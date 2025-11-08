@@ -1,0 +1,1 @@
+# O app 'core' não possui modelos de dados, sendo dedicado a views globais.

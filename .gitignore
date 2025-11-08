@@ -1,0 +1,23 @@
+##Arquivo .gitignore para Projeto Django
+#Ambientes Virtuais
+venv/
+env/
+
+# Ignora configurações do PyCharm
+.idea/
+
+#Cache e Logs
+pycache/
+*.pyc
+*.log
+
+#Banco de Dados Local
+db.sqlite3
+
+#Arquivos de Mídia de Desenvolvimento (Se não usar S3)
+
+#Descomente se você não quer subir arquivos de mídia no Git
+media/
+
+#Variáveis de Ambiente
+.env

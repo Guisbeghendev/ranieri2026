@@ -1,0 +1,1109 @@
+/* ================================
+   RESET BÁSICO
+=================================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+ul, ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+th, td {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  text-align: left;
+}
+
+th {
+  background: var(--color-primary);
+  color: white;
+  font-weight: 600;
+}
+
+/* ================================
+   VARIÁVEIS DE TEMA - ESCOLA JOSÉ RANIERI
+=================================== */
+:root {
+  /* Roxos */
+  --roxo1: #61152d;
+  --roxo2: #681630;
+
+  /* Pretos */
+  --preto1: #0f0e0f;
+  --preto2: #000000;
+
+  /* Laranjas Escuros */
+  --laranja-escuro1: #c9583e;
+  --laranja-escuro2: #cb703a;
+
+  /* Laranjas Médios */
+  --laranja-medio1: #cd862a;
+  --laranja-medio2: #cd8729;
+
+  /* Laranjas Claros */
+  --laranja-claro1: #c89c20;
+  --laranja-claro2: #c89c1e;
+
+  /* Cores principais do tema */
+  --color-primary: var(--roxo1);
+  --color-primary-dark: var(--roxo2);
+  --color-accent: var(--laranja-escuro1);
+  --color-bg: #f9fafb;
+  --color-text: var(--preto1);
+  --color-border: #e5e7eb;
+
+  /* Cor do header e footer */
+  --verde-petroleo: #0a9396; /* usada no header */
+
+  /* Cores adicionais futuras */
+  --azul-profundo: #005f73; /* opção futura */
+  --turquesa-viva: #94d2bd; /* opção futura */
+
+  /* Outros padrões */
+  --radius: 6px;
+  --transition: 0.2s ease-in-out;
+  --font-base: "Inter", Arial, sans-serif;
+  --shadow-default: 0 2px 6px rgba(0,0,0,0.05);
+  --shadow-hover: 0 4px 12px rgba(0,0,0,0.1);
+
+  /* Variáveis de cor para os estilos de login/cadastro (baseadas no tema) */
+  --color-text-light: #6c757d;
+  --color-border-dark: #ced4da;
+  --color-background-light: #f8f9fa;
+  --color-background-hover: #e9ecef;
+  --color-error: #dc3545;
+  --color-warning-bg: #fff3cd;
+  --color-warning-text: #856404;
+  --color-warning-border: #ffeeba;
+  --laranja-rgb: 205, 134, 42; /* RGB de laranja-medio1 para sombras */
+
+  /* Cores específicas para os botões de edição de perfil (além dos padrões) */
+  --color-btn-info: var(--azul-profundo); /* Azul para Perfil Universal */
+  --color-btn-warning: var(--laranja-medio1); /* Laranja para Alteração de Senha */
+}
+
+/* ================================
+   BASE GLOBAL
+=================================== */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-base);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* A11y: Remove o outline padrão ao clicar (para usuários de mouse), mantendo a usabilidade no teclado. */
+*:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* A11y: Garante que usuários de teclado tenham um indicador de foco claro e customizado. */
+:focus-visible {
+    outline: 2px solid var(--laranja-medio1);
+    outline-offset: 3px;
+    border-radius: var(--radius);
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+
+a:hover {
+  color: var(--color-primary-dark);
+  text-decoration: underline;
+}
+
+/* ================================
+   HEADER
+=================================== */
+header, .header {
+    background-color: var(--verde-petroleo); /* Cor #0a9396 */
+    color: white;
+    padding: 0.5rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--shadow-default);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    flex-wrap: wrap;
+}
+
+/* Logo */
+header .logo, .header .logo {
+    margin-right: 2rem; /* distância da logo ao menu */
+}
+
+header .logo img, .header .logo img {
+    height: 80px; /* reduz o tamanho do logo */
+    width: auto;
+    object-fit: contain;
+}
+
+/* Navegação */
+nav ul {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 2rem;
+}
+
+nav li {
+    margin: 0;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color var(--transition);
+    position: relative;
+}
+
+nav a::after {
+    content: "";
+    display: block;
+    height: 2px;
+    background: white;
+    width: 0;
+    transition: width var(--transition);
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+}
+
+nav a:hover::after {
+    width: 100%;
+}
+
+nav a:hover {
+    color: var(--laranja-claro1);
+}
+
+/* Hamburger */
+.hamburger {
+    display: none; /* inicialmente escondido */
+    flex-direction: column;
+    cursor: pointer;
+    gap: 5px;
+}
+
+.hamburger span {
+    display: block;
+    width: 25px;
+    height: 3px;
+    background-color: white;
+    border-radius: 2px;
+    transition: 0.3s;
+}
+
+/* Menu responsivo */
+@media (max-width: 768px) {
+    nav ul {
+        display: none; /* esconde menu padrão em mobile */
+        flex-direction: column;
+        background-color: var(--roxo2);
+        width: 100%;
+        padding: 1rem 0;
+        position: absolute;
+        top: 90px; /* logo de 80px + padding do header */
+        left: 0;
+    }
+
+    nav ul.show {
+        display: flex; /* mostra menu quando o hamburger é clicado */
+    }
+
+    .hamburger {
+        display: flex; /* mostra o hamburger em telas pequenas */
+    }
+}
+
+/* ================================
+   CONTEÚDO PRINCIPAL
+=================================== */
+main {
+  max-width: 960px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+/* ================================
+   BOTÕES PADRÃO
+=================================== */
+button,
+.btn {
+  display: inline-block;
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--radius);
+  font-family: var(--font-base);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition), border var(--transition), transform var(--transition);
+  text-align: center;
+  border: none;
+  box-shadow: var(--shadow-default);
+}
+
+button:hover,
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-hover);
+}
+
+.btn-primary { background: var(--color-primary); color: white; }
+.btn-primary:hover { background: var(--color-primary-dark); }
+
+.btn-secondary { background: var(--laranja-escuro1); color: white; }
+.btn-secondary:hover { background: var(--laranja-medio1); }
+
+.btn-outline {
+  background: transparent;
+  border: 2px solid var(--color-primary);
+  color: var(--color-primary);
+}
+.btn-outline:hover {
+  background: var(--color-primary);
+  color: white;
+}
+
+.btn-light {
+  background: white;
+  color: var(--color-primary);
+  border: 2px solid var(--color-primary);
+}
+.btn-light:hover {
+  background: var(--color-primary);
+  color: white;
+}
+
+/* Cor Padrão de Perfil */
+.btn-danger { background: var(--laranja-escuro1); color: white; }
+.btn-danger:hover { background: var(--laranja-medio1); }
+
+/* Botão de voltar usado no perfil, adaptado */
+.btn-back {
+    background-color: #e5e7eb; /* Cinza claro */
+    color: var(--color-text);
+    border-color: #d1d5db;
+    box-shadow: none;
+}
+
+.btn-back:hover {
+    background-color: #d1d5db; /* Cinza um pouco mais escuro */
+    color: var(--color-text);
+    transform: translateY(-1px);
+}
+
+/* ================================
+   BOTÕES DE EDIÇÃO DE PERFIL (Novos estilos)
+=================================== */
+
+/* Botão INFO (Perfil Universal - Bloco 3) */
+.btn-info {
+    background: var(--color-btn-info);
+    color: white;
+}
+.btn-info:hover {
+    background: #004d5d; /* tom mais escuro do azul profundo */
+}
+
+/* Botão WARNING (Alterar Senha - Bloco 4) */
+.btn-warning {
+    background: var(--color-btn-warning);
+    color: var(--preto1);
+}
+.btn-warning:hover {
+    background: var(--laranja-escuro1);
+    color: white;
+}
+
+/* Botão de Logout no Header */
+.btn-logout {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+    background: var(--laranja-escuro1);
+    color: white;
+}
+.btn-logout:hover {
+    background: var(--laranja-medio1);
+}
+
+/* Tamanho G para botões grandes (Dashboard) */
+.btn-lg {
+    padding: 1rem 3rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+/* ================================
+   FORMULÁRIOS
+=================================== */
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-family: var(--font-base);
+  margin-bottom: 1rem;
+  transition: border var(--transition), box-shadow var(--transition);
+}
+
+/* Mantém os estilos de foco, o outline principal para teclado é gerenciado pelo :focus-visible global */
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--laranja-medio1); /* Foco Laranja */
+  box-shadow: 0 0 0 2px rgba(205, 134, 42, 0.3); /* Sombra Laranja */
+}
+
+.form-group, .form-field-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-label, .form-field-group label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 0.5rem;
+}
+
+.form-error {
+    color: var(--color-error);
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+}
+
+.form-help {
+    color: var(--color-text-light);
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+/* ================================
+   CARDS
+=================================== */
+.card {
+  background: white;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-default);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+.card-header {
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+  color: var(--color-primary);
+}
+.card-body { font-size: 0.95rem; color: var(--color-text); }
+.card-footer { margin-top: 1rem; text-align: right; }
+
+/* ================================
+   ALERTAS
+=================================== */
+.alert,
+.messages .message { /* Aplica os estilos de alerta às mensagens do Django */
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  border-left: 4px solid transparent;
+  list-style: none;
+}
+.alert-success,
+.messages .success { background: #d1fae5; color: #065f46; border-left-color: #10b981; }
+.alert-warning,
+.messages .warning { background: #fff7ed; color: #92400e; border-left-color: var(--laranja-medio1); }
+.alert-danger,
+.messages .error { background: #fee2e2; color: #991b1b; border-left-color: var(--laranja-escuro1); }
+.alert-info,
+.messages .info { background: #f5f3ff; color: #4c1d95; border-left-color: var(--roxo2); }
+
+.messages {
+    padding: 0;
+}
+
+/* ================================
+   GRID RESPONSIVO
+=================================== */
+.row { display: grid; gap: 1rem; }
+.col-1 { grid-column: span 1; }
+.col-2 { grid-column: span 2; }
+.col-3 { grid-column: span 3; }
+.col-4 { grid-column: span 4; }
+/* Usado para os cartões de dashboard/perfil */
+.grid-auto {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+}
+
+/* ================================
+   BADGES
+=================================== */
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 12px;
+  background: var(--laranja-medio1);
+  color: white;
+  text-align: center;
+}
+.badge-success { background: #10b981; }
+.badge-warning { background: var(--laranja-medio1); }
+.badge-danger { background: var(--laranja-escuro1); }
+.badge-info { background: var(--roxo2); }
+
+/* ================================
+   TIPOGRAFIA
+=================================== */
+h1 { font-size: 2rem; font-weight: 700; color: var(--color-primary); margin-bottom: 1rem; }
+h2 { font-size: 1.75rem; font-weight: 600; color: var(--color-primary); margin-bottom: 0.75rem; }
+h3 { font-size: 1.5rem; font-weight: 600; color: var(--color-primary-dark); margin-bottom: 0.5rem; }
+p { font-size: 1rem; line-height: 1.6; color: var(--color-text); margin-bottom: 1rem; }
+
+.text-center { text-align: center; }
+
+/* ================================
+   TEXT UTILITIES (Para Ícones/Status)
+=================================== */
+.text-primary { color: var(--color-primary) !important; }
+.text-secondary { color: var(--laranja-escuro1) !important; }
+.text-success { color: #065f46 !important; } /* Cor do sucesso/verde */
+.text-info { color: var(--azul-profundo) !important; }
+.text-warning { color: var(--laranja-medio1) !important; }
+
+/* ================================
+   FOOTER
+=================================== */
+footer {
+  background-color: var(--verde-petroleo); /* mesma cor do header */
+  color: white;
+  text-align: center;
+  padding: 1.5rem 2rem;
+  margin-top: 3rem;
+  font-size: 0.9rem;
+  box-shadow: var(--shadow-default);
+}
+
+
+/* ================================
+   UTILITÁRIOS
+=================================== */
+.mt-1 { margin-top: 0.5rem !important; }
+.mt-2 { margin-top: 1rem !important; }
+.mt-3 { margin-top: 2rem !important; }
+.mb-1 { margin-bottom: 0.5rem !important; }
+.mb-2 { margin-bottom: 1rem !important; }
+.mb-3 { margin-bottom: 2rem !important; }
+.mb-4 { margin-bottom: 2.5rem !important; }
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* ================================
+   RESPONSIVIDADE
+=================================== */
+@media (max-width: 768px) {
+  nav ul { flex-direction: column; align-items: center; gap: 0.75rem; }
+  main { padding: 0 0.75rem; }
+  header, footer { text-align: center; }
+}
+
+@media (max-width: 480px) {
+  body { font-size: 0.95rem; }
+  .btn, button { width: 100%; }
+  nav ul { gap: 0.5rem; }
+}
+
+@media (min-width: 1200px) {
+  main { max-width: 1200px; }
+  body { font-size: 1.05rem; }
+  header, footer { padding: 1.5rem 3rem; }
+}
+
+@media (min-width: 1600px) {
+  main { max-width: 1400px; }
+  body { font-size: 1.1rem; }
+  .container { max-width: 1400px; }
+}
+
+/* ================================
+   ESPAÇAMENTO GLOBAL E SEÇÕES
+=================================== */
+.m-0 { margin: 0 !important; }
+.p-0 { padding: 0 !important; }
+.m-1 { margin: 0.5rem !important; }
+.m-2 { margin: 1rem !important; }
+.m-3 { margin: 2rem !important; }
+.p-1 { padding: 0.5rem !important; }
+.p-2 { padding: 1rem !important; }
+.p-3 { padding: 2rem !important; }
+.mx-auto { margin-left: auto; margin-right: auto; }
+
+.section {
+  padding: 3rem 1rem;
+  margin-bottom: 2rem;
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-default);
+}
+
+.section-alt {
+  background: #f3f4f6;
+  padding: 3rem 1rem;
+  margin-bottom: 2rem;
+}
+
+.section-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.section-subtitle {
+  font-size: 1.1rem;
+  color: #6b7280;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.center { display: flex; align-items: center; justify-content: center; }
+
+/* ================================
+   EFEITO FADE-IN
+=================================== */
+.fade-in {
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+}
+
+/* ================================
+   HOME.HTML
+=================================== */
+
+.hero-section {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Imagem principal */
+.hero-section .hero-img {
+  width: 100%;
+  height: auto;
+  max-height: 600px; /* altura padrão para desktop */
+  object-fit: cover;
+  display: block;
+}
+
+/* Camada de texto sobre a imagem */
+.hero-section .hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  color: var(--laranja-claro2) !important; /* texto laranja */
+  background: rgba(0, 0, 0, 0.35); /* leve sombra sobre a imagem */
+  padding: 1rem;
+}
+
+.hero-section .hero-overlay h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--laranja-claro2) !important; /* texto laranja */
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
+}
+
+.hero-section .hero-overlay p {
+  font-size: 1.2rem;
+  text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.7);
+}
+
+/* Ajuste para telas grandes (desktop) */
+@media (min-width: 1024px) {
+  .hero-section .hero-img {
+    max-height: 480px; /* reduz 20% da altura */
+  }
+}
+
+/* Ajuste para telas pequenas (celular/tablet) */
+@media (max-width: 768px) {
+  .hero-section .hero-img {
+    max-height: 650px; /* aumenta altura da imagem para celular */
+  }
+
+  .hero-section .hero-overlay h1 {
+    font-size: 1.4rem; /* reduz texto para celular */
+  }
+
+  .hero-section .hero-overlay p {
+    font-size: 0.9rem; /* reduz texto para celular */
+  }
+}
+
+/* ================================
+   PROFILE (VIEW MODE)
+=================================== */
+
+.profile-main {
+    max-width: 960px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.profile-header {
+    background-color: var(--color-primary);
+    color: white;
+    padding: 1.5rem;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-default);
+    margin-bottom: 2rem;
+}
+
+.profile-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.profile-header .header-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0;
+    color: white;
+}
+
+.profile-header .user-role {
+    font-size: 1rem;
+    color: var(--laranja-claro2);
+    font-weight: 600;
+    margin: 0;
+}
+
+.profile-sections-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.profile-info-block {
+    background: white;
+    padding: 1.5rem;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-default);
+    border: 1px solid var(--color-border);
+}
+
+.profile-info-block h2 {
+    font-size: 1.25rem;
+    color: var(--color-primary-dark);
+    margin-top: 0;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+}
+.profile-info-block h2 i {
+    margin-right: 0.5rem;
+    font-size: 1.1em;
+}
+
+.info-details p {
+    margin: 0.75rem 0;
+    font-size: 0.95rem;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.info-details strong {
+    color: var(--preto1);
+    font-weight: 600;
+    min-width: 140px;
+    flex-shrink: 0;
+}
+
+.profile-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-start;
+    padding: 1rem 0;
+}
+
+/* ================================
+   PROFILE (EDIT MODE - Novas Classes)
+=================================== */
+
+.profile-content.edit-mode {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.profile-info-block.editable-block {
+    display: flex;
+    flex-direction: column;
+    min-height: 300px;
+}
+
+.profile-info-block .section-description {
+    color: var(--color-text-light);
+    font-size: 0.9rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.editable-block form {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.editable-block form button {
+    margin-top: auto;
+    width: 100%;
+}
+
+.password-change-section h2 {
+    color: var(--laranja-medio1);
+}
+
+
+/* ---------------------------------- Responsividade de Perfil ---------------------------------- */
+
+@media (max-width: 768px) {
+    .profile-sections-container,
+    .profile-content.edit-mode {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        margin-bottom: 0.75rem;
+    }
+
+    .profile-header .header-title {
+        margin-bottom: 0.5rem;
+    }
+
+    .profile-actions {
+        flex-direction: column;
+    }
+
+    .profile-actions .btn {
+        width: 100%;
+    }
+}
+
+/* ================================
+   DASHBOARD (Seção Adicionada/Revisada)
+=================================== */
+
+.dashboard-main {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.dashboard-header {
+    background-color: var(--color-primary);
+    color: white;
+    padding: 1.5rem;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-default);
+    margin-bottom: 2rem;
+}
+.dashboard-header .header-title {
+    font-size: 1.75rem;
+    color: white;
+    margin-bottom: 0.25rem;
+}
+.dashboard-header .user-role {
+    color: var(--laranja-claro2);
+    font-weight: 600;
+}
+
+.dashboard-summary h2 {
+    font-size: 1.5rem;
+    color: var(--color-primary-dark);
+    margin-bottom: 1.5rem;
+}
+
+.summary-cards {
+    gap: 1.5rem;
+}
+
+.card .card-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    text-align: center;
+    text-decoration: none;
+    height: 100%;
+    color: var(--color-text);
+}
+
+.card:hover .card-link {
+    color: var(--color-text);
+}
+
+.card .card-link h3 {
+    font-size: 1.25rem;
+    color: var(--color-primary);
+    margin-bottom: 0.5rem;
+    margin-top: 0.5rem;
+    transition: color 0.2s;
+}
+
+.card:hover .card-link h3 {
+    color: var(--laranja-medio1);
+}
+
+.icon-large {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.dashboard-logout-info {
+    text-align: center;
+    padding: 2rem 0;
+}
+
+/* ================================
+   LOGIN / CADASTRO WIZARD
+=================================== */
+
+/* Container que centraliza o formulário vertical e horizontalmente */
+.login-container,
+.cadastro-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 4rem); /* Altura mínima da tela menos o padding da main */
+    padding: 2rem 1rem;
+}
+
+/* O Box/Card principal do Login */
+.login-card,
+.cadastro-card {
+    width: 100%;
+    max-width: 400px; /* Largura padrão para telas de auth */
+    background: white;
+    padding: 2rem;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-hover);
+    border: 1px solid var(--color-border);
+}
+
+/* Título Principal */
+.login-header-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    margin-bottom: 0.25rem;
+}
+
+/* Subtítulo */
+.login-header-subtitle {
+    font-size: 1rem;
+    color: var(--color-text);
+    margin-bottom: 1.5rem;
+}
+
+/* Link de recuperação de senha alinhado à direita */
+.form-link-right {
+    display: block;
+    text-align: right;
+    font-size: 0.9rem;
+    color: var(--laranja-medio1);
+    margin-top: -0.5rem; /* Ajusta o espaçamento superior */
+    margin-bottom: 1.5rem;
+    text-decoration: none; /* Adicionando o padrão de link */
+}
+.form-link-right:hover {
+    color: var(--laranja-escuro1);
+    text-decoration: underline; /* Mudando o hover para dar feedback visual */
+}
+
+/* Força o botão de submit a ocupar 100% da largura no contexto do login/cadastro */
+.login-card .btn,
+.cadastro-card .btn {
+    width: 100%;
+}
+
+/* Ajuste para telas menores */
+@media (max-width: 480px) {
+    .login-card,
+    .cadastro-card {
+        padding: 1rem;
+    }
+}
+
+/* ================================
+   CADASTRO WIZARD-SPECIFIC STYLES
+=================================== */
+
+/* Container da barra de progresso */
+.progress-bar-container {
+    height: 8px;
+    width: 100%;
+    background-color: var(--color-border); /* Cor de fundo da barra */
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+/* Preenchimento da barra de progresso */
+.progress-bar-fill {
+    height: 100%;
+    background-color: var(--laranja-medio1); /* Cor de preenchimento (laranja primário) */
+    transition: width 0.3s ease-in-out;
+}
+
+/* Contêiner de navegação para alinhamento dos botões (Voltar e Próximo) */
+.form-navigation {
+    display: flex;
+    justify-content: space-between; /* Alinha o primeiro à esquerda e o último à direita */
+    align-items: center;
+}
+
+/* Estilo específico para o botão de voltar (secundário) */
+.form-navigation .btn-secondary {
+    width: auto; /* Desfaz o width: 100% */
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    color: var(--color-text-light);
+    background-color: transparent;
+    border: 1px solid var(--color-border);
+    transition: all 0.2s;
+    border-radius: var(--radius); /* Aplicando o radius */
+}
+.form-navigation .btn-secondary:hover {
+    background-color: var(--color-border-dark);
+}
+
+/* Estilo específico para o botão principal (Próximo/Finalizar) */
+.form-navigation .btn-primary {
+    width: auto; /* Desfaz o width: 100% */
+    min-width: 150px; /* Garante que o botão seja substancial */
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+}
+
+/* ================================
+   PASSWORD RESET FLOW
+=================================== */
+
+/* Container principal (centralização) */
+.reset-main {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 4rem);
+    padding: 2rem 1rem;
+}
+
+/* O Box/Card principal */
+.reset-box {
+    width: 100%;
+    max-width: 400px; /* Largura padrão para telas de auth */
+    background: white;
+    padding: 2rem;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-hover);
+    border: 1px solid var(--color-border);
+}
+
+/* Cabeçalho do Card (Reset) */
+.reset-header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.reset-header .header-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    margin: 0;
+}
+
+/* Estilo específico para a página de sucesso/conclusão */
+.reset-header.success {
+    border-bottom: 2px solid #10b981; /* Borda de cor Sucesso (Verde) */
+}
+
+.reset-header.success .header-title {
+    color: #065f46; /* Texto de cor Sucesso (Verde Escuro) */
+}
+
+.reset-body {
+    font-size: 0.95rem;
+}
+
+/* Ajuste para telas menores */
+@media (max-width: 480px) {
+    .reset-box {
+        padding: 1rem;
+    }
+}

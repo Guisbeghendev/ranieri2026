@@ -17,8 +17,8 @@ urlpatterns = [
     # path('brincando-e-dialogando/', include('brinc_dialogando.urls')),
 
     # URLs do App de Identidade e Acesso
-    # path('users/', include('users.urls')),
-    # path('painel/', include('users.urls')), # Dashboard
+    # CORRIGIDO: Apenas uma inclusão do namespace 'users' para evitar o aviso urls.W005
+    path('users/', include('users.urls', namespace='users')),
 
     # URLs dos Apps de Conteúdo Restrito
     # path('simoninha-na-cozinha/', include('sim_cozinha.urls')),
@@ -34,4 +34,5 @@ urlpatterns = [
 if settings.DEBUG:
     # Apenas para garantir que o Django sirva os arquivos estáticos e de mídia em DEV
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-    # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) # Descomentar quando MEDIA_ROOT for definido
+    urlpatterns += static(settings.MEDIA_URL,
+                          document_root=settings.MEDIA_ROOT) # Descomentar quando MEDIA_ROOT for definido

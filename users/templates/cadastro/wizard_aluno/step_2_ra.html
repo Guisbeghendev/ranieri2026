@@ -1,0 +1,67 @@
+{% extends "cadastro/base.html" %}
+{% load static %}
+
+{% block cadastro_title_page %}
+    Cadastro de Aluno | Passo 2 de 4
+{% endblock %}
+
+{% block card_title %}
+    Identificação de Aluno
+{% endblock %}
+
+{% block card_subtitle %}
+    Por favor, informe seu Registro do Aluno (RA) para validar seu vínculo com a instituição.
+{% endblock %}
+
+{% block auth_content %}
+    <div class="cadastro-card mx-auto">
+        <form method="post">
+            {% csrf_token %}
+
+            {# CORREÇÃO: Usando a classe de alerta definida no seu main.css (.alert-danger) para erros não relacionados a campos. #}
+            {# CORREÇÃO: Removendo o loop excessivo, pois erros de campo serão exibidos ao lado do campo. #}
+            {% if form.non_field_errors %}
+                <div class="alert-danger" role="alert">
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label for="{{ form.ra_numero.id_for_label }}" class="form-label">
+                    {{ form.ra_numero.label }}
+                </label>
+                {{ form.ra_numero }}
+                <small class="form-help">Apenas o número do RA.</small>
+
+                {# MELHORIA: Exibindo erros de campo imediatamente abaixo do campo #}
+                {% for error in form.ra_numero.errors %}
+                    <p class="form-error">{{ error }}</p>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.ra_digito_verificador.id_for_label }}" class="form-label">
+                    {{ form.ra_digito_verificador.label }}
+                </label>
+                {{ form.ra_digito_verificador }}
+                <small class="form-help">O dígito verificador do RA.</small>
+
+                {# MELHORIA: Exibindo erros de campo imediatamente abaixo do campo #}
+                {% for error in form.ra_digito_verificador.errors %}
+                    <p class="form-error">{{ error }}</p>
+                {% endfor %}
+            </div>
+
+            <div class="action-buttons-group mt-3">
+                <button type="submit" class="btn btn-primary action-button">
+                    Validar e Continuar (Passo 3)
+                </button>
+                <a href="{% url 'users:registration_step_1_tipo' %}" class="btn btn-back action-button">
+                    &larr; Voltar (Trocar Tipo)
+                </a>
+            </div>
+        </form>
+    </div>
+{% endblock auth_content %}

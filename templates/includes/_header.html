@@ -1,7 +1,6 @@
 {% load static %}
 <header class="header">
     <div class="logo">
-        <!-- Inserção da imagem do logo. O caminho é relativo à pasta 'static/' -->
         <a href="{% url 'core:home' %}">
             <img src="{% static 'images/logo/prof_ranieri.png' %}" alt="Logo Escola Ranieri" onerror="this.onerror=null; this.src='https://placehold.co/80x80/61152d/FFFFFF?text=LOGO'">
         </a>
@@ -9,26 +8,22 @@
 
     <nav>
         <ul id="main-nav-ul">
-            <!-- URLs ajustadas para usar a view 'core:home' -->
             <li><a href="{% url 'core:home' %}">Home</a></li>
             <li><a href="#">História</a></li>
             <li><a href="#">Coral</a></li>
             <li><a href="#">Brincando & Dialogando</a></li>
             <li><a href="#">Galerias</a></li>
 
-            <!-- Item de menu que só aparece se o usuário estiver autenticado -->
             {% if user.is_authenticated %}
-                <li><a href="#">Painel</a></li>
-                <!-- Botão de Logout. URL substituída por '#' temporariamente -->
+                <li><a href="{% url 'users:dashboard' %}">Painel</a></li>
                 <li>
-                    <form method="post" action="#">
+                    <form method="post" action="{% url 'users:logout' %}">
                         {% csrf_token %}
                         <button type="submit" class="btn-logout">Sair <i class="fas fa-sign-out-alt"></i></button>
                     </form>
                 </li>
             {% else %}
-                <!-- Link para Login/Cadastro. URL substituída por '#' temporariamente -->
-                <li><a href="#" class="btn-primary btn-logout">Entrar</a></li>
+                <li><a href="{% url 'users:login' %}" class="btn-primary btn-logout">Entrar</a></li>
             {% endif %}
         </ul>
         <div class="hamburger" id="hamburger-menu">

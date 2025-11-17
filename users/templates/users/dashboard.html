@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Bem-vindo(a), {{ user.first_name }}{% endblock title %}
+
+{% block content %}
+
+<div class="dashboard-main-container">
+
+    <div class="dashboard-header mb-2">
+        <h1 class="header-title">
+            Bem-vindo(a), {{ user.first_name }}!
+        </h1>
+        <p class="header-subtitle">
+            Seu Painel de Controle ({{ user.get_tipo_usuario_display }})
+        </p>
+    </div>
+
+    {# CORREÇÃO: Usando a estrutura padronizada de mensagens (ul.messages > li.message) #}
+    {% if messages %}
+        <ul class="messages mb-2">
+            {% for message in messages %}
+                <li class="message {{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <div class="dashboard-grid">
+
+        <div class="card card-primary">
+            <h3 class="card-title">Minha Conta</h3>
+            <div class="card-body">
+                <p><strong>Usuário:</strong> @{{ user.username }}</p>
+                <p><strong>E-mail:</strong> {{ user.email }}</p>
+                <p><strong>Tipo:</strong> {{ user.get_tipo_usuario_display }}</p>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'users:profile' %}" class="btn btn-back btn-sm">Ver Perfil Completo</a>
+            </div>
+        </div>
+
+        <div class="card card-secondary">
+            <h3 class="card-title">Ações Rápidas</h3>
+            <div class="card-body action-list">
+                {# Assumindo que você está usando Font Awesome ou similar para ícones. #}
+                <a href="{% url 'users:profile_edit' %}" class="btn-dashboard-action">
+                    <i class="fas fa-edit"></i> Editar Dados
+                </a>
+                <a href="{% url 'users:password_change' %}" class="btn-dashboard-action">
+                    <i class="fas fa-key"></i> Alterar Senha
+                </a>
+                <a href="#" class="btn-dashboard-action is-disabled">
+                    <i class="fas fa-plus-circle"></i> Novo Registro (Em Breve)
+                </a>
+            </div>
+        </div>
+
+        {% if user.is_aluno %}
+            <div class="card card-info">
+                <h3 class="card-title">Situação do Aluno</h3>
+                <div class="card-body">
+                    <p><strong>Matrícula:</strong> {{ user.registro_aluno.ra_matricula }}</p>
+                    <p><strong>Turma:</strong> {{ user.registro_aluno.turma }}</p>
+                    <p><strong>Status:</strong> <span class="badge badge-success">Ativo</span></p>
+                </div>
+            </div>
+        {% elif user.is_professor %}
+            <div class="card card-warning">
+                <h3 class="card-title">Função</h3>
+                <div class="card-body">
+                    <p><strong>Tipo de Professor:</strong> {{ user.registro_professor.get_tipo_professor_display }}</p>
+                    <p><strong>Próxima Aula:</strong> Matemática - 09:00 (Sala 301)</p>
+                </div>
+            </div>
+        {% else %}
+             <div class="card card-default">
+                <h3 class="card-title">Avisos</h3>
+                <div class="card-body">
+                    <p>Nenhum aviso urgente para seu tipo de perfil.</p>
+                </div>
+            </div>
+        {% endif %}
+
+    </div>
+
+    <div class="main-content-area mt-2">
+        {# CORREÇÃO: Usando a classe de alerta padrão para elementos neutros (.alert-info ou .alert-default) #}
+        <div class="alert-info">
+            Esta é a área de atividades recentes e notificações.
+        </div>
+    </div>
+</div>
+{% endblock content %}

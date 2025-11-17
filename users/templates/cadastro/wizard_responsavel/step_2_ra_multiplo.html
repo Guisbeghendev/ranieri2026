@@ -1,0 +1,62 @@
+{% extends "cadastro/base.html" %}
+{% load static %}
+
+{% block cadastro_title_page %}
+    Cadastro de Responsável | Passo 2 de 4
+{% endblock %}
+
+{% block card_title %}
+    Vínculo de Dependência
+{% endblock %}
+
+{% block card_subtitle %}
+    Informe o(s) Registro(s) do Aluno (RA) do(s) seu(s) dependente(s). É obrigatório informar pelo menos um RA válido.
+{% endblock %}
+
+{% block auth_content %}
+    <div class="cadastro-card mx-auto">
+        <form method="post">
+            {% csrf_token %}
+
+            {# Exibe erros não relacionados a campos usando a classe de alerta correta (.alert-danger) #}
+            {% if form.non_field_errors %}
+                <div class="alert-danger mb-2" role="alert">
+                    <p>Corrija os erros abaixo:</p>
+                    {# Loop direto sobre non_field_errors (já que são textos) #}
+                    {% for error in form.non_field_errors %}
+                        <p class="form-error mt-1">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label for="{{ form.ra_dependentes.id_for_label }}" class="form-label">
+                    {{ form.ra_dependentes.label }}
+                </label>
+                {{ form.ra_dependentes }}
+
+                {# Bloco de Help Text customizado/padrão #}
+                {% if form.ra_dependentes.help_text %}
+                    <small class="form-help">{{ form.ra_dependentes.help_text|safe }}</small>
+                {% else %}
+                    <small class="form-help">Liste os RAs. Separe por vírgula, espaço ou linha.</small>
+                {% endif %}
+
+                {# Exibe erros específicos do campo #}
+                {% for error in form.ra_dependentes.errors %}
+                    <p class="form-error">{{ error }}</p>
+                {% endfor %}
+            </div>
+
+            <div class="action-buttons-group mt-3">
+                <button type="submit" class="btn btn-primary action-button">
+                    Validar e Continuar (Passo 3)
+                </button>
+                {# Usando a classe .btn-back para botões de Voltar, que tem estilo cinza no seu CSS #}
+                <a href="{% url 'users:registration_step_1_tipo' %}" class="btn btn-back action-button">
+                    &larr; Voltar (Trocar Tipo)
+                </a>
+            </div>
+        </form>
+    </div>
+{% endblock auth_content %}

@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Perfil de {{ user.get_full_name|default:user.username }}{% endblock title %}
+
+{% block content %}
+
+<div class="profile-main">
+
+    {% if messages %}
+        <div class="messages-container mb-4">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="profile-header">
+        <div class="profile-header-content">
+            <h1 class="header-title login-header-title">
+                {{ user.first_name }} {{ user.last_name }}
+            </h1>
+            <p class="user-role">{{ user.get_tipo_usuario_display }}</p>
+        </div>
+        <p class="user-username">@{{ user.username }}</p>
+    </div>
+
+    <div class="profile-sections-container">
+
+        <div class="profile-info-block card-style">
+            <h2><i class="fas fa-user-circle icon-color"></i> Dados Pessoais</h2>
+            <div class="info-details">
+                {# Os dados abaixo são do AbstractUser e do Profile #}
+                <p><strong>Nome Completo:</strong> <span>{{ user.get_full_name }}</span></p>
+                <p><strong>E-mail:</strong> <span>{{ user.email }}</span></p>
+                <p><strong>WhatsApp:</strong> <span>{{ user.profile.whatsapp|default:"Não informado" }}</span></p>
+                <p><strong>Outro Contato:</strong> <span>{{ user.profile.outro_contato|default:"Não informado" }}</span></p>
+                <p><strong>Data de Nascimento:</strong> <span>{{ user.profile.data_nascimento|default:"Não informado" }}</span></p>
+                <p><strong>Endereço:</strong> <span>{{ user.profile.endereco|default:"Não informado" }}</span></p>
+                <p><strong>Cidade/UF:</strong> <span>{% if user.profile.cidade %}{{ user.profile.cidade }}{% if user.profile.estado %}, {{ user.profile.estado }}{% endif %}{% else %}Não informado{% endif %}</span></p>
+            </div>
+        </div>
+
+        <div class="profile-info-block photo-block text-center card-style">
+            <h2><i class="fas fa-camera icon-color"></i> Foto de Perfil</h2>
+            <div class="mb-3">
+                {% if user.profile.foto_perfil %}
+                    <img src="{{ user.profile.foto_perfil.url }}" alt="Foto de Perfil" class="profile-photo" style="width: 150px; height: 150px;">
+                {% else %}
+                    <div class="profile-photo profile-photo-placeholder mx-auto">
+                        👤
+                    </div>
+                {% endif %}
+            </div>
+            <div class="info-details bio-section">
+                <p class="mt-2"><strong>Bio:</strong> <span>{{ user.profile.bio|default:"Nenhuma bio definida." }}</span></p>
+            </div>
+        </div>
+
+        {# BLOCOS DE INFORMAÇÃO CONDICIONAL (BASEADOS NO CAMPO 'TIPO_USUARIO') #}
+
+        {# Aluno: RegistroAluno #}
+        {% if user.tipo_usuario == 'ALUNO' and user.registro_aluno %}
+            <div class="profile-info-block card-style">
+                <h2><i class="fas fa-graduation-cap icon-color"></i> Dados de Aluno</h2>
+                <div class="info-details">
+                    <p><strong>Matrícula/RA:</strong> <span>{{ user.registro_aluno.ra_numero }}-{{ user.registro_aluno.ra_digito_verificador }}</span></p>
+                    <p><strong>Turma:</strong> <span>{{ user.registro_aluno.turma.nome }} ({{ user.registro_aluno.turma.ano_letivo }})</span></p>
+                </div>
+            </div>
+
+        {# Professor: RegistroProfessor #}
+        {% elif user.tipo_usuario == 'PROFESSOR' and user.registro_professor %}
+            <div class="profile-info-block card-style">
+                <h2><i class="fas fa-chalkboard-teacher icon-color"></i> Dados de Professor</h2>
+                <div class="info-details">
+                    <p><strong>Tipo:</strong> <span>{{ user.registro_professor.get_tipo_professor_display }}</span></p>
+                    <p><strong>Turmas Adicionais:</strong>
+                        <ul>
+                            {% for turma in user.registro_professor.turmas.all %}
+                                <li>{{ turma.nome }} ({{ turma.ano_letivo }})</li>
+                            {% empty %}
+                                <li>Nenhuma turma adicional vinculada.</li>
+                            {% endfor %}
+                        </ul>
+                    </p>
+                </div>
+            </div>
+
+        {# Colaborador: RegistroColaborador #}
+        {% elif user.tipo_usuario == 'COLABORADOR' and user.registro_colaborador %}
+             <div class="profile-info-block card-style">
+                <h2><i class="fas fa-briefcase icon-color"></i> Dados de Colaborador</h2>
+                <div class="info-details">
+                    <p><strong>Função:</strong> <span>{{ user.registro_colaborador.get_funcao_display }}</span></p>
+                    <p><strong>Matrícula/Identificador:</strong> <span>{{ user.registro_colaborador.matricula_ou_identificador|default:"Não informado" }}</span></p>
+                </div>
+            </div>
+
+        {# Responsável: RegistroResponsavel #}
+        {% elif user.tipo_usuario == 'RESPONSAVEL' and user.registro_responsavel %}
+             <div class="profile-info-block card-style">
+                <h2><i class="fas fa-users icon-color"></i> Dependentes</h2>
+                <div class="info-details">
+                    <ul>
+                    {% for aluno in user.registro_responsavel.alunos.all %}
+                        <li><span>{{ aluno.nome_completo }} (RA: {{ aluno.ra_numero }}-{{ aluno.ra_digito_verificador }})</span></li>
+                    {% empty %}
+                        <p><span>Nenhum dependente vinculado.</span></p>
+                    {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+        {# URE: RegistroURE #}
+        {% elif user.tipo_usuario == 'URE' and user.registro_ure %}
+             <div class="profile-info-block card-style">
+                <h2><i class="fas fa-building icon-color"></i> Dados URE</h2>
+                <div class="info-details">
+                    <p><strong>Função/Cargo:</strong> <span>{{ user.registro_ure.funcao|default:"Não informado" }}</span></p>
+                </div>
+            </div>
+
+        {# Outros Visitantes: RegistroOutrosVisitantes #}
+        {% elif user.tipo_usuario == 'OUTRO_VISITANTE' and user.registro_visitante %}
+             <div class="profile-info-block card-style">
+                <h2><i class="fas fa-info-circle icon-color"></i> Vínculo de Visitante</h2>
+                <div class="info-details">
+                    <p><strong>Descrição do Vínculo:</strong> <span>{{ user.registro_visitante.descricao|default:"Nenhuma descrição informada." }}</span></p>
+                </div>
+            </div>
+
+        {# Administrador ou Usuário sem Vínculo #}
+        {% else %}
+             <div class="profile-info-block card-style">
+                <h2><i class="fas fa-info-circle icon-color"></i> Status da Conta</h2>
+                <div class="info-details">
+                    <p><strong>Tipo de Usuário:</strong> <span>{{ user.get_tipo_usuario_display }}</span></p>
+                    <p><span>Não há dados de registro adicionais para este tipo de perfil.</span></p>
+                </div>
+            </div>
+        {% endif %}
+        </div>
+
+    <div class="profile-actions mt-4">
+        <a href="{% url 'profile_edit' %}" class="btn btn-info action-button mb-2">
+            <i class="fas fa-edit"></i> Editar Meus Dados
+        </a>
+
+        <a href="{% url 'password_change' %}" class="btn btn-warning action-button">
+            <i class="fas fa-key"></i> Alterar Senha
+        </a>
+    </div>
+
+</div>
+{% endblock content %}

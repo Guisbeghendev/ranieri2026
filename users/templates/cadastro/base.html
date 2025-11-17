@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% block cadastro_title_page %}Cadastro{% endblock %} | {{ block.super }}
+{% endblock %}
+
+{% block main_nav %}
+    {# Este bloco deve ser preenchido caso você queira um header diferente no fluxo de cadastro #}
+{% endblock %}
+
+{% block content %}
+    <main>
+        <div class="cadastro-container">
+
+            <div class="cadastro-card">
+
+                <h2 class="login-header-title">
+                    {% block card_title %}Acesso ao Sistema{% endblock %}
+                </h2>
+
+                <p class="login-header-subtitle">
+                    {% block card_subtitle %}Escolha seu tipo de acesso para continuar.{% endblock %}
+                </p>
+
+                {# Bloco de Mensagens Django #}
+                {% if messages %}
+                    <ul class="messages p-0 m-0">
+                        {% for message in messages %}
+                            {# Utiliza message.tags para aplicar as classes CSS corretas (success, error, etc.) #}
+                            <li class="message {{ message.tags }}">{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+
+                {% block auth_content %}
+                {% endblock %}
+
+            </div>
+        </div>
+    </main>
+{% endblock %}
+
+{% block footer %}
+    {{ block.super }}
+{% endblock %}

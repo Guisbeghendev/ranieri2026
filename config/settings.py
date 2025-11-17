@@ -44,8 +44,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    #config projeto
+    # config
+    'formtools',
     'core',
+    'users',
 ]
 
 MIDDLEWARE = [
@@ -141,3 +143,27 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # ==============================================================================
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# ==============================================================================
+# 8. CONFIGURAÇÕES DE AUTENTICAÇÃO (Adicionado)
+# ==============================================================================
+
+# Define o modelo de usuário customizado a ser usado pelo Django
+AUTH_USER_MODEL = 'users.CustomUser'
+
+# Define a URL para onde redirecionar após o login
+LOGIN_REDIRECT_URL = 'users:dashboard' # Redireciona para a Dashboard após o login
+
+# Define a URL para onde redirecionar após o logout
+LOGOUT_REDIRECT_URL = 'users:login' # Redireciona para a página de login após o logout
+
+# Define a URL usada pelo sistema de autenticação para o login
+LOGIN_URL = 'users:login' # Garante que o Django saiba qual é a URL de login
+
+
+# ==============================================================================
+# 9. CONFIGURAÇÕES DE SESSÃO
+# ==============================================================================
+
+SESSION_SAVE_EVERY_REQUEST = True

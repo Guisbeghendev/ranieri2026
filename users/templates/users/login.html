@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Entrar na Plataforma{% endblock title %}
+
+{% block content %}
+
+<div class="login-container">
+    <div class="login-card">
+
+        <div class="text-center mb-2">
+            <h1 class="login-header-title">Bem-vindo de volta</h1>
+            <p class="login-header-subtitle">Acesse sua conta para continuar</p>
+        </div>
+
+        <form method="post" action="{% url 'users:login' %}">
+            {% csrf_token %}
+
+            {# CORREÇÃO: Utilizando a classe de erro definida no main.css (.alert-danger) #}
+            {% if form.non_field_errors %}
+                <div class="alert-danger" role="alert">
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label for="{{ form.username.id_for_label }}" class="form-label">
+                    Usuário ou Email
+                </label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                    {% for error in form.username.errors %}
+                        <p class="form-error">{{ error }}</p>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.password.id_for_label }}" class="form-label">
+                    Senha
+                </label>
+                {{ form.password }}
+                {% if form.password.errors %}
+                    {% for error in form.password.errors %}
+                        <p class="form-error">{{ error }}</p>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <a href="{% url 'users:password_reset' %}" class="form-link-right">
+                Esqueci minha senha
+            </a>
+
+            <button
+                type="submit"
+                class="btn btn-primary btn-lg mt-1 mb-1"
+            >
+                Entrar
+            </button>
+        </form>
+
+        <div class="text-center mt-3">
+            <p>
+                Não tem uma conta?
+                {# CORREÇÃO: Usando classes existentes (text-primary) #}
+                <a href="{% url 'users:register' %}" style="font-weight: 600;">
+                    Cadastre-se agora
+                </a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock content %}

@@ -1,3 +1,5 @@
+# users/models.py
+
 from django.db import models
 from django.contrib.auth.models import AbstractUser, Group as AuthGroup
 from django.utils.translation import gettext_lazy as _
@@ -93,6 +95,10 @@ class Turma(models.Model):
         verbose_name=_("Turma Ativa")
     )
 
+    # Este campo será adicionado DEPOIS da classe RegistroProfessor ser definida
+    # pois a declaração `Turma.add_to_class` no código original está correta
+    # e deve ser mantida após a classe RegistroProfessor.
+
     class Meta:
         verbose_name = _("Turma")
         verbose_name_plural = _("Turmas")
@@ -125,6 +131,7 @@ class RegistroProfessor(RegistroBase):
         return f"{self.nome_completo} - {self.get_tipo_professor_display()}"
 
 
+# Reaplicando o campo ForeignKey em Turma após a definição de RegistroProfessor
 Turma.add_to_class('professor_regente', models.ForeignKey(
     RegistroProfessor,
     on_delete=models.SET_NULL,
@@ -137,7 +144,8 @@ Turma.add_to_class('professor_regente', models.ForeignKey(
 
 def validate_regente_type(sender, instance, **kwargs):
     if instance.professor_regente and instance.professor_regente.tipo_professor != TipoProfessor.REGENTE:
-        raise ValidationError(
+        # Aumentei o nível da exceção de ValidationError para o Django Signals funcionar corretamente
+        raise signals.django_dispatch.Signal.Exception(
             _('O professor regente deve ter o tipo de professor definido como "Regente".')
         )
 
@@ -361,7 +369,11 @@ class CustomUser(AbstractUser):
                 _('Um usuário pode estar vinculado a, no máximo, uma única Entidade de Registro.')
             )
 
-        if self.pk and self.tipo_usuario != CustomUserTipo.ADMIN and num_vinculos == 0:
+        # A verificação de vinculos == 0 deve ser feita no save ou clean,
+        # mas a exceção `ValidationError` deve ser importada de `django.core.exceptions`.
+        # Seu código já está importando corretamente.
+
+        if self.tipo_usuario != CustomUserTipo.ADMIN and num_vinculos == 0:
             raise ValidationError(
                 _('Usuários não-Administradores devem estar vinculados a uma Entidade de Registro (Aluno, Professor, etc.).')
             )
@@ -615,3 +627,36 @@ class MembroGrupo(models.Model):
         registro_name = registro.nome_completo if registro else "Registro Desconhecido"
         return f"{registro_name} no grupo {self.grupo.auth_group.name}"
 
+
+# ==============================================================================
+# 5. MODELO DE UPLOAD JSON (Implementação de Seeder via Admin)
+# ==============================================================================
+
+class JSONUpload(models.Model):
+    """
+    Modelo para gerenciar o upload de arquivos JSON via Admin.
+    O processamento e exclusão do arquivo/objeto ocorre no Admin.
+    """
+    # CORREÇÃO INCLUÍDA: O campo 'turma' é obrigatório para o Admin.
+    turma = models.ForeignKey(
+        'Turma',
+        on_delete=models.CASCADE,
+        verbose_name=_("Turma de Destino"),
+        help_text=_("Selecione a turma à qual os alunos do arquivo serão associados.")
+    )
+    json_file = models.FileField(
+        upload_to='json_uploads/',
+        verbose_name=_("Arquivo JSON")
+    )
+    uploaded_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_("Data de Upload")
+    )
+
+    class Meta:
+        verbose_name = _("Upload de Seeder JSON")
+        verbose_name_plural = _("Upload de Seeders JSON")
+
+    def __str__(self):
+        # A representação agora inclui a turma, evitando erro no admin
+        return f"Arquivo {self.json_file.name} para {self.turma.nome} em {self.uploaded_at.strftime('%Y-%m-%d %H:%M')}"

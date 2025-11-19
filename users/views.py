@@ -1,13 +1,18 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.contrib.auth.views import PasswordChangeView
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.db import transaction
 from django.core.files.storage import FileSystemStorage
 from django.http import Http404
 from django.contrib.auth import login as auth_login
-from django.db.models.signals import post_save
+# Removido 'from django.db.models.signals import post_save' (já importado em outro lugar ou não usado diretamente aqui)
+
+# Removidas importações de import-export e processamento manual de JSON
+# from tablib import Dataset
+# import json
+# from io import TextIOWrapper
 
 # Importar modelos e formulários
 from .forms import (
@@ -21,13 +26,14 @@ from .forms import (
     Step2_AlunoForm,
     Step2_ResponsavelForm,
     Step2_VisitanteForm,
-    # Importar os novos formulários de Update de Registro
+    # Importar os formulários de Update de Registro
     RegistroProfessorUpdateForm,
     RegistroColaboradorUpdateForm,
     RegistroUREUpdateForm,
     RegistroOutrosVisitantesUpdateForm,
     RegistroAlunoUpdateForm,
     RegistroResponsavelUpdateForm,
+    # Removido: CustomImportForm
 )
 from .models import (
     CustomUser,
@@ -39,7 +45,10 @@ from .models import (
     RegistroResponsavel,
     RegistroURE,
     RegistroOutrosVisitantes,
+    Turma,
 )
+# Removido: Importa o Resource
+# from .resources import RegistroAlunoResource
 
 # Configura o FileSystemStorage (Mantido para uso em profile_edit)
 file_storage = FileSystemStorage()
@@ -130,7 +139,7 @@ def _create_registro_entity_manual(user, data, tipo_usuario):
         user.registro_colaborador = registro
 
     elif tipo_usuario == CustomUserTipo.RESPONSAVEL.value:
-        # CORREÇÃO CRÍTICA: Não salva mais aqui. Apenas cria o objeto em memória.
+        # CRIAÇÃO: Apenas cria o objeto em memória.
         registro = RegistroResponsavel(
             nome_completo=f"{user.first_name} {user.last_name}"
         )
@@ -145,20 +154,17 @@ def _create_registro_entity_manual(user, data, tipo_usuario):
         user.registro_ure = registro
 
     elif tipo_usuario == CustomUserTipo.OUTRO_VISITANTE.value:
-        # CORREÇÃO: O campo no models.py é 'descricao', não 'descricao_vinculo'.
         registro = RegistroOutrosVisitantes(
             nome_completo=f"{user.first_name} {user.last_name}",
-            descricao=data.get('descricao_vinculo', 'Não informado')  # Usando 'descricao' do models
+            descricao=data.get('descricao_vinculo', 'Não informado')
         )
         user.registro_visitante = registro
 
-    # Note que a entidade 'registro' não é salva aqui, exceto Aluno (é buscado/existente).
-    # O salvamento ocorre atomicamente na função registration_finalizar.
     return registro
 
 
 # ==============================================================================
-# 1. FLUXO DE REGISTRO MANUAL (ETAPAS - AGORA SÃO 4)
+# 1. FLUXO DE REGISTRO MANUAL (ETAPAS)
 # ==============================================================================
 # (As funções de registro step_1 a step_3 não foram modificadas.)
 
@@ -315,7 +321,6 @@ def registration_step_3_user(request):
 def registration_finalizar(request):
     """
     Etapa 4: Executa a transação final, salva CustomUser, Registro e Profile em branco, e autentica.
-    CORRIGIDA: O salvamento do RegistroResponsavel foi movido para o Passo 3 para garantir a atomicidade.
     """
     dados_cadastro = request.session.get('cadastro_data')
 
@@ -345,8 +350,8 @@ def registration_finalizar(request):
                 # 2. CRIA/BUSCA A ENTIDADE DE REGISTRO E VINCULA (Em Memória)
                 registro_entity = _create_registro_entity_manual(new_user, dados_cadastro, tipo_usuario)
 
-                # 3. SALVA AS ENTIDADES DE REGISTRO EM MEMÓRIA (INCLUI RESPONSÁVEL AGORA)
-                # Salva Professor, Colaborador, URE, Visitante E o Responsável (que não era salvo antes)
+                # 3. SALVA AS ENTIDADES DE REGISTRO EM MEMÓRIA
+                # Salva Professor, Colaborador, URE, Visitante e Responsável
                 # Exclui Aluno (é buscado/existente)
                 if registro_entity and tipo_usuario not in [CustomUserTipo.ALUNO.value]:
                     registro_entity.save()
@@ -354,7 +359,7 @@ def registration_finalizar(request):
                 # 4. SALVA O USUÁRIO (Salva a FK do registro e aciona o signal para criar o Profile, UMA ÚNICA VEZ)
                 new_user.save()
 
-                # 5. TRATAMENTO M2M PARA RESPONSÁVEL (Apenas M2M, o objeto de Registro já está salvo)
+                # 5. TRATAMENTO M2M PARA RESPONSÁVEL
                 if tipo_usuario == CustomUserTipo.RESPONSAVEL.value:
                     dependentes_pks = dados_cadastro.get('dependentes_encontrados_pks', [])
                     dependentes = RegistroAluno.objects.filter(pk__in=dependentes_pks)
@@ -500,3 +505,12 @@ def dashboard(request):
     """
     context = {}
     return render(request, 'users/dashboard.html', context)
+
+
+# ==============================================================================
+# 4. VISTA DE IMPORTAÇÃO CUSTOMIZADA DE ALUNOS (REMOVIDA)
+# ==============================================================================
+
+# A view 'importacao_aluno_view' e a auxiliar 'render_import_form' foram removidas,
+# pois a importação de dados via JSON foi realocada para o fluxo
+# do Admin/JSONUploadAdmin no users/admin.py.

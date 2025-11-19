@@ -1,3 +1,5 @@
+# users/urls.py
+
 from django.urls import path
 from . import views
 from django.contrib.auth import views as auth_views
@@ -67,4 +69,9 @@ urlpatterns = [
 
     # 5. Rota da Dashboard (Pós-login)
     path('dashboard/', views.dashboard, name='dashboard'),
+
+    # 6. ROTA CUSTOMIZADA DE IMPORTAÇÃO (REMOVIDA)
+    # A importação via JSON agora é feita exclusivamente pelo Admin,
+    # utilizando a interface do modelo JSONUploadAdmin, sem a necessidade
+    # desta rota de importação customizada.
 ]

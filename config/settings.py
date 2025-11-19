@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     # config
     'formtools',
     'core',
+    #meus app
     'users',
 ]
 

@@ -13,8 +13,10 @@ from .models import (
     RegistroResponsavel,
     RegistroURE,
     RegistroOutrosVisitantes,
-    Profile
+    Profile,
+    Turma # IMPORTAÇÃO MANTIDA (usada nos forms do wizard)
 )
+from django.utils.translation import gettext_lazy as _ # Para rótulos
 
 
 # ==============================================================================
@@ -169,8 +171,6 @@ class Step2_ResponsavelForm(forms.Form):
             try:
                 aluno1 = RegistroAluno.objects.get(ra_numero=ra1_num, ra_digito_verificador=ra1_dig)
                 # Verifica se o aluno já está vinculado a outro Responsável (opcional, mas bom para evitar duplicidade)
-                # Note: Um Responsável PODE ter múltiplos registros, mas um aluno só deve ter um Responsável 'Master'
-                # Por simplicidade, faremos a verificação de vínculo na View de criação.
                 dependentes_encontrados.append(aluno1)
             except RegistroAluno.DoesNotExist:
                 raise ValidationError(
@@ -309,8 +309,6 @@ class RegistroProfessorUpdateForm(forms.ModelForm):
     """Atualiza dados específicos de RegistroProfessor."""
     class Meta:
         model = RegistroProfessor
-        # Excluindo 'nome_completo' pois deve ser editado pelo UserUpdateForm (first/last name)
-        # e 'turmas' que é ManyToMany, geralmente editado em tela separada ou admin.
         fields = ['tipo_professor']
         labels = {
             'tipo_professor': 'Tipo de Professor',
@@ -352,8 +350,6 @@ class RegistroAlunoUpdateForm(forms.ModelForm):
     """Atualiza dados específicos de RegistroAluno."""
     class Meta:
         model = RegistroAluno
-        # Alunos geralmente não editam RA ou Turma após o registro.
-        # Adicionando nome completo (se a view for permitir)
         fields = ['nome_completo']
         labels = {
             'nome_completo': 'Nome Completo Registrado (na ficha)',
@@ -362,8 +358,6 @@ class RegistroAlunoUpdateForm(forms.ModelForm):
 
 class RegistroResponsavelUpdateForm(forms.ModelForm):
     """Atualiza dados específicos de RegistroResponsavel."""
-    # O campo 'alunos' (ManyToManyField) é complexo e deve ser editado à parte.
-    # Não há campos simples para edição, mas a classe é criada para ser base.
     class Meta:
         model = RegistroResponsavel
         fields = ['nome_completo']

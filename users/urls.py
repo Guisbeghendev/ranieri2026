@@ -11,7 +11,7 @@ urlpatterns = [
     path('login/', auth_views.LoginView.as_view(template_name='users/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
 
-    # ROTAS DE REDEFINIÇÃO DE SENHA
+    # ROTAS DE REDEFINIÇÃO DE SENHA (Mantidas, não relacionadas ao Wizard)
     path(
         'password_reset/',
         auth_views.PasswordResetView.as_view(
@@ -37,20 +37,10 @@ urlpatterns = [
         name='password_reset_complete'
     ),
 
-    # 1. ROTAS DE CADASTRO MANUAL (Fluxo Sequencial - 4 PASSOS)
+    # 1. ROTAS DE CADASTRO MANUAL (Fluxo Sequencial - 4 PASSOS) - REMOVIDAS
 
-    # Passo 1: Escolha do Tipo. Serve como ROTA RAIZ para /register/ e /register/tipo/
-    path('register/', views.registration_step_1_tipo, name='register'),
-    path('register/tipo/', views.registration_step_1_tipo, name='registration_step_1_tipo'),
-
-    # Passo 2: Complemento Específico (RA, Função, Vínculo, etc.)
-    path('register/complemento/', views.registration_step_2_complemento, name='registration_step_2_complemento'),
-
-    # Passo 3: Criação de Usuário e Senha (Login)
-    path('register/usuario/', views.registration_step_3_user, name='registration_step_3_user'),
-
-    # Passo 4: Finalização e Sucesso
-    path('register/finalizar/', views.registration_finalizar, name='registration_finalizar'),
+    # Placeholder para a futura Rota de Cadastro Atômico (Página Única):
+    # path('register/', views.registration_create, name='registration_create'),
 
     # Rota de Perfil e Dashboard
 
@@ -70,8 +60,5 @@ urlpatterns = [
     # 5. Rota da Dashboard (Pós-login)
     path('dashboard/', views.dashboard, name='dashboard'),
 
-    # 6. ROTA CUSTOMIZADA DE IMPORTAÇÃO (REMOVIDA)
-    # A importação via JSON agora é feita exclusivamente pelo Admin,
-    # utilizando a interface do modelo JSONUploadAdmin, sem a necessidade
-    # desta rota de importação customizada.
+    # 6. ROTA CUSTOMIZADA DE IMPORTAÇÃO (REMOVIDA) - Não existe no código fornecido.
 ]

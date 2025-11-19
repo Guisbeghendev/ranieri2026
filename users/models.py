@@ -356,6 +356,9 @@ class CustomUser(AbstractUser):
         """Garante que apenas UMA Entidade de Registro esteja vinculada."""
         super().clean()
 
+        # REMOVIDO: A lógica de 'skip_link_validation' que era específica do Wizard.
+        # Agora o clean() SEMPRE valida a regra de negócio.
+
         vinculos = [
             self.registro_aluno, self.registro_professor, self.registro_colaborador,
             self.registro_responsavel, self.registro_ure, self.registro_visitante
@@ -369,10 +372,7 @@ class CustomUser(AbstractUser):
                 _('Um usuário pode estar vinculado a, no máximo, uma única Entidade de Registro.')
             )
 
-        # A verificação de vinculos == 0 deve ser feita no save ou clean,
-        # mas a exceção `ValidationError` deve ser importada de `django.core.exceptions`.
-        # Seu código já está importando corretamente.
-
+        # Lógica original que checa se falta o vínculo (para usuários não-ADMIN)
         if self.tipo_usuario != CustomUserTipo.ADMIN and num_vinculos == 0:
             raise ValidationError(
                 _('Usuários não-Administradores devem estar vinculados a uma Entidade de Registro (Aluno, Professor, etc.).')

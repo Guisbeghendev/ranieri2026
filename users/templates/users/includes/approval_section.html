@@ -1,0 +1,25 @@
+{% load static %}
+{% if is_admin_active and pendentes_count > 0 %}
+<div class="card card-danger admin-approval-card mb-2">
+    <h3 class="card-title">🚨 Aprovação Pendente ({{ pendentes_count }})</h3>
+    <div class="card-body">
+        <p>Os seguintes usuários se registraram e precisam de sua aprovação para acesso:</p>
+
+        <ul class="list-group list-group-flush mt-2">
+            {% for user in usuarios_pendentes %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>{{ user.get_full_name|default:user.username }}</strong>
+                    <br>
+                    <small>({{ user.get_tipo_usuario_display }} | {{ user.email }})</small>
+                </div>
+
+                <a href="{% url 'users:admin_approve_user' user.pk %}" class="btn btn-success btn-sm">
+                    Aprovar Agora
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endif %}

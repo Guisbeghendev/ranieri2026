@@ -81,7 +81,7 @@ class RegistrationAtomicForm(forms.Form):
         required=True
     )
 
-    nome_completo = forms.CharField(max_length=255, required=True, label="Nome Completo")
+    nome_completo = forms.CharField(max_length=255, required=True, label="Nome:")
     username = forms.CharField(max_length=150, required=True, label="Username (Login)")
     email = forms.EmailField(required=True, label="Email")
     password = forms.CharField(widget=forms.PasswordInput, label="Senha")
@@ -90,8 +90,9 @@ class RegistrationAtomicForm(forms.Form):
     # --- 2.2. Campos Específicos (Registro*) - TODOS required=False inicialmente ---
 
     # ALUNO / RESPONSÁVEL (Validação por RA)
-    ra_numero = forms.CharField(max_length=20, required=False, label="RA - Número")
-    ra_digito_verificador = forms.CharField(max_length=2, required=False, label="RA - Dígito Verificador")
+    # TRILHA ALUNO: Label estática. A label do RESPONSÁVEL será aplicada em __init__ dinamicamente.
+    ra_numero = forms.CharField(max_length=20, required=False, label="RA - somente números")
+    ra_digito_verificador = forms.CharField(max_length=2, required=False, label="Dígito")
 
     # PROFESSOR
     tipo_professor = forms.ChoiceField(
@@ -118,6 +119,22 @@ class RegistrationAtomicForm(forms.Form):
 
     # OUTRO VISITANTE
     descricao_vinculo = forms.CharField(max_length=255, required=False, label="Descreva brevemente seu vínculo")
+
+    def __init__(self, *args, **kwargs):
+        """
+        Ajusta as labels dos campos RA/Dígito dinamicamente se o formulário for submetido
+        (is_bound) e o tipo de usuário for Responsável (TRILHA RESPONSÁVEL).
+        """
+        super().__init__(*args, **kwargs)
+
+        # Se o formulário foi submetido, verificamos o tipo de usuário para aplicar a label correta.
+        if self.is_bound:
+            tipo_usuario = self.data.get('tipo_usuario')
+
+            if tipo_usuario == CustomUserTipo.RESPONSAVEL.value:
+                # TRILHA RESPONSÁVEL: Aplica a label longa
+                self.fields['ra_numero'].label = "RA de um aluno pelo qual é responsável - somente números"
+                # ra_digito_verificador já é 'Dígito'
 
     def clean(self):
         """
@@ -149,6 +166,7 @@ class RegistrationAtomicForm(forms.Form):
 
         # Objeto auxiliar para armazenar os registros encontrados ou criados temporariamente.
         registros_encontrados = {}
+        nome = cleaned_data.get("nome_completo")  # Armazenado para uso nas buscas abaixo
 
         # --- A. ALUNO (Requer RA) ---
         if tipo_usuario == CustomUserTipo.ALUNO.value:
@@ -157,7 +175,6 @@ class RegistrationAtomicForm(forms.Form):
 
             if not ra_num or not ra_dig:
                 self.add_error('ra_numero', ValidationError("O RA (Número e Dígito) é obrigatório para alunos."))
-                # Não retorna aqui, permite que outras validações de campo sejam executadas
 
             elif ra_num and ra_dig:
                 try:
@@ -169,9 +186,9 @@ class RegistrationAtomicForm(forms.Form):
                     # Checa se o RegistroAluno já está vinculado a um CustomUser
                     if hasattr(aluno_registro, 'usuario') and aluno_registro.usuario:
                         self.add_error(
-                             'ra_numero',
-                             ValidationError("Este RA já está vinculado a um usuário ativo no sistema.",
-                             code='ra_already_linked')
+                            'ra_numero',
+                            ValidationError("Este RA já está vinculado a um usuário ativo no sistema.",
+                                            code='ra_already_linked')
                         )
                     else:
                         registros_encontrados['aluno_registro'] = aluno_registro
@@ -205,31 +222,66 @@ class RegistrationAtomicForm(forms.Form):
                     registros_encontrados['dependentes'] = dependentes_encontrados
                 except RegistroAluno.DoesNotExist:
                     self.add_error('ra_numero',
-                        ValidationError(
-                            "O RA do Dependente Obrigatório não foi encontrado no sistema de registros.",
-                            code='ra_not_found_required'
-                        )
-                    )
+                                   ValidationError(
+                                       "O RA do Dependente Obrigatório não foi encontrado no sistema de registros.",
+                                       code='ra_not_found_required'
+                                   )
+                                   )
 
             # NOTE: Neste formulário atômico simplificado, optamos por coletar apenas um RA
             # para o Responsável, para manter a página única mais limpa.
 
 
-        # --- C. PROFESSOR (Requer tipo_professor) ---
+        # --- C. PROFESSOR (Requer tipo_professor e busca por nome) ---
         elif tipo_usuario == CustomUserTipo.PROFESSOR.value:
             tipo = cleaned_data.get("tipo_professor")
-            # CORREÇÃO: ChoiceField com required=False ainda pode retornar uma string vazia se o widget não for Select
-            # com opção vazia configurada, mas o código anterior já cobria a checagem de "not tipo"
+
             if not tipo:
                 self.add_error('tipo_professor', ValidationError("O papel do Professor é obrigatório."))
+
+            # Executa a busca somente se o tipo estiver preenchido (para evitar erros duplos)
+            if nome and tipo:
+                try:
+                    professor_registro = RegistroProfessor.objects.get(
+                        nome_completo__iexact=nome  # Busca exata, ignorando caixa alta/baixa
+                    )
+
+                    # 1. Checa se o RegistroProfessor já está vinculado
+                    if hasattr(professor_registro, 'usuario') and professor_registro.usuario:
+                        self.add_error(
+                            'nome_completo',
+                            ValidationError("Este nome já está vinculado a um usuário ativo no sistema.",
+                                            code='registro_already_linked')
+                        )
+                    else:
+                        # 2. Armazena o registro encontrado para ser vinculado na view
+                        registros_encontrados['professor_registro'] = professor_registro
+
+                except RegistroProfessor.DoesNotExist:
+                    self.add_error(
+                        'nome_completo',
+                        ValidationError(
+                            "Nome não encontrado no registro de Professores. Verifique a digitação ou contate a administração.",
+                            code='registro_not_found'
+                        )
+                    )
+                except RegistroProfessor.MultipleObjectsReturned:
+                    # Risco assumido: Colisão de nomes. Ação imediata é bloquear o cadastro.
+                    self.add_error(
+                        'nome_completo',
+                        ValidationError(
+                            "Colisão de nomes. Mais de um Professor encontrado. Contate a administração para resolver a duplicidade.",
+                            code='name_collision'
+                        )
+                    )
+
 
         # --- D. COLABORADOR (Requer funcao_colaborador) ---
         elif tipo_usuario == CustomUserTipo.COLABORADOR.value:
             funcao = cleaned_data.get("funcao_colaborador")
-            # CORREÇÃO: ChoiceField com required=False ainda pode retornar uma string vazia se o widget não for Select
-            # com opção vazia configurada.
             if not funcao:
                 self.add_error('funcao_colaborador', ValidationError("A função do Colaborador é obrigatória."))
+
 
         # --- E. URE (Requer funcao_ure) ---
         elif tipo_usuario == CustomUserTipo.URE.value:

@@ -409,6 +409,7 @@ textarea {
   font-family: var(--font-base);
   margin-bottom: 1rem;
   transition: border var(--transition), box-shadow var(--transition);
+  background-color: var(--color-background-hover);
 }
 
 /* Mantém os estilos de foco, o outline principal para teclado é gerenciado pelo :focus-visible global */

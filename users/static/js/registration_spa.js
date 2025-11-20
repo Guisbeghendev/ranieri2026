@@ -2,7 +2,7 @@
 * Arquivo: registration_spa.js
 * Objetivo: Gerenciar a lógica de Single Page Application (SPA) para o formulário de cadastro,
 * mostrando ou ocultando campos com base no tipo de usuário selecionado.
-* CORREÇÃO: Força a visibilidade dos blocos se houver um erro de validação do Django (status 200).
+* CORREÇÃO: Alterada a lógica para buscar e atualizar a tag <label> diretamente.
 */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -14,17 +14,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const credenciaisBlock = document.getElementById('credenciais-fields');
     const submitButton = document.getElementById('submit-button');
 
+    // Elemento da Label do RA que será atualizado (Busca a label usando o ID do campo 'id_ra_numero')
+    // O Django gera a label com o atributo 'for' apontando para o id do campo.
+    const raLabelElement = form.querySelector('label[for="id_ra_numero"]');
+
+    // Textos das Labels (Nota: Mantenha o texto idêntico ao do forms.py, se necessário)
+    const LABEL_ALUNO = 'RA - somente números:'; // Django adiciona ':'
+    const LABEL_RESPONSAVEL = 'RA de um aluno pelo qual é responsável - somente números:';
+
     // Verifica se há erros de validação no formulário (para uso na lógica de inicialização)
     const hasErrorElement = form.querySelector('.form-error');
 
     // Mapeamento dos campos específicos para cada tipo de usuário.
     const fieldMap = {
-        'ALUNO': ['ra_numero', 'ra_digito_verificador'], // Chaves devem ser os valores do Django
+        'ALUNO': ['ra_numero', 'ra_digito_verificador'],
         'RESPONSAVEL': ['ra_numero', 'ra_digito_verificador'],
         'PROFESSOR': ['tipo_professor'],
         'COLABORADOR': ['funcao_colaborador'],
         'URE': ['funcao_ure'],
-        'OUTRO_VISITANTE': ['descricao_vinculo'] // Chaves devem ser os valores do Django
+        'OUTRO_VISITANTE': ['descricao_vinculo']
     };
 
     // Todos os grupos de campos específicos que são condicionalmente exibidos/ocultados.
@@ -33,42 +41,39 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateFormVisibility(selectedType) {
 
         // --- 1. Lógica Corrigida: Força a exibição se houver um erro ---
-
-        // Se houver um tipo selecionado OU se houver erros na página (POST 200)
         if (selectedType || hasErrorElement) {
-            // Mostra os blocos específicos e credenciais para que os erros do Django sejam visíveis
             registroEspecificoBlock.classList.remove('js-hidden');
             credenciaisBlock.classList.remove('js-hidden');
-            // Habilita o botão de submissão
             submitButton.classList.remove('is-disabled');
         } else {
-            // Oculta tudo e desabilita o botão se NADA estiver selecionado E NÃO houver erros
             registroEspecificoBlock.classList.add('js-hidden');
             credenciaisBlock.classList.add('js-hidden');
             submitButton.classList.add('is-disabled');
-            // Retorna imediatamente se não houver um tipo selecionado (para evitar erros abaixo)
             return;
         }
 
-        // --- 2. Lógica de Ocultação/Exibição dos Campos Individuais ---
+        // --- 2. Lógica de Atualização da Label do RA (CORREÇÃO) ---
+        if (raLabelElement) {
+            if (selectedType === 'RESPONSAVEL') {
+                raLabelElement.textContent = LABEL_RESPONSAVEL;
+            } else {
+                raLabelElement.textContent = LABEL_ALUNO;
+            }
+        }
 
-        // Se não houver um selectedType (mas houver erro), ocultamos os campos individuais.
-        // O Bloco Principal (registroEspecificoBlock) permanece visível, mas os campos internos somem,
-        // garantindo que, se o erro estiver no tipo_usuario, os campos não apareçam incorretamente.
+
+        // --- 3. Lógica de Ocultação/Exibição dos Campos Individuais ---
         const requiredFields = fieldMap[selectedType] || [];
 
         allSpecificFields.forEach(fieldGroup => {
             let isRequired = false;
+            const fieldName = fieldGroup.dataset.fieldName;
 
-            const inputs = fieldGroup.querySelectorAll('input, select, textarea');
+            if (fieldName && requiredFields.includes(fieldName)) {
+                 isRequired = true;
+            }
 
-            inputs.forEach(input => {
-                if (input.name && requiredFields.includes(input.name)) {
-                    isRequired = true;
-                }
-            });
-
-            // Se o campo for requerido ou se ele contiver um erro de validação (para forçar a visibilidade)
+            // Se o campo for requerido ou se ele contiver um erro de validação
             if (isRequired || fieldGroup.querySelector('.form-error')) {
                 fieldGroup.classList.remove('js-hidden');
             } else {
@@ -77,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 3. Listener de Eventos (Nenhuma alteração)
+    // 4. Listener de Eventos
     tipoUsuarioRadios.forEach(radio => {
         radio.addEventListener('change', (e) => {
             updateFormVisibility(e.target.value);
@@ -94,11 +99,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 4. Inicialização (Simplificada e Corrigida)
+    // 5. Inicialização
     const initiallySelectedRadio = form.querySelector('input[name="tipo_usuario"]:checked');
     const selectedValue = initiallySelectedRadio ? initiallySelectedRadio.value : null;
 
-    // Chama a função com o valor selecionado (ou null) para inicializar a UI e forçar visibilidade em caso de erro.
     updateFormVisibility(selectedValue);
 
 });

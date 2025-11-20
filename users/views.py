@@ -1,5 +1,3 @@
-# users/views.py
-
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy, reverse
 from django.contrib.auth.views import PasswordChangeView
@@ -9,6 +7,7 @@ from django.db import transaction
 from django.core.files.storage import FileSystemStorage
 from django.http import Http404
 from django.contrib.auth import login as auth_login
+from django.db.models import Q  # NOVO: Import necessário para queries complexas
 
 # Importar modelos e formulários
 from .forms import (
@@ -29,6 +28,7 @@ from .models import (
     Profile,
     CustomUserTipo,
     RegistroAluno,
+    # REFORMA: Importar todos os modelos de Registro.
     RegistroProfessor,
     RegistroColaborador,
     RegistroResponsavel,
@@ -74,8 +74,66 @@ def get_registro_info_for_edit(user):
     return form_class, registro_instance
 
 
-# A função auxiliar _create_registro_entity_manual FOI REMOVIDA,
-# pois sua lógica foi absorvida pela nova view registration_create.
+# ==============================================================================
+# FUNÇÕES AUXILIARES DE ADMIN (NOVAS)
+# ==============================================================================
+
+def is_admin_or_staff(user):
+    """Verifica se o usuário tem permissão para administrar (is_staff ou is_superuser)."""
+    return user.is_active and (user.is_superuser or user.is_staff)
+
+
+def get_pending_users_context(request):
+    """Retorna o contexto de aprovação, visível apenas para Admin/Staff."""
+    pendentes_context = {
+        'pendentes_count': 0,
+        'usuarios_pendentes': None,
+        'is_admin_active': False
+    }
+
+    if is_admin_or_staff(request.user):
+        pendentes_context['is_admin_active'] = True
+
+        # Filtra usuários inativos (is_active=False) que são professores OU colaboradores
+        # O filtro deve incluir qualquer tipo de usuário que exija aprovação (is_active=False na criação)
+        pendentes_qs = CustomUser.objects.filter(
+            is_active=False
+        ).filter(
+            Q(tipo_usuario=CustomUserTipo.PROFESSOR.value) |
+            Q(tipo_usuario=CustomUserTipo.COLABORADOR.value)
+            # Adicione outros tipos se a regra de is_active=False mudar
+        )
+
+        pendentes_context['pendentes_count'] = pendentes_qs.count()
+        pendentes_context['usuarios_pendentes'] = pendentes_qs.order_by('date_joined')
+
+    return pendentes_context
+
+
+@login_required
+@user_passes_test(is_admin_or_staff)
+@transaction.atomic
+def admin_approve_user(request, user_id):
+    """
+    View para ativar um usuário específico via link no dashboard do admin.
+    """
+    user_to_approve = get_object_or_404(CustomUser, pk=user_id)
+
+    # Garante que estamos ativando apenas contas inativas que deveriam ser aprovadas manualmente
+    if not user_to_approve.is_active and (
+            user_to_approve.tipo_usuario == CustomUserTipo.PROFESSOR.value or
+            user_to_approve.tipo_usuario == CustomUserTipo.COLABORADOR.value
+    ):
+        user_to_approve.is_active = True
+        user_to_approve.save()
+        messages.success(request,
+                         f'Usuário {user_to_approve.username} ({user_to_approve.get_tipo_usuario_display()}) ativado com sucesso.')
+        # 🎯 CORREÇÃO: Adicionado () em get_tipo_usuario_display() para evitar functools.partial
+    else:
+        messages.warning(request, f'Usuário {user_to_approve.username} não precisa de aprovação.')
+
+    # Redireciona de volta para o dashboard
+    return redirect(reverse('users:dashboard'))
 
 
 # ==============================================================================
@@ -95,7 +153,12 @@ def registration_create(request):
             nome_completo = data['nome_completo']
             registros_a_vincular = data['registros_a_vincular']
 
-            # Garantimos que a criação/vínculo do Registro e do CustomUser seja atômica
+            # Define se a conta deve ser ativa (Regra: Professor e Colaborador exigem aprovação manual)
+            is_active_initial = not (
+                    tipo_usuario == CustomUserTipo.PROFESSOR.value or
+                    tipo_usuario == CustomUserTipo.COLABORADOR.value  # NOVO: Colaborador também exige aprovação
+            )
+
             try:
                 with transaction.atomic():
                     registro_obj = None
@@ -107,14 +170,16 @@ def registration_create(request):
                         registro_obj = registros_a_vincular['aluno_registro']
 
                     elif tipo_usuario == CustomUserTipo.PROFESSOR.value:
-                        # Cria novo RegistroProfessor
-                        registro_obj = RegistroProfessor.objects.create(
-                            nome_completo=nome_completo,
-                            tipo_professor=data['tipo_professor']
-                        )
+                        # CORREÇÃO: Usa o objeto RegistroProfessor encontrado pelo forms.py
+                        if 'professor_registro' in registros_a_vincular:
+                            registro_obj = registros_a_vincular['professor_registro']
+                            # Atualiza o campo específico do objeto pré-existente
+                            registro_obj.tipo_professor = data['tipo_professor']
+                            registro_obj.save()
+                        # Se não estiver no 'registros_a_vincular', o form.clean() já lançou um erro.
 
                     elif tipo_usuario == CustomUserTipo.COLABORADOR.value:
-                        # Cria novo RegistroColaborador
+                        # REVERTIDO: Cria novo RegistroColaborador (com is_active=False por padrão)
                         registro_obj = RegistroColaborador.objects.create(
                             nome_completo=nome_completo,
                             funcao=data['funcao_colaborador']
@@ -156,7 +221,9 @@ def registration_create(request):
                         password=data['password'],
                         tipo_usuario=tipo_usuario,
                         first_name=first_name,
-                        last_name=last_name
+                        last_name=last_name,
+                        # Aplica a regra de aprovação manual
+                        is_active=is_active_initial
                     )
 
                     # 3. Faz o link OneToOne
@@ -181,13 +248,24 @@ def registration_create(request):
                         # O signal post_save cuidará da criação do Profile.
 
                     messages.success(request, f'Cadastro concluído com sucesso! Bem-vindo(a), {first_name}.')
-                    auth_login(request, new_user)  # Faz o login automático
-                    return redirect(reverse('users:dashboard'))
+
+                    if is_active_initial:
+                        # Se ativo (Aluno, Responsável, URE, Outros), faz o login automático
+                        auth_login(request, new_user)
+                        return redirect(reverse('users:dashboard'))
+                    else:
+                        # Se inativo (Professor ou Colaborador), informa sobre a aprovação
+                        messages.info(request,
+                                      f"Sua conta de {new_user.get_tipo_usuario_display()} foi criada e está pendente de aprovação administrativa. Você será notificado após a ativação.")
+                        # 🎯 CORREÇÃO: Adicionado () em get_tipo_usuario_display() para evitar functools.partial
+                        return redirect(reverse('users:login'))  # Redireciona para a página de login
+
 
             except Exception as e:
                 # Se algo falhar (ex: IntegrityError ou falha no save()), o atomic reverte
                 messages.error(request,
-                               f'Ocorreu um erro inesperado durante o cadastro. Por favor, tente novamente. Detalhe: {e}')
+                               f'Ocorreu um erro inesperado durante o cadastro. Por favor, tente novamente.')
+                # Opcional: print(e) para debug
 
         # Se o form não for válido (inclui erros do clean()), re-renderiza
         else:
@@ -304,13 +382,17 @@ class UserPasswordChangeView(PasswordChangeView):
 
 
 # ==============================================================================
-# 3. VISTA DA DASHBOARD
+# 3. VISTA DA DASHBOARD (ATUALIZADA)
 # ==============================================================================
 
 @login_required
 def dashboard(request):
     """
-    Vista principal após o login.
+    Vista principal após o login. Adiciona o contexto administrativo.
     """
     context = {}
+
+    # 🎯 Adiciona o contexto de aprovação se o usuário for Admin/Staff
+    context.update(get_pending_users_context(request))
+
     return render(request, 'users/dashboard.html', context)

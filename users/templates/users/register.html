@@ -25,7 +25,12 @@
                 <div class="form-group mb-3" id="tipo-usuario-selection">
                     <label class="form-label">Eu sou:</label>
                     <div class="tipo-escolha-radio-group">
-                        {{ form.tipo_usuario }}
+                        {# Renderização manual para aplicar a classe .radio-option ao wrapper de cada item #}
+                        {% for radio in form.tipo_usuario %}
+                            <div class="radio-option">
+                                {{ radio }}
+                            </div>
+                        {% endfor %}
                     </div>
                     {% if form.tipo_usuario.errors %}<p class="form-error">{{ form.tipo_usuario.errors }}</p>{% endif %}
                 </div>
@@ -33,37 +38,38 @@
                 <div id="registro-especifico-fields" class="js-hidden">
                     <h3 class="mb-2">Dados Específicos do Vínculo</h3>
 
-                    <div class="form-group js-hidden">
+                    <div class="form-group js-hidden" data-field-name="ra_numero">
+                        {# CORREÇÃO: Removido o filtro inválido 'replace'. A label original será usada. #}
                         {{ form.ra_numero.label_tag }}
                         {{ form.ra_numero }}
                         {% if form.ra_numero.errors %}<p class="form-error">{{ form.ra_numero.errors }}</p>{% endif %}
                     </div>
 
-                    <div class="form-group js-hidden">
+                    <div class="form-group js-hidden" data-field-name="ra_digito_verificador">
                         {{ form.ra_digito_verificador.label_tag }}
                         {{ form.ra_digito_verificador }}
                         {% if form.ra_digito_verificador.errors %}<p class="form-error">{{ form.ra_digito_verificador.errors }}</p>{% endif %}
                     </div>
 
-                    <div class="form-group js-hidden">
+                    <div class="form-group js-hidden" data-field-name="tipo_professor">
                         {{ form.tipo_professor.label_tag }}
                         {{ form.tipo_professor }}
                         {% if form.tipo_professor.errors %}<p class="form-error">{{ form.tipo_professor.errors }}</p>{% endif %}
                     </div>
 
-                    <div class="form-group js-hidden">
+                    <div class="form-group js-hidden" data-field-name="funcao_colaborador">
                         {{ form.funcao_colaborador.label_tag }}
                         {{ form.funcao_colaborador }}
                         {% if form.funcao_colaborador.errors %}<p class="form-error">{{ form.funcao_colaborador.errors }}</p>{% endif %}
                     </div>
 
-                    <div class="form-group js-hidden">
+                    <div class="form-group js-hidden" data-field-name="funcao_ure">
                         {{ form.funcao_ure.label_tag }}
                         {{ form.funcao_ure }}
                         {% if form.funcao_ure.errors %}<p class="form-error">{{ form.funcao_ure.errors }}</p>{% endif %}
                     </div>
 
-                    <div class="form-group js-hidden">
+                    <div class="form-group js-hidden" data-field-name="descricao_vinculo">
                         {{ form.descricao_vinculo.label_tag }}
                         {{ form.descricao_vinculo }}
                         {% if form.descricao_vinculo.errors %}<p class="form-error">{{ form.descricao_vinculo.errors }}</p>{% endif %}

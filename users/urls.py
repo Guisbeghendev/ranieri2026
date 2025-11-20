@@ -40,10 +40,14 @@ urlpatterns = [
     # ROTAS DE PERFIL
     path('profile/', views.profile_view, name='profile'),
     path('profile/edit/', views.profile_edit, name='profile_edit'),
-    path('password_change/', views.UserPasswordChangeView.as_view(
-        template_name='users/password_change_form.html',
-        success_url='/users/profile/'
-    ), name='password_change'),
+
+    # 🎯 CORREÇÃO: Usar a View customizada diretamente sem argumentos,
+    # pois o template_name e success_url são definidos DENTRO da classe UserPasswordChangeView (views.py).
+    path(
+        'password_change/',
+        views.UserPasswordChangeView.as_view(),
+        name='password_change'
+    ),
 
     # ROTA DA DASHBOARD
     path('dashboard/', views.dashboard, name='dashboard'),

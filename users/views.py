@@ -46,30 +46,54 @@ file_storage = FileSystemStorage()
 # ==============================================================================
 
 def get_registro_info_for_edit(user):
-    """Retorna a classe de formulário de atualização e a instância de registro."""
+    """
+    Retorna a classe de formulário de atualização e a instância de registro,
+    usando getattr para evitar RelatedObjectDoesNotExist se a instância
+    OneToOne não existir.
+    """
     tipo = user.tipo_usuario
     form_class = None
     registro_instance = None
 
     # Mapeamento do Tipo de Usuário para o Form de Update e o Objeto de Registro
-    if tipo == CustomUserTipo.ALUNO.value and user.registro_aluno:
-        form_class = RegistroAlunoUpdateForm
-        registro_instance = user.registro_aluno
-    elif tipo == CustomUserTipo.PROFESSOR.value and user.registro_professor:
-        form_class = RegistroProfessorUpdateForm
-        registro_instance = user.registro_professor
-    elif tipo == CustomUserTipo.COLABORADOR.value and user.registro_colaborador:
-        form_class = RegistroColaboradorUpdateForm
-        registro_instance = user.registro_colaborador
-    elif tipo == CustomUserTipo.RESPONSAVEL.value and user.registro_responsavel:
-        form_class = RegistroResponsavelUpdateForm
-        registro_instance = user.registro_responsavel
-    elif tipo == CustomUserTipo.URE.value and user.registro_ure:
-        form_class = RegistroUREUpdateForm
-        registro_instance = user.registro_ure
-    elif tipo == CustomUserTipo.OUTRO_VISITANTE.value and user.registro_visitante:
-        form_class = RegistroOutrosVisitantesUpdateForm
-        registro_instance = user.registro_visitante
+    # Usando getattr para acessar as relações OneToOne de forma segura.
+    # O segundo argumento (None) é o valor padrão se a relação não existir,
+    # evitando o erro 'RelatedObjectDoesNotExist'.
+
+    if tipo == CustomUserTipo.ALUNO.value:
+        registro_instance = getattr(user, 'registro_aluno', None)
+        if registro_instance:
+            form_class = RegistroAlunoUpdateForm
+
+    elif tipo == CustomUserTipo.PROFESSOR.value:
+        registro_instance = getattr(user, 'registro_professor', None)
+        if registro_instance:
+            form_class = RegistroProfessorUpdateForm
+
+    elif tipo == CustomUserTipo.COLABORADOR.value:
+        registro_instance = getattr(user, 'registro_colaborador', None)
+        if registro_instance:
+            form_class = RegistroColaboradorUpdateForm
+
+    elif tipo == CustomUserTipo.RESPONSAVEL.value:
+        registro_instance = getattr(user, 'registro_responsavel', None)
+        if registro_instance:
+            form_class = RegistroResponsavelUpdateForm
+
+    elif tipo == CustomUserTipo.URE.value:
+        registro_instance = getattr(user, 'registro_ure', None)
+        if registro_instance:
+            form_class = RegistroUREUpdateForm
+
+    elif tipo == CustomUserTipo.OUTRO_VISITANTE.value:
+        # Acessa a relação com o nome definido (registro_visitante) ou o nome padrão
+        registro_instance = getattr(user, 'registro_visitante', None)
+        if not registro_instance:
+            # Tenta o nome padrão do Django (nome da classe em minúsculo: registrooutrosvisitantes)
+            registro_instance = getattr(user, 'registrooutrosvisitantes', None)
+
+        if registro_instance:
+            form_class = RegistroOutrosVisitantesUpdateForm
 
     return form_class, registro_instance
 
@@ -156,7 +180,7 @@ def registration_create(request):
             # Define se a conta deve ser ativa (Regra: Professor e Colaborador exigem aprovação manual)
             is_active_initial = not (
                     tipo_usuario == CustomUserTipo.PROFESSOR.value or
-                    tipo_usuario == CustomUserTipo.COLABORADOR.value  # NOVO: Colaborador também exige aprovação
+                    tipo_usuario == CustomUserTipo.COLABORADOR.value
             )
 
             try:
@@ -317,6 +341,7 @@ def profile_edit(request):
         return redirect('users:profile')
 
     # 2. Obtém a classe do Form de Registro e a instância de Registro (RegistroAluno, etc.)
+    # Esta chamada agora é mais robusta contra RelatedObjectDoesNotExist (corrigida na auxiliar)
     RegistroFormClass, registro_instance = get_registro_info_for_edit(request.user)
     registro_form = None  # Inicializa o formulário de registro como None
 
@@ -346,6 +371,7 @@ def profile_edit(request):
                     registro_form.save()
 
             messages.success(request, 'Seu perfil foi atualizado com sucesso!')
+            # CORREÇÃO NA REDIREÇÃO DE SUCESSO: Garantir o namespace, embora já estivesse correto
             return redirect('users:profile')
         else:
             messages.error(request, 'Por favor, corrija os erros abaixo.')
@@ -366,6 +392,7 @@ def profile_edit(request):
         'registro_form': registro_form
     }
 
+    # CORREÇÃO NA RENDERIZAÇÃO: Usar o template correto, que já estava aqui
     return render(request, 'users/profile_edit.html', context)
 
 
@@ -373,7 +400,10 @@ class UserPasswordChangeView(PasswordChangeView):
     """
     Vista para alteração de senha.
     """
-    template_name = 'registration/password_change_form.html'
+    # 🎯 CORREÇÃO: Revertido para o nome do template que existe no disco (registration/password_change_form.html),
+    # pois o usuário recusou mover o arquivo e o nome 'users/...' causou TemplateDoesNotExist.
+    # OBS: O template do Admin PODE ser carregado se 'django.contrib.admin' estiver listado antes de 'users' em settings.py.
+    template_name = 'registration/password_change_form.html'  # <--- CORREÇÃO APLICADA AQUI
     success_url = reverse_lazy('users:profile')
 
     def form_valid(self, form):

@@ -38,6 +38,9 @@ ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
 # ==============================================================================
 
 INSTALLED_APPS = [
+    # meus app
+    'users',
+    # outros
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -48,7 +51,6 @@ INSTALLED_APPS = [
     'formtools',
     'core',
     #meus app
-    'users',
 ]
 
 MIDDLEWARE = [

@@ -1210,67 +1210,9 @@ footer {
 }
 
 /* ================================
-   CADASTRO CONCLUÍDO (SUCESSO)
+   JS CONTROLS (CLASSES PARA LÓGICA DO SPA)
 =================================== */
 
-.success-message-box {
-    /* Herda o estilo do login-card/cadastro-card, mas adicionamos um toque de sucesso */
-    border: 2px solid var(--color-success); /* Borda verde */
-}
-
-.status-icon-wrapper {
-    margin-bottom: 1.5rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.success-icon {
-    fill: var(--color-success); /* Cor verde para o ícone SVG */
-    width: 60px;
-    height: 60px;
-}
-
-.status-title {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: var(--color-success-dark); /* Título em verde escuro */
-    margin-bottom: 0.5rem;
-}
-
-.status-message {
-    font-size: 1.1rem;
-    color: var(--color-text-light);
-    margin-bottom: 1.5rem;
-}
-
-.info-guidance-box {
-    background-color: var(--color-success-bg); /* Fundo verde claro */
-    color: var(--color-success-dark); /* Texto verde escuro */
-    padding: 1rem;
-    border-radius: var(--radius);
-    border: 1px solid var(--color-success);
-    margin-bottom: 2rem;
-    text-align: left;
-    font-size: 0.95rem;
-    line-height: 1.4;
-}
-
-.action-buttons-group {
-    display: flex;
-    flex-direction: column; /* Padrão em mobile (vertical) */
-    gap: 1rem;
-}
-
-/* Ajusta o layout dos botões para horizontal em telas maiores */
-@media (min-width: 600px) {
-    .action-buttons-group {
-        flex-direction: row;
-        justify-content: center;
-    }
-
-    .action-button {
-        flex-grow: 1;
-        max-width: 180px; /* Limita a largura dos botões em desktop */
-    }
+.js-hidden {
+    display: none !important;
 }

@@ -12,12 +12,11 @@ from django.contrib.auth import login as auth_login
 
 # Importar modelos e formulários
 from .forms import (
+    RegistrationAtomicForm,  # NOVO: Formulário de Cadastro Atômico
     CustomUserCreationForm,
     UserUpdateForm,
     ProfileUpdateForm,
-    # Formulários do Wizard REMOVIDOS
-    # Step1_EscolhaTipoForm, Step2_ProfessorForm, etc.
-    # Importar os formulários de Update de Registro (Mantidos para profile_edit)
+    # Formulários de Update de Registro (Mantidos para profile_edit)
     RegistroProfessorUpdateForm,
     RegistroColaboradorUpdateForm,
     RegistroUREUpdateForm,
@@ -43,13 +42,9 @@ file_storage = FileSystemStorage()
 
 
 # ==============================================================================
-# FUNÇÕES AUXILIARES DE REGISTRO MANUAL (APENAS AS ESSENCIAIS)
+# FUNÇÕES AUXILIARES
 # ==============================================================================
 
-# FUNÇÃO REMOVIDA: get_form_class_by_type (Não é mais necessária sem Etapa 2 do Wizard)
-# def get_form_class_by_type(tipo_usuario): ...
-
-# FUNÇÃO AUXILIAR MANTIDA: Mapeia o tipo de usuário para o Form e a Instância de Registro
 def get_registro_info_for_edit(user):
     """Retorna a classe de formulário de atualização e a instância de registro."""
     tipo = user.tipo_usuario
@@ -79,79 +74,134 @@ def get_registro_info_for_edit(user):
     return form_class, registro_instance
 
 
-# FUNÇÃO AUXILIAR MANTIDA: _create_registro_entity_manual (Essencial para criar o registro no save final, será adaptada na nova view)
-def _create_registro_entity_manual(user, data, tipo_usuario):
-    """
-    Cria a Entidade de Registro e faz o vínculo NO OBJETO user em memória.
-    Retorna o objeto de registro criado/buscado.
-    """
-    registro = None
-
-    if tipo_usuario == CustomUserTipo.ALUNO.value:
-        try:
-            # Busca o objeto RegistroAluno pelo PK (Agora 'data' virá do POST ÚNICO)
-            # ATENÇÃO: É NECESSÁRIO MUDAR A LÓGICA DE BUSCA DO RA NA NOVA VIEW DE CADASTRO
-            # POR ENQUANTO, MANTEMOS A BUSCA POR PK, ASSUMIMOS QUE O NOVO FORMULARIO FORNECE.
-            registro_pk = data.get('aluno_registro')
-            if not registro_pk:
-                # Mudança: Na nova estratégia, o form deve validar e fornecer o objeto RegistroAluno
-                # Usaremos o PK temporariamente, mas esta função será revista na nova implementação.
-                # AQUI, SIMULAMOS QUE O FORMULARIO ATOMICO JÁ VALIDOU O PK
-                raise Http404("Erro: PK de Registro de Aluno ausente. Nova view deve fornecer.")
-
-            registro = RegistroAluno.objects.get(pk=registro_pk)
-            user.registro_aluno = registro
-        except RegistroAluno.DoesNotExist:
-            raise Http404("Erro: Registro de Aluno não encontrado no banco de dados.")
-
-    elif tipo_usuario == CustomUserTipo.PROFESSOR.value:
-        registro = RegistroProfessor(
-            nome_completo=f"{user.first_name} {user.last_name}",
-            tipo_professor=data.get('tipo_professor')
-        )
-        user.registro_professor = registro
-
-    elif tipo_usuario == CustomUserTipo.COLABORADOR.value:
-        registro = RegistroColaborador(
-            nome_completo=f"{user.first_name} {user.last_name}",
-            funcao=data.get('funcao_colaborador')
-        )
-        user.registro_colaborador = registro
-
-    elif tipo_usuario == CustomUserTipo.RESPONSAVEL.value:
-        registro = RegistroResponsavel(
-            nome_completo=f"{user.first_name} {user.last_name}"
-        )
-        user.registro_responsavel = registro
-
-    elif tipo_usuario == CustomUserTipo.URE.value:
-        registro = RegistroURE(
-            nome_completo=f"{user.first_name} {user.last_name}",
-            funcao=data.get('funcao_ure')
-        )
-        user.registro_ure = registro
-
-    elif tipo_usuario == CustomUserTipo.OUTRO_VISITANTE.value:
-        registro = RegistroOutrosVisitantes(
-            nome_completo=f"{user.first_name} {user.last_name}",
-            descricao=data.get('descricao_vinculo', 'Não informado')
-        )
-        user.registro_visitante = registro
-
-    return registro
+# A função auxiliar _create_registro_entity_manual FOI REMOVIDA,
+# pois sua lógica foi absorvida pela nova view registration_create.
 
 
 # ==============================================================================
-# 1. FLUXO DE REGISTRO MANUAL (ETAPAS) - REMOVIDO/SUBSTITUÍDO
+# 1. FLUXO DE REGISTRO ATÔMICO (PÁGINA ÚNICA) - NOVO
 # ==============================================================================
 
-# TODAS AS VIEWS DE WIZARD FORAM REMOVIDAS:
-# registration_step_1_tipo -> REMOVIDA
-# registration_step_2_complemento -> REMOVIDA
-# registration_step_3_user -> REMOVIDA
-# registration_finalizar -> REMOVIDA
-#
-# A NOVA VIEW DE CADASTRO SERÁ CRIADA AQUI NO PRÓXIMO PASSO DO PROJETO.
+def registration_create(request):
+    """
+    Nova vista de cadastro. Processa todas as trilhas em uma única transação atômica.
+    """
+    if request.method == 'POST':
+        form = RegistrationAtomicForm(request.POST)
+
+        if form.is_valid():
+            data = form.cleaned_data
+            tipo_usuario = data['tipo_usuario']
+            nome_completo = data['nome_completo']
+            registros_a_vincular = data['registros_a_vincular']
+
+            # Garantimos que a criação/vínculo do Registro e do CustomUser seja atômica
+            try:
+                with transaction.atomic():
+                    registro_obj = None
+
+                    # 1. CRIAÇÃO OU VÍNCULO DA ENTIDADE DE REGISTRO
+
+                    if tipo_usuario == CustomUserTipo.ALUNO.value:
+                        # O form.clean já buscou e validou o objeto RegistroAluno
+                        registro_obj = registros_a_vincular['aluno_registro']
+
+                    elif tipo_usuario == CustomUserTipo.PROFESSOR.value:
+                        # Cria novo RegistroProfessor
+                        registro_obj = RegistroProfessor.objects.create(
+                            nome_completo=nome_completo,
+                            tipo_professor=data['tipo_professor']
+                        )
+
+                    elif tipo_usuario == CustomUserTipo.COLABORADOR.value:
+                        # Cria novo RegistroColaborador
+                        registro_obj = RegistroColaborador.objects.create(
+                            nome_completo=nome_completo,
+                            funcao=data['funcao_colaborador']
+                        )
+
+                    elif tipo_usuario == CustomUserTipo.RESPONSAVEL.value:
+                        # Cria novo RegistroResponsavel e adiciona dependentes
+                        registro_obj = RegistroResponsavel.objects.create(
+                            nome_completo=nome_completo
+                        )
+                        # O M2M é salvo APÓS o objeto, mas como estamos no atomic block, é seguro
+                        if 'dependentes' in registros_a_vincular:
+                            registro_obj.alunos.set(registros_a_vincular['dependentes'])
+
+                    elif tipo_usuario == CustomUserTipo.URE.value:
+                        # Cria novo RegistroURE
+                        registro_obj = RegistroURE.objects.create(
+                            nome_completo=nome_completo,
+                            funcao=data['funcao_ure']
+                        )
+
+                    elif tipo_usuario == CustomUserTipo.OUTRO_VISITANTE.value:
+                        # Cria novo RegistroOutrosVisitantes
+                        registro_obj = RegistroOutrosVisitantes.objects.create(
+                            nome_completo=nome_completo,
+                            descricao=data['descricao_vinculo']
+                        )
+
+                    # 2. CRIAÇÃO DO CUSTOMUSER e VÍNCULO
+
+                    # Mapeia nome_completo para first_name e last_name
+                    partes_nome = nome_completo.split(' ', 1)
+                    first_name = partes_nome[0]
+                    last_name = partes_nome[1] if len(partes_nome) > 1 else ''
+
+                    new_user = CustomUser.objects.create_user(
+                        username=data['username'],
+                        email=data['email'],
+                        password=data['password'],
+                        tipo_usuario=tipo_usuario,
+                        first_name=first_name,
+                        last_name=last_name
+                    )
+
+                    # 3. Faz o link OneToOne
+                    if registro_obj:
+                        if tipo_usuario == CustomUserTipo.ALUNO.value:
+                            new_user.registro_aluno = registro_obj
+                        elif tipo_usuario == CustomUserTipo.PROFESSOR.value:
+                            new_user.registro_professor = registro_obj
+                        elif tipo_usuario == CustomUserTipo.COLABORADOR.value:
+                            new_user.registro_colaborador = registro_obj
+                        elif tipo_usuario == CustomUserTipo.RESPONSAVEL.value:
+                            new_user.registro_responsavel = registro_obj
+                        elif tipo_usuario == CustomUserTipo.URE.value:
+                            new_user.registro_ure = registro_obj
+                        elif tipo_usuario == CustomUserTipo.OUTRO_VISITANTE.value:
+                            new_user.registro_visitante = registro_obj
+
+                        # Salva o vínculo no CustomUser
+                        # NOTE: Este save dispara o post_save que cria o Profile
+                        new_user.save()
+
+                        # O signal post_save cuidará da criação do Profile.
+
+                    messages.success(request, f'Cadastro concluído com sucesso! Bem-vindo(a), {first_name}.')
+                    auth_login(request, new_user)  # Faz o login automático
+                    return redirect(reverse('users:dashboard'))
+
+            except Exception as e:
+                # Se algo falhar (ex: IntegrityError ou falha no save()), o atomic reverte
+                messages.error(request,
+                               f'Ocorreu um erro inesperado durante o cadastro. Por favor, tente novamente. Detalhe: {e}')
+
+        # Se o form não for válido (inclui erros do clean()), re-renderiza
+        else:
+            messages.error(request, 'Por favor, corrija os erros indicados no formulário.')
+
+    else:
+        # GET request
+        form = RegistrationAtomicForm()
+
+    context = {
+        'form': form
+    }
+    return render(request, 'users/register.html', context)
+
 
 # ==============================================================================
 # 2. VISTAS DE PERFIL (MANTIDAS para PÓS-LOGIN)

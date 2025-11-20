@@ -1,5 +1,3 @@
-# users/urls.py
-
 from django.urls import path
 from . import views
 from django.contrib.auth import views as auth_views
@@ -10,6 +8,9 @@ urlpatterns = [
     # ROTAS DE AUTENTICAÇÃO (Login e Logout)
     path('login/', auth_views.LoginView.as_view(template_name='users/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
+
+    # ROTAS DE CADASTRO (Adicionada)
+    path('register/', views.registration_create, name='register'),
 
     # ROTAS DE REDEFINIÇÃO DE SENHA (Mantidas, não relacionadas ao Wizard)
     path(
@@ -37,11 +38,6 @@ urlpatterns = [
         name='password_reset_complete'
     ),
 
-    # 1. ROTAS DE CADASTRO MANUAL (Fluxo Sequencial - 4 PASSOS) - REMOVIDAS
-
-    # Placeholder para a futura Rota de Cadastro Atômico (Página Única):
-    # path('register/', views.registration_create, name='registration_create'),
-
     # Rota de Perfil e Dashboard
 
     # 2. Rota de Visualização de Perfil
@@ -59,6 +55,4 @@ urlpatterns = [
 
     # 5. Rota da Dashboard (Pós-login)
     path('dashboard/', views.dashboard, name='dashboard'),
-
-    # 6. ROTA CUSTOMIZADA DE IMPORTAÇÃO (REMOVIDA) - Não existe no código fornecido.
 ]

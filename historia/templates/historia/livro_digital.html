@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    História da Escola - Capítulo {{ capitulo_ordem }} de {{ total_capitulos }}
+{% endblock title %}
+
+{% block content %}
+
+    <div class="section-alt">
+        <div class="container">
+            <h1 class="section-title">Nossa História: O Legado Ranieri</h1>
+            <p class="section-subtitle">Livro Digital Interativo. Capítulo {{ capitulo_ordem }} de {{ total_capitulos }}</p>
+
+            <div class="card mb-3">
+
+                <div class="card-header">
+                    <h2>{{ capitulo.titulo }}</h2>
+                </div>
+
+                <div class="card-body">
+
+                    <div class="chapter-content">
+                        {{ capitulo.conteudo|safe }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="chapter-navigation mt-3 center">
+
+                {% if capitulo_anterior %}
+                    {# Se o capítulo anterior existir, o link aponta para ele #}
+                    <a href="{% url 'historia:livro_digital' %}?page={{ capitulo_anterior.ordem_exibicao }}"
+                       class="btn btn-back action-button mr-2"
+                       id="btn-anterior">
+                        &larr; Capítulo Anterior
+                    </a>
+                {% else %}
+                    {# Se for o primeiro capítulo, o botão é desabilitado #}
+                    <button class="btn btn-back is-disabled mr-2" disabled>
+                        &larr; Capítulo Anterior
+                    </button>
+                {% endif %}
+
+                <div class="mx-auto"></div>
+
+                {% if proximo_capitulo %}
+                    {# Se o próximo capítulo existir, o link aponta para ele #}
+                    <a href="{% url 'historia:livro_digital' %}?page={{ proximo_capitulo.ordem_exibicao }}"
+                       class="btn btn-secondary primary-action ml-2"
+                       id="btn-proximo">
+                        Próximo Capítulo &rarr;
+                    </a>
+                {% else %}
+                    {# Se for o último capítulo, o botão é desabilitado (ou pode ser um botão "Fim") #}
+                    <button class="btn btn-secondary is-disabled ml-2" disabled>
+                        Fim da História
+                    </button>
+                {% endif %}
+
+            </div>
+
+            <div class="progress-bar-container mt-3">
+                {# Usa widthratio para calcular (capitulo_ordem / total_capitulos) * 100 #}
+                {% widthratio capitulo_ordem total_capitulos 100 as progresso_percentual %}
+
+                <div class="progress-bar-label text-center mb-1">
+                    Progresso: {{ progresso_percentual|floatformat:0 }}%
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-bar-fill" style="width: {{ progresso_percentual }}%;"></div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+{% endblock content %}
+
+{% block js %}
+    {# Incluiremos aqui o script JS Vanilla para os efeitos de transição #}
+    <script src="{% static 'historia/js/livro_digital.js' %}"></script>
+{% endblock js %}

@@ -1,3 +1,5 @@
+# config/urls.py
+
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -12,7 +14,8 @@ urlpatterns = [
 
     # URLs dos Apps de Conteúdo Público
     # IMPORTANTE: URLs destes Apps serão adicionadas assim que os Apps forem criados.
-    # path('historia/', include('historia.urls')),
+    # 🚨 CORREÇÃO: Necessário passar (urls_module, app_name) ao usar namespace no include
+    path('historia/', include(('historia.urls', 'historia'), namespace='historia')),
     # path('coral/', include('coral.urls')),
     # path('brincando-e-dialogando/', include('brinc_dialogando.urls')),
 

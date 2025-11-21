@@ -50,7 +50,8 @@ INSTALLED_APPS = [
     # config
     'formtools',
     'core',
-    #meus app
+    #meus app (continua)
+    'historia',
 ]
 
 MIDDLEWARE = [

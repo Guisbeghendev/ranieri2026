@@ -1217,3 +1217,30 @@ footer {
 .js-hidden {
     display: none !important;
 }
+
+
+/* ================================
+   BARRAS DE PROGRESSO (ADICIONAL PARA APP HISTÓRIA)
+=================================== */
+.progress-bar-container {
+    max-width: 600px; /* Limita a largura da barra */
+    margin: 1.5rem auto 0;
+}
+
+.progress-bar {
+    height: 10px;
+    background-color: var(--color-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background-color: var(--laranja-medio1); /* Cor de destaque para o progresso */
+    transition: width 0.5s ease-in-out;
+}
+
+.progress-bar-label {
+    font-size: 0.85rem;
+    color: var(--color-text-light);
+}

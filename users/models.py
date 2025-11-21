@@ -1,5 +1,3 @@
-# users/models.py
-
 from django.db import models
 from django.contrib.auth.models import AbstractUser, Group as AuthGroup
 from django.utils.translation import gettext_lazy as _
@@ -165,6 +163,8 @@ class RegistroAluno(RegistroBase):
     )
     turma = models.ForeignKey(
         Turma,
+        # Mantido PROTECT. Se a Turma for deletada, a exclusão será impedida
+        # enquanto houver alunos nela.
         on_delete=models.PROTECT,
         related_name='alunos',
         verbose_name=_("Turma")
@@ -234,7 +234,7 @@ class RegistroURE(RegistroBase):
         verbose_name = _("Registro URE")
         verbose_name_plural = _("Registros URE")
 
-    def __str__(self):
+    def __str__(self: str) -> str:
         return f"{self.nome_completo} ({self.funcao})"
 
 
@@ -250,7 +250,7 @@ class RegistroOutrosVisitantes(RegistroBase):
         verbose_name = _("Registro de Outro Visitante")
         verbose_name_plural = _("Registros de Outros Visitantes")
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.nome_completo
 
 
@@ -275,9 +275,11 @@ class CustomUser(AbstractUser):
         verbose_name=_("Pode gerenciar todas as galerias")
     )
 
+    # ATUALIZADO: on_delete=models.CASCADE em todos os OneToOneFields.
+    # A exclusão do CustomUser deleta em cascata o Registro e o Profile associado.
     registro_aluno = models.OneToOneField(
         RegistroAluno,
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=True,
         blank=True,
         related_name='usuario',
@@ -285,7 +287,7 @@ class CustomUser(AbstractUser):
     )
     registro_professor = models.OneToOneField(
         RegistroProfessor,
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=True,
         blank=True,
         related_name='usuario',
@@ -293,7 +295,7 @@ class CustomUser(AbstractUser):
     )
     registro_colaborador = models.OneToOneField(
         RegistroColaborador,
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=True,
         blank=True,
         related_name='usuario',
@@ -301,7 +303,7 @@ class CustomUser(AbstractUser):
     )
     registro_responsavel = models.OneToOneField(
         RegistroResponsavel,
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=True,
         blank=True,
         related_name='usuario',
@@ -309,7 +311,7 @@ class CustomUser(AbstractUser):
     )
     registro_ure = models.OneToOneField(
         RegistroURE,
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=True,
         blank=True,
         related_name='usuario',
@@ -317,7 +319,7 @@ class CustomUser(AbstractUser):
     )
     registro_visitante = models.OneToOneField(
         RegistroOutrosVisitantes,
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=True,
         blank=True,
         related_name='usuario',
@@ -414,6 +416,7 @@ class Profile(models.Model):
 
     user = models.OneToOneField(
         CustomUser,
+        # on_delete=models.CASCADE garante que o Profile seja deletado com o CustomUser.
         on_delete=models.CASCADE,
         related_name='profile',
         verbose_name=_("Usuário Associado")
@@ -540,6 +543,9 @@ class MembroGrupo(models.Model):
         verbose_name=_("Grupo")
     )
 
+    # ATUALIZADO: on_delete=models.CASCADE em todos os ForeignKeys para entidades
+    # de registro. Se uma entidade de registro for deletada (o que acontece
+    # quando o CustomUser é deletado), a associação MembroGrupo deve ser limpa.
     aluno = models.ForeignKey(
         RegistroAluno,
         on_delete=models.CASCADE,
@@ -660,3 +666,14 @@ class JSONUpload(models.Model):
     def __str__(self):
         # A representação agora inclui a turma, evitando erro no admin
         return f"Arquivo {self.json_file.name} para {self.turma.nome} em {self.uploaded_at.strftime('%Y-%m-%d %H:%M')}"
+
+
+# ==============================================================================
+# 6. SIGNALS (Garante a Integridade Referencial)
+# ==============================================================================
+
+@receiver(post_save, sender=CustomUser)
+def create_user_profile(sender, instance, created, **kwargs):
+    """Cria um objeto Profile automaticamente quando um novo CustomUser é criado."""
+    if created:
+        Profile.objects.create(user=instance)

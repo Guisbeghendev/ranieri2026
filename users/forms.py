@@ -2,6 +2,8 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.db.models import Q
+from django.contrib.auth.models import Group as AuthGroup # NOVO IMPORT
+
 from .models import (
     CustomUser,
     CustomUserTipo,
@@ -14,7 +16,8 @@ from .models import (
     RegistroURE,
     RegistroOutrosVisitantes,
     Profile,
-    Turma
+    Turma,
+    Grupo # NOVO IMPORT
 )
 from django.utils.translation import gettext_lazy as _
 
@@ -420,3 +423,33 @@ class RegistroResponsavelUpdateForm(forms.ModelForm):
         labels = {
             'nome_completo': 'Nome Completo do Responsável',
         }
+
+
+# ==============================================================================
+# 5. Formulário Customizado para Admin (GrupoCreationForm) - NOVO
+# ==============================================================================
+
+def validate_unique_auth_group_name(value):
+    """Valida se o nome do grupo do Django já existe."""
+    if AuthGroup.objects.filter(name=value).exists():
+        raise ValidationError(_('Um grupo com este nome já existe. Por favor, escolha outro.'))
+
+class GrupoCreationForm(forms.ModelForm):
+    """
+    Formulário usado na view de criação de GrupoAdmin.
+    Adiciona o campo virtual 'nome_do_grupo' e exclui 'auth_group'.
+    """
+    nome_do_grupo = forms.CharField(
+        label=_("Nome Único do Grupo (Ex: 3A_2025 ou free)"),
+        max_length=80,
+        help_text=_("Este nome será a chave de permissão (AuthGroup.name) e deve ser único."),
+        required=True,
+        validators=[validate_unique_auth_group_name]
+    )
+
+    class Meta:
+        model = Grupo
+        # Exclui auth_group, que será preenchido no save_model, e usa campos do modelo.
+        # Os campos explícitos em fields garantem a ordem correta no formulário
+        fields = ('nome_do_grupo', 'tipo', 'descricao', 'ativo')
+        exclude = ('auth_group',)

@@ -1,0 +1,47 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls admin_list %}
+{% load l10n %}
+
+{% block bodyclass %}change-list{% endblock %}
+
+{% block content %}
+<p>{% blocktranslate count counter=queryset|length %}Você está prestes a aplicar uma ação em 1 CustomUser selecionado.{% plural %}Você está prestes a aplicar uma ação em {{ counter }} CustomUsers selecionados.{% endblocktranslate %}</p>
+
+<p>{{ description }}</p>
+
+<form action="" method="post">
+    {% csrf_token %}
+
+    {% comment %}
+    Ação oculta padrão (hidden action) e a lista de checkboxes
+    {% endcomment %}
+    <input type="hidden" name="action" value="{{ action_name }}" />
+
+    {% comment %}
+    Renderiza o formulário do GrupoSelectForm (ou qualquer form que você passou para o action)
+    {% endcomment %}
+    {% for field in form %}
+        <div class="form-row">
+            {{ field.label_tag }}
+            {{ field }}
+            {% if field.help_text %}
+                <div class="help">{{ field.help_text|safe }}</div>
+            {% endif %}
+            {{ field.errors }}
+        </div>
+    {% endfor %}
+
+    {% comment %}
+    Lista de IDs de objetos para garantir que a seleção seja transferida para o POST
+    (Esta é a parte que precisa do filtro unlocalize)
+    {% endcomment %}
+    {% for obj in queryset %}
+        <input type="hidden" name="{{ action_checkbox_name }}" value="{{ obj.pk|unlocalize }}" />
+    {% endfor %}
+
+    <p>
+        <input type="submit" name="{{ action_button_name }}" value="{% translate 'Aplicar Ação' %}" />
+        <a href="{% url opts|admin_urlname:'changelist' %}" class="button cancel-link">{% translate 'Cancelar' %}</a>
+    </p>
+</form>
+{% endblock %}

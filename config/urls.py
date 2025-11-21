@@ -13,13 +13,12 @@ urlpatterns = [
     # URLs dos Apps de Conteúdo Público
     path('historia/', include(('historia.urls', 'historia'), namespace='historia')),
     path('coral/', include(('coral.urls', 'coral'), namespace='coral')),
-    # path('brincando-e-dialogando/', include('brinc_dialogando.urls')),
+    path('brincando-e-dialogando/', include(('brinc_dialogando.urls', 'brinc_dialogando'), namespace='brinc_dialogando')),
 
     # URLs do App de Identidade e Acesso
     path('users/', include('users.urls', namespace='users')),
 
     # URLs dos Apps de Conteúdo Restrito
-    # 🚨 ADIÇÃO: URLs do App 'sim_cozinha' com namespace
     path('simoninha-na-cozinha/', include(('sim_cozinha.urls', 'sim_cozinha'), namespace='sim_cozinha')),
     # path('galerias/', include('galerias.urls')),
     # path('mensagens/', include('mensagens.urls')),

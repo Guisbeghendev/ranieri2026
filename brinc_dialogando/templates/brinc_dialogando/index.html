@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    {{ titulo_projeto }}
+{% endblock title %}
+
+{% block content %}
+    <div class="section-alt">
+        <div class="container text-center">
+
+            <h1 class="section-title mb-4">{{ titulo_projeto }}</h1>
+
+            <div class="card mx-auto p-4" style="max-width: 600px;">
+
+                {# Imagem do Logo do Projeto (Atualizado o caminho e nome do arquivo) #}
+                <img src="{% static 'images/brinc_dialog/brinc_dialog.jpg' %}"
+                     alt="Logo do Projeto Brincando e Dialogando"
+                     class="img-fluid mb-4 mx-auto"
+                     style="max-height: 200px;"
+                     onerror="this.onerror=null; this.src='https://placehold.co/200x200/5A67D8/FFFFFF?text=LOGO+BD'">
+
+                <p class="lead mb-4">
+                    O projeto **{{ titulo_projeto }}** é uma iniciativa que promove a educação
+                    e o desenvolvimento social através de atividades lúdicas, contação de histórias
+                    e rodas de conversa, incentivando a criatividade e o diálogo em nossa comunidade.
+                </p>
+
+                {# Link para o Canal do YouTube #}
+                {% if link_canal %}
+                    <a href="{{ link_canal }}"
+                       target="_blank"
+                       class="btn btn-danger btn-lg action-button">
+                        <i class="fab fa-youtube"></i> &nbsp; Acessar o Canal do YouTube
+                    </a>
+                {% else %}
+                    <p class="text-danger mt-3">Link do canal não configurado.</p>
+                {% endif %}
+
+            </div>
+
+        </div>
+    </div>
+{% endblock content %}

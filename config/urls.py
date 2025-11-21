@@ -11,18 +11,16 @@ urlpatterns = [
     path('', include('core.urls')),
 
     # URLs dos Apps de Conteúdo Público
-    # 🚨 CORREÇÃO: Necessário passar (urls_module, app_name) ao usar namespace no include
     path('historia/', include(('historia.urls', 'historia'), namespace='historia')),
-    # 🚨 ADIÇÃO: URLs do App 'coral' com namespace
     path('coral/', include(('coral.urls', 'coral'), namespace='coral')),
     # path('brincando-e-dialogando/', include('brinc_dialogando.urls')),
 
     # URLs do App de Identidade e Acesso
-    # CORRIGIDO: Apenas uma inclusão do namespace 'users' para evitar o aviso urls.W005
     path('users/', include('users.urls', namespace='users')),
 
     # URLs dos Apps de Conteúdo Restrito
-    # path('simoninha-na-cozinha/', include('sim_cozinha.urls')),
+    # 🚨 ADIÇÃO: URLs do App 'sim_cozinha' com namespace
+    path('simoninha-na-cozinha/', include(('sim_cozinha.urls', 'sim_cozinha'), namespace='sim_cozinha')),
     # path('galerias/', include('galerias.urls')),
     # path('mensagens/', include('mensagens.urls')),
 

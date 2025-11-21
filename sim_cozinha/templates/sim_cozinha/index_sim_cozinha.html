@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    {{ titulo_projeto }}
+{% endblock title %}
+
+{% block content %}
+    <div class="section-alt">
+        <div class="container text-center">
+
+            <h1 class="section-title mb-4">{{ titulo_projeto }}</h1>
+
+            <div class="card mx-auto p-4" style="max-width: 600px;">
+
+                {# 🚨 CORREÇÃO DO CAMINHO DA IMAGEM #}
+                <img src="{% static 'images/sim_cozinha/simoninha_na_cozinha_transp.png' %}"
+                     alt="Logo do Projeto Simoninha na Cozinha"
+                     class="img-fluid mb-4 mx-auto"
+                     style="max-height: 200px;">
+
+                {# -------------------- BOTÕES MÚLTIPLOS PARA CANAIS DO YOUTUBE -------------------- #}
+                <div class="d-flex justify-content-center mb-4 flex-wrap">
+
+                    {# Primeiro Canal #}
+                    <a href="https://www.youtube.com/channel/UCiV3o50mX82BzF2vQiexC3w"
+                       target="_blank"
+                       class="btn btn-danger btn-lg mr-2 mb-2 action-button">
+                        <i class="fab fa-youtube"></i> &nbsp; Canal 1 (Simoninha)
+                    </a>
+
+                    {# Segundo Canal #}
+                    <a href="https://www.youtube.com/channel/UCXvUihPSbr4KzRfyRmt02Ew"
+                       target="_blank"
+                       class="btn btn-danger btn-lg mb-2 action-button">
+                        <i class="fab fa-youtube"></i> &nbsp; Canal 2 (Ranieri)
+                    </a>
+                </div>
+                {# -------------------- FIM BOTÕES MÚLTIPLOS -------------------- #}
+
+                <hr>
+
+                {# Link para Entrar no Livro Digital (Catálogo) #}
+                <p class="lead mt-4">
+                    Explore todas as receitas e eventos em nosso Catálogo Digital:
+                </p>
+                <a href="{% url 'sim_cozinha:catalogo' %}"
+                   class="btn btn-primary btn-lg action-button">
+                    Acessar o Livro Digital &rarr;
+                </a>
+            </div>
+
+        </div>
+    </div>
+{% endblock content %}

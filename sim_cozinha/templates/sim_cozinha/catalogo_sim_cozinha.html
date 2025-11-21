@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    {% if capitulo %}
+        {{ capitulo.titulo }} - Catálogo Simoninha na Cozinha
+    {% else %}
+        Catálogo Simoninha na Cozinha
+    {% endif %}
+{% endblock title %}
+
+{% block content %}
+
+    <div class="section-alt">
+        <div class="container">
+            {# Título principal do projeto/módulo #}
+            <h1 class="section-title">Projeto Simoninha na Cozinha</h1>
+
+            {% if total_capitulos > 0 %}
+                {# Exibe a contagem e título do capítulo atual #}
+                <p class="section-subtitle">
+                    {{ catalogo_titulo }}. Evento {{ capitulo_ordem }} de {{ total_capitulos }}
+                </p>
+
+                <div class="card mb-3">
+                    <div class="card-header">
+                        {# Título do Evento/Receita #}
+                        <h2>{{ capitulo.titulo }}</h2>
+                    </div>
+
+                    <div class="card-body">
+                        {# -------------------- VÍDEO INCORPORADO E LINK EXTERNO (CORRIGIDO) -------------------- #}
+                        {% if capitulo.link_video %}
+
+                            {# NOVO CONTAINER PAI PARA AGRUPAR VÍDEO E LEGENDA #}
+                            <div class="video-content-wrapper mb-3 text-center">
+
+                                {# CONTAINER PARA O ASPECT RATIO DO IFRAME. APLICAR CSS DE ASPECT RATIO A ESTA CLASSE! #}
+                                <div class="video-iframe-container">
+                                    <iframe
+                                        {# Montando o Embed com o ID do vídeo #}
+                                        src="https://www.youtube.com/embed/{{ capitulo.link_video }}"
+                                        frameborder="0"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowfullscreen
+                                        title="Vídeo do Evento: {{ capitulo.titulo }}">
+                                    </iframe>
+                                </div>
+
+                                {# O LINK EXTERNO AGORA É IRMÃO DO CONTAINER DO IFRAME, FICANDO VISÍVEL ABAIXO #}
+                                {% if capitulo.link_externo|length > 0 %}
+                                    <div class="youtube-fallback-link p-3 border rounded mt-3" style="background-color: #fff3cd; border-color: #ffeeba;">
+
+                                        <p class="mb-2 text-dark">
+                                            **Problemas com a exibição?** Assista diretamente no YouTube:
+                                        </p>
+
+                                        {# Botão de link externo (agora é o único link visível) #}
+                                        <a href="{{ capitulo.link_externo }}"
+                                           target="_blank"
+                                           class="btn btn-warning btn-sm">
+                                            Abrir o Vídeo no YouTube
+                                        </a>
+
+                                    </div>
+                                {% endif %}
+
+                                <p class="form-help mt-1 text-center">
+                                    ID do Vídeo: <code>{{ capitulo.link_video }}</code>
+                                </p>
+                            </div>
+                        {% endif %}
+                        {# -------------------- FIM VÍDEO INCORPORADO E LINK EXTERNO -------------------- #}
+
+                        <div class="chapter-content">
+                            {# Assume que o conteúdo é HTML (safe) #}
+                            {% if capitulo.descricao_detalhada %}
+                                {{ capitulo.descricao_detalhada|safe }}
+                            {% else %}
+                                <p class="text-center text-muted">Não há descrição detalhada para este evento.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                {# -------------------- NAVEGAÇÃO SEQUENCIAL -------------------- #}
+                <div class="chapter-navigation mt-3 center">
+
+                    {% if capitulo_anterior %}
+                        {# Link para o evento anterior #}
+                        <a href="{% url 'sim_cozinha:catalogo' %}?page={{ capitulo_anterior.capitulo_index_base_1 }}"
+                           class="btn btn-back action-button mr-2"
+                           id="btn-anterior">
+                            &larr; Evento Anterior
+                        </a>
+                    {% else %}
+                        {# Botão desabilitado no primeiro capítulo #}
+                        <button class="btn btn-back is-disabled action-button mr-2" disabled>
+                            &larr; Evento Anterior
+                        </button>
+                    {% endif %}
+
+                    <div class="mx-auto"></div>
+
+                    {% if proximo_capitulo %}
+                        {# Link para o próximo evento #}
+                        <a href="{% url 'sim_cozinha:catalogo' %}?page={{ proximo_capitulo.capitulo_index_base_1 }}"
+                           class="btn btn-secondary primary-action action-button ml-2"
+                           id="btn-proximo">
+                            Próximo Evento &rarr;
+                        </a>
+                    {% else %}
+                        {# Botão desabilitado no último capítulo #}
+                        <button class="btn btn-secondary is-disabled action-button ml-2" disabled>
+                            Fim do Catálogo
+                        </button>
+                    {% endif %}
+
+                </div>
+                {# -------------------- BARRA DE PROGRESSO -------------------- #}
+                <div class="progress-bar-container mt-3">
+                    {# Usa widthratio para calcular (capitulo_ordem / total_capitulos) * 100 #}
+                    {% widthratio capitulo_ordem total_capitulos 100 as progresso_percentual %}
+
+                    <div class="progress-bar-label text-center mb-1">
+                        Progresso: {{ progresso_percentual|floatformat:0 }}%
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-bar-fill" style="width: {{ progresso_percentual }}%;"></div>
+                    </div>
+                </div>
+                {# -------------------- FIM BARRA DE PROGRESSO -------------------- #}
+
+            {% else %}
+                <div class="alert alert-warning text-center">
+                    <p><strong>Atenção:</strong> Ainda não há eventos ou receitas cadastradas para o projeto Simoninha na Cozinha.</p>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+{% endblock content %}
+
+{% block js %}
+    {# Inclui o script JS para transições e lógica do Livro Digital #}
+    <script src="{% static 'sim_cozinha/js/catalogo.js' %}"></script>
+{% endblock js %}

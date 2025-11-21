@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     #meus app (continua)
     'historia',
     'coral',
+    'sim_cozinha',
 ]
 
 MIDDLEWARE = [

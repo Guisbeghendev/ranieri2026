@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Início - Coral Ranieri
+{% endblock title %}
+
+{% block content %}
+
+    <div class="section-alt">
+        <div class="container text-center">
+            <h1 class="section-title">Bem-vindo ao Projeto Coral Ranieri</h1>
+            <p class="section-subtitle">Selecione o livro digital que deseja explorar:</p>
+
+            <div class="row mt-5">
+
+                {# Link para o Livro de História #}
+                <div class="col-md-6 mb-4">
+                    {# CORRIGIDO: Usa a variável 'livro_historia_url' passada pela CoralIndexView #}
+                    <a href="{% url 'coral:livro_digital_coral_base' livro_historia_url %}"
+                       class="btn-coral-choice">
+                        <i class="fas fa-book-open"></i>
+                        <h3>História do Coral</h3>
+                        <p>Conheça a trajetória, os fundadores e os marcos importantes do Coral Ranieri.</p>
+                    </a>
+                </div>
+
+                {# Link para o Livro de Repertório #}
+                <div class="col-md-6 mb-4">
+                    {# CORRIGIDO: Usa a variável 'livro_repertorio_url' passada pela CoralIndexView #}
+                    <a href="{% url 'coral:livro_digital_coral_base' livro_repertorio_url %}"
+                       class="btn-coral-choice">
+                        <i class="fas fa-music"></i>
+                        <h3>Repertório</h3>
+                        <p>Explore as canções que nos baseamos para o trabalho e ensaios do Coral.</p>
+                    </a>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+{% endblock content %}

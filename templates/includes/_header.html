@@ -9,7 +9,9 @@
     <nav>
         <ul id="main-nav-ul">
             <li><a href="{% url 'core:home' %}">Home</a></li>
-            <li><a href="{% url 'historia:livro_digital' %}">História</a></li>  <li><a href="#">Coral</a></li>
+            <li><a href="{% url 'historia:livro_digital' %}">História</a></li>
+            {# CORREÇÃO: Aponta para a rota de índice 'coral:index', que exibe os botões de escolha (coral_index.html) #}
+            <li><a href="{% url 'coral:index' %}">Coral</a></li>
             <li><a href="#">Brincando & Dialogando</a></li>
             <li><a href="#">Galerias</a></li>
 

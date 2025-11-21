@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'core',
     #meus app (continua)
     'historia',
+    'coral',
 ]
 
 MIDDLEWARE = [

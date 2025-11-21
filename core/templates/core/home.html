@@ -29,7 +29,8 @@
                 <i class="fas fa-music card-icon"></i>
                 <h3>Coral Ranieri</h3>
                 <p>Descubra o repertório, os eventos e o legado musical de nossa comunidade.</p>
-                <a href="#" class="text-link">Ver Repertório <i class="fas fa-chevron-right"></i></a>
+                {# CORREÇÃO: Aponta para o índice do Coral, onde o usuário escolhe o livro. #}
+                <a href="{% url 'coral:index' %}" class="text-link">Ver Livros <i class="fas fa-chevron-right"></i></a>
             </div>
 
             <div class="card card-hover">

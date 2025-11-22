@@ -7,6 +7,8 @@ urlpatterns = [
     # URL para a lista de todos os canais do usuário (acessada em /mensagens/)
     path('', views.lista_canais_view, name='chat_list'),
 
-    # URL para o chat de um canal específico (acessada em /mensagens/<id>/)
-    path('<int:canal_id>/', views.chat_canal_view, name='canal'),
+    # 🚨 ATUALIZAÇÃO: URL para o chat de um canal específico (usando o SLUG)
+    # Acessada via: /mensagens/nome-do-canal-slug/
+    # O name 'canal_chat' é o que foi referenciado em users/dashboard.html
+    path('<slug:slug>/', views.chat_canal_view, name='canal_chat'),
 ]

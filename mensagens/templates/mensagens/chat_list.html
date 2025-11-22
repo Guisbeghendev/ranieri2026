@@ -14,7 +14,7 @@
                 <ul class="m-0 p-0">
                     {% for canal in canais %}
                         <li class="p-0 m-0">
-                            <a href="{% url 'mensagens:canal' canal_id=canal.id %}" class="chat-list-item">
+                            <a href="{% url 'mensagens:canal_chat' slug=canal.slug %}" class="chat-list-item">
 
                                 <div class="chat-list-avatar">
                                     {{ canal.nome|slice:":1" }}

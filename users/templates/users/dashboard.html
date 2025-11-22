@@ -28,6 +28,11 @@
     {% include 'users/includes/approval_section.html' %}
 
 
+    {# ============================================================================== #}
+    {# 🚨 O BLOCO DE NOTIFICAÇÃO FORA DO GRID FOI REMOVIDO DAQUI #}
+    {# ============================================================================== #}
+
+
     <div class="dashboard-grid">
 
         <div class="card card-primary">
@@ -58,31 +63,44 @@
             </div>
         </div>
 
-        {% if user.is_aluno %}
-            <div class="card card-info">
-                <h3 class="card-title">Situação do Aluno</h3>
-                <div class="card-body">
-                    <p><strong>Matrícula:</strong> {{ user.registro_aluno.ra_matricula }}</p>
-                    <p><strong>Turma:</strong> {{ user.registro_aluno.turma }}</p>
-                    <p><strong>Status:</strong> <span class="badge badge-success">Ativo</span></p>
-                </div>
+        {# ============================================================================== #}
+        {# 🎯 NOVO/MOVIDO: CARD DE AVISOS GERAIS AGORA PRIORIZA NOTIFICAÇÕES DE CHAT #}
+        {# Este bloco substitui o card de avisos anterior (que ficava no 'else' do tipo de usuário). #}
+        {# ============================================================================== #}
+        <div class="card card-warning">
+            <h3 class="card-title"><i class="fas fa-bell"></i> Central de Mensagens</h3>
+            <div class="card-body">
+                {% if canais_nao_lidos %}
+                    <p class="text-danger">
+                        Você tem **{{ canais_nao_lidos|length }}** mensage{{ canais_nao_lidos|length|pluralize:"m,ns" }} não lida{{ canais_nao_lidos|length|pluralize:"s" }}:
+                    </p>
+                    <ul class="list-unstyled mt-2 notification-list">
+                        {% for canal in canais_nao_lidos %}
+                            <li>
+                                {# 🚨 O URL 'mensagens:canal_chat' deve ser criado no mensagens/urls.py #}
+                                <a href="{% url 'mensagens:canal_chat' slug=canal.slug %}" class="btn btn-sm btn-outline-danger mb-1 btn-block text-left">
+                                    <i class="fas fa-comment-dots"></i> **{{ canal.nome }}** (Ler)
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>
+                        <i class="fas fa-check-circle text-success"></i> Sem novas mensagens ou avisos urgentes.
+                    </p>
+                    {# Link neutro para a lista de chats, mesmo sem notificação #}
+                    <a href="{% url 'mensagens:chat_list' %}" class="btn btn-sm btn-outline-secondary mt-2">
+                        Ver todos os Canais
+                    </a>
+                {% endif %}
             </div>
-        {% elif user.is_professor %}
-            <div class="card card-warning">
-                <h3 class="card-title">Função</h3>
-                <div class="card-body">
-                    <p><strong>Tipo de Professor:</strong> {{ user.registro_professor.get_tipo_professor_display }}</p>
-                    <p><strong>Próxima Aula:</strong> Matemática - 09:00 (Sala 301)</p>
-                </div>
-            </div>
-        {% else %}
-             <div class="card card-default">
-                <h3 class="card-title">Avisos</h3>
-                <div class="card-body">
-                    <p>Nenhum aviso urgente para seu tipo de perfil.</p>
-                </div>
-            </div>
-        {% endif %}
+        </div>
+        {# ============================================================================== #}
+
+        {# REMOVIDO: Blocos condicionais is_aluno/is_professor/else que ocupavam o terceiro slot #}
+        {# Se precisar reter as informações de Situação do Aluno/Função do Professor, #}
+        {# será necessário um quarto slot ou reconfigurar o dashboard-grid para 4 colunas #}
+
 
     </div>
 

@@ -3,9 +3,12 @@ from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import Prefetch, Max
+# 🚨 NOVO: Importa timezone para usar o horário exato da leitura
+from django.utils import timezone
 
 # Importa modelos do app `mensagens`
-from .models import Canal, Mensagem
+# 🚨 ATUALIZAÇÃO: Adicionado UltimaLeituraUsuario
+from .models import Canal, Mensagem, UltimaLeituraUsuario
 # Importa modelos de usuários/grupos (assumindo que o Grupo está em users.models)
 from users.models import Grupo
 
@@ -54,22 +57,21 @@ def lista_canais_view(request):
 
 
 @login_required
-def chat_canal_view(request, canal_id):
+def chat_canal_view(request, slug): # 🚨 ATUALIZAÇÃO: Recebe 'slug' no lugar de 'canal_id'
     """
-    Renderiza a interface de chat para um canal específico,
-    incluindo a lista de membros e o histórico de mensagens.
+    Renderiza a interface de chat para um canal específico e
+    atualiza o registro de UltimaLeituraUsuario.
     """
 
-    # 1. Busca o Canal (inclui o grupo e o AuthGroup para validação e busca de membros)
+    # 1. Busca o Canal pelo slug (inclui o grupo e o AuthGroup)
     try:
         canal = get_object_or_404(
             Canal.objects.select_related('grupo', 'grupo__auth_group'),
-            pk=canal_id
+            slug=slug # 🚨 ATUALIZAÇÃO: Filtra por slug
         )
         # Obtém o AuthGroup (Group padrão do Django) associado
         auth_group = canal.grupo.auth_group
     except Exception as e:
-        # Caso o Canal não exista ou o relacionamento falhe
         raise e
 
     # 2. Validação de Membro do Grupo (Lógica de Autorização)
@@ -80,9 +82,24 @@ def chat_canal_view(request, canal_id):
         # Se não for membro, levanta erro de permissão 403.
         raise PermissionDenied("Você não tem permissão para acessar este canal de chat.")
 
-    # 3. BUSCA EXPLÍCITA DOS MEMBROS (CORREÇÃO)
-    # Usamos o 'customuser_set' (related_name em users/models.py) no AuthGroup para obter
-    # todos os CustomUsers que são membros deste grupo.
+    # ==============================================================================
+    # 🚨 NOVO PASSO: Rastreamento de Leitura (Limpa a notificação)
+    # ==============================================================================
+    # Busca o registro existente ou cria um novo, e atualiza a data/hora da última leitura.
+    # O campo data_leitura em UltimaLeituraUsuario está configurado com auto_now=True,
+    # então basta chamar .save() para atualizar o timestamp.
+    UltimaLeituraUsuario.objects.update_or_create(
+        usuario=request.user,
+        canal=canal,
+        # O valor `data_leitura` será atualizado automaticamente (auto_now=True)
+        # Se você preferir um timestamp explícito e mais preciso:
+        # defaults={'data_leitura': timezone.now()}
+    )
+    # Este passo é crucial, pois ao salvar, o campo auto_now=True garante que o
+    # dashboard não mostrará mais notificação para este canal.
+    # ==============================================================================
+
+    # 3. BUSCA EXPLÍCITA DOS MEMBROS
     membros = auth_group.customuser_set.all().order_by('username')
 
 

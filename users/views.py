@@ -9,6 +9,11 @@ from django.http import Http404
 from django.contrib.auth import login as auth_login
 from django.db.models import Q  # NOVO: Import necessário para queries complexas
 
+# ==============================================================================
+# 🎯 CORREÇÃO CRÍTICA: Importar modelos do app 'mensagens'
+# ==============================================================================
+from mensagens.models import Canal, UltimaLeituraUsuario, Mensagem
+
 # Importar modelos e formulários
 from .forms import (
     RegistrationAtomicForm,  # NOVO: Formulário de Cadastro Atômico
@@ -158,6 +163,41 @@ def admin_approve_user(request, user_id):
 
     # Redireciona de volta para o dashboard
     return redirect(reverse('users:dashboard'))
+
+
+# ==============================================================================
+# 🎯 NOVA FUNÇÃO AUXILIAR: BUSCAR NOTIFICAÇÕES DE CHAT (CORRIGIDA)
+# ==============================================================================
+
+def get_chat_notifications(user):
+    """
+    Retorna uma QuerySet de canais onde há mensagens mais novas
+    do que a última vez que o usuário leu (UltimaLeituraUsuario).
+    """
+    # 1. Busca todos os canais que o usuário pertence (Filtra Canais cujo Grupo tem o usuário logado)
+    # 🚨 CORREÇÃO DO VALUERROR: Substituída a sintaxe '...__user=user' pela sintaxe '...__in=user.groups.all()'
+    # para garantir que o filtro receba uma coleção de objetos Group, conforme esperado pelo Django.
+    channels_qs = Canal.objects.filter(grupo__auth_group__in=user.groups.all())
+    canais_nao_lidos = []
+
+    for channel in channels_qs:
+        # Tenta encontrar o registro de última leitura do usuário para este canal
+        # 🚨 CORRIGIDO: Usa UltimaLeituraUsuario, campo 'usuario' e campo 'canal'
+        last_read_obj = UltimaLeituraUsuario.objects.filter(usuario=user, canal=channel).first()
+
+        # 2. Encontra a data da última mensagem no canal
+        # 🚨 CORRIGIDO: Usa Mensagem e campo 'data_envio'
+        latest_message = Mensagem.objects.filter(canal=channel).order_by('-data_envio').first()
+
+        if latest_message:
+            # Se não houver registro de leitura OU se a última mensagem for mais nova que o last_read
+            # 🚨 CORRIGIDO: Usa o campo 'data_leitura'
+            if not last_read_obj or latest_message.data_envio > last_read_obj.data_leitura:
+                # 3. Se houver nova mensagem, adiciona o canal à lista
+                canais_nao_lidos.append(channel)
+
+    # Retorna uma lista dos objetos Canal que têm novas mensagens
+    return canais_nao_lidos
 
 
 # ==============================================================================
@@ -418,11 +458,15 @@ class UserPasswordChangeView(PasswordChangeView):
 @login_required
 def dashboard(request):
     """
-    Vista principal após o login. Adiciona o contexto administrativo.
+    Vista principal após o login. Adiciona o contexto administrativo e de chat.
     """
     context = {}
 
-    # 🎯 Adiciona o contexto de aprovação se o usuário for Admin/Staff
+    # Adiciona o contexto de aprovação se o usuário for Admin/Staff
     context.update(get_pending_users_context(request))
+
+    # 🎯 NOVO: Adiciona a lista de canais com mensagens não lidas
+    canais_nao_lidos_list = get_chat_notifications(request.user)
+    context['canais_nao_lidos'] = canais_nao_lidos_list
 
     return render(request, 'users/dashboard.html', context)

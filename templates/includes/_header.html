@@ -20,6 +20,8 @@
 
             {% if user.is_authenticated %}
                 <li><a href="{% url 'users:dashboard' %}">Painel</a></li>
+                {# ✅ ADIÇÃO CORRIGIDA: Link para a nova rota 'mensagens:chat_list' #}
+                <li><a href="{% url 'mensagens:chat_list' %}">Mensagens</a></li>
                 <li>
                     <form method="post" action="{% url 'users:logout' %}">
                         {% csrf_token %}

@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Canais de Chat{% endblock %}
+
+{% block content %}
+    <div class="container chat-list-container">
+        <h1 class="chat-main-title">
+            Seus Canais de Mensagens
+        </h1>
+
+        {% if canais %}
+            <div class="card chat-list-card p-0">
+                <ul class="m-0 p-0">
+                    {% for canal in canais %}
+                        <li class="p-0 m-0">
+                            <a href="{% url 'mensagens:canal' canal_id=canal.id %}" class="chat-list-item">
+
+                                <div class="chat-list-avatar">
+                                    {{ canal.nome|slice:":1" }}
+                                </div>
+
+                                <div class="chat-list-content">
+
+                                    <div class="chat-list-header">
+                                        <p class="chat-list-title">
+                                            {{ canal.nome }}
+                                        </p>
+
+                                        {% if canal.ultima_mensagem %}
+                                            <span class="chat-list-timestamp">
+                                                {{ canal.ultima_mensagem.data_envio|date:'H:i' }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="chat-list-preview-row">
+
+                                        <p class="chat-list-preview">
+                                            {% if canal.ultima_mensagem %}
+                                                <span class="chat-list-preview-sender">
+                                                    {{ canal.ultima_mensagem.autor.get_full_name|default:canal.ultima_mensagem.autor.username }}:
+                                                </span>
+                                                {{ canal.ultima_mensagem.conteudo|truncatechars:45 }}
+                                            {% else %}
+                                                <span class="text-info">Nenhuma mensagem. Clique para começar!</span>
+                                            {% endif %}
+                                        </p>
+
+                                        <span class="chat-list-group">
+                                            {{ canal.grupo.auth_group.name }}
+                                        </span>
+                                    </div>
+
+                                </div>
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% else %}
+            <div class="chat-empty-alert mt-3">
+                <div class="chat-empty-content-wrapper">
+                    <i class="fas fa-exclamation-triangle chat-empty-icon"></i>
+                    <p class="chat-empty-text">
+                        Você não está associado a nenhum canal de chat ativo. Entre em contato com o administrador para ter acesso aos canais.
+                    </p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

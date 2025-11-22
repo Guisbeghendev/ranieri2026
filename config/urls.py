@@ -21,7 +21,7 @@ urlpatterns = [
     # URLs dos Apps de Conteúdo Restrito
     path('simoninha-na-cozinha/', include(('sim_cozinha.urls', 'sim_cozinha'), namespace='sim_cozinha')),
     # path('galerias/', include('galerias.urls')),
-    # path('mensagens/', include('mensagens.urls')),
+    path('mensagens/', include('mensagens.urls', namespace='mensagens')), # Linha adicionada/corrigida
 
     # URLs do App Administrativo (Interface Customizada para Fotógrafo)
     # path('repositorio-admin/', include('repositorio.urls')),

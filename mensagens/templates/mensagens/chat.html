@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Chat: {{ canal.nome }}{% endblock %}
+
+{% block content %}
+    <div class="chat-app-container">
+
+        <div id="toggle-container" class="chat-toggle-container">
+            <span class="chat-toggle-label">Listar Membros</span>
+            <button id="sidebar-toggle-button" class="chat-sidebar-toggle-button" title="Mostrar/Ocultar Membros">
+                &#9776;
+            </button>
+        </div>
+        <aside id="members-sidebar" class="members-sidebar">
+            <h2 class="chat-sidebar-title">Membros do Canal ({{ membros_canal|length }})</h2>
+
+            <div class="chat-members-list-wrapper">
+                {% for membro in membros_canal %}
+                    <div class="chat-member-item {% if membro.id == user_id %}chat-member-current{% else %}chat-member-other{% endif %}" data-user-id="{{ membro.id }}">
+                        <div class="chat-member-avatar">
+                            {{ membro.username|slice:":1"|upper }}
+                        </div>
+
+                        <div class="chat-member-info">
+                            <span class="chat-member-name" title="{{ membro.get_full_name|default:membro.username }}">
+                                {{ membro.get_full_name|default:membro.username }}
+                                {% if membro.id == user_id %}
+                                    <span class="chat-member-you">(Você)</span>
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <div class="chat-member-status-online" title="Online (simulado)"></div>
+                    </div>
+                {% endfor %}
+            </div>
+        </aside>
+
+        <main class="chat-main-content chat-layout">
+
+            <header class="chat-header">
+                <h1 class="chat-title">
+                    Canal: <span>{{ canal.nome }}</span>
+                </h1>
+                <p class="chat-group-info">
+                    Grupo: {{ canal.grupo.auth_group.name }}
+                </p>
+
+                </header>
+
+            <div id="chat-log" class="chat-container">
+                <ul class="chat-messages-wrapper">
+                    {% for mensagem in mensagens %}
+                        <li class="chat-message-row chat-message-{% if mensagem.autor.id == user_id %}user{% else %}other{% endif %}">
+                            <div class="chat-bubble {% if mensagem.autor.id == user_id %}user-message{% else %}other-message{% endif %}">
+                                <span class="message-sender">
+                                    {% if mensagem.autor.id == user_id %}
+                                        Você
+                                    {% else %}
+                                        {{ mensagem.autor.get_full_name|default:mensagem.autor.username }}
+                                    {% endif %}
+                                </span>
+                                <p class="message-content">{{ mensagem.conteudo }}</p>
+                                <span class="message-timestamp">
+                                    {{ mensagem.data_envio|date:"H:i" }}
+                                </span>
+                            </div>
+                        </li>
+                    {% empty %}
+                        <p class="chat-empty-log-message">Nenhuma mensagem no histórico. Comece a conversa!</p>
+                    {% endfor %}
+                </ul>
+
+                <script id="canal-id" type="text/template">{{ canal.id }}</script>
+                <script id="user-id" type="text/template">{{ user_id }}</script>
+            </div>
+
+            <div class="chat-input-area">
+                <div class="chat-input-wrapper">
+                    <input
+                        id="chat-message-input"
+                        type="text"
+                        placeholder="Digite sua mensagem..."
+                        class="chat-input-field"
+                        autocomplete="off"
+                    >
+                    <button
+                        id="chat-message-submit"
+                        class="chat-send-button"
+                        disabled
+                    >
+                        Enviar
+                    </button>
+                </div>
+            </div>
+
+        </main>
+
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'mensagens/js/chat.js' %}"></script>
+{% endblock %}

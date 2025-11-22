@@ -50,11 +50,15 @@ INSTALLED_APPS = [
     # config
     'formtools',
     'core',
+    # Configuração do Channels
+    'channels',
     #meus app (continua)
     'historia',
     'coral',
     'sim_cozinha',
     'brinc_dialogando',
+    'mensagens',
+
 ]
 
 MIDDLEWARE = [
@@ -174,3 +178,25 @@ LOGIN_URL = 'users:login' # Garante que o Django saiba qual é a URL de login
 # ==============================================================================
 
 SESSION_SAVE_EVERY_REQUEST = True
+
+
+# ==============================================================================
+# 10. CONFIGURAÇÕES DO DJANGO CHANNELS (Tempo Real)
+# ==============================================================================
+
+# Define o ponto de entrada principal para o servidor ASGI
+ASGI_APPLICATION = 'config.asgi.application' # Usando 'config' como nome do projeto
+
+# Configuração do Channel Layer
+# Usando o Redis (channels_redis) como backend de camada de canal
+CHANNEL_LAYERS = {
+    'default': {
+        # CORREÇÃO: A classe mudou de 'RedisChannelLayer' para 'RedisPubSubChannelLayer'
+        'BACKEND': 'channels_redis.pubsub.RedisPubSubChannelLayer',
+        'CONFIG': {
+            # Host padrão e porta do servidor Redis
+            # ATENÇÃO: O Redis deve estar rodando (ex: docker run -p 6379:6379 -d redis:latest)
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}

@@ -1,0 +1,28 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+
+{% block content %}
+<div id="content-main">
+    <form action="" method="post">{% csrf_token %}
+        <p>
+            {% blocktrans count counter=channels.count %}Tem certeza de que deseja exportar as mensagens para o canal selecionado?{% plural %}Tem certeza de que deseja exportar as mensagens para os **{{ counter }} canais** selecionados?{% endblocktrans %}
+        </p>
+
+        <h2 style="margin-top: 1em;">{% translate "Período de Auditoria Customizado" %}</h2>
+
+        {{ form.as_p }}
+
+        <p class="errornote">
+            **Atenção:** Se a Data Inicial e/ou Data Final estiverem em branco, o sistema incluirá o histórico completo (desde o início ou até o momento atual).
+        </p>
+
+        <div class="submit-row">
+            <input type="hidden" name="action" value="{{ action_name }}" />
+            <input type="hidden" name="apply" value="1" />
+
+            <a href="{% url opts|admin_urlname:'changelist' %}" class="button cancel-link">{% translate "Cancelar" %}</a>
+            <input type="submit" name="export" value="{% translate 'Exportar para CSV' %}" />
+        </div>
+    </form>
+</div>
+{% endblock %}

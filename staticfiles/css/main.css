@@ -1993,3 +1993,194 @@ LISTA DE CANAIS (CHAT LIST)
     color: var(--color-warning-text);
     font-weight: 600; /* font-semibold */
 }
+
+
+/* ================================
+   SUPORTE - LISTA DE TÓPICOS
+=================================== */
+
+/* Container para a listagem (trabalha em conjunto com .grid-auto) */
+.card-list-suporte {
+    /* Define o espaçamento inferior para a seção de listagem */
+    margin-bottom: 2rem;
+    /* Adicionando estilo de card padrão para a listagem */
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-default);
+    border: 1px solid var(--color-border);
+    padding: 1.5rem; /* Padding interno */
+}
+
+/* Ajuste para o link do título do tópico dentro do header do card */
+.card-header a.text-primary {
+    display: block;
+    margin-right: 1rem; /* Espaço entre o título e o badge de status */
+    /* Garante que o link herde a cor correta */
+    color: var(--color-primary);
+}
+
+/* Garante que o botão Ver Detalhes tenha um peso visual adequado */
+.card-footer a.btn-light {
+    font-weight: 600;
+}
+
+/* ================================
+   SUPORTE - DETALHES DO TÓPICO
+=================================== */
+
+/* Layout principal: 2 colunas no desktop, empilhadas no mobile */
+.topico-detail-grid {
+    display: grid;
+    gap: 20px;
+    grid-template-columns: 1fr; /* Padrão: 1 coluna no mobile */
+    margin-top: 1.5rem;
+    /* CORREÇÃO DE CONTEXTO DE EMPILHAMENTO: Garante que o grid não compita com o header (z-index: 1000). */
+    /* Adiciona posição relativa apenas para fins de empilhamento, se necessário, com um z-index muito baixo. */
+    position: relative;
+    z-index: 1; /* Deve ficar abaixo do header e do botão flutuante */
+}
+
+/* Breakpoint para layout de 2 colunas */
+@media (min-width: 768px) {
+    .topico-detail-grid {
+        /* Coluna de conversa (principal) e coluna lateral (sidebar) */
+        grid-template-columns: 2fr 1fr;
+    }
+}
+
+/* Detalhes do Card Lateral */
+.detail-card .card-body p {
+    margin: 0;
+    padding: 0.2rem 0;
+    border-bottom: 1px dashed var(--color-border-light);
+}
+.detail-card .card-body p:last-child {
+    border-bottom: none;
+}
+
+/* CORREÇÃO ROLAGEM: O wrapper deve ser um flex container para que a lista de respostas use o espaço restante. */
+.respostas-wrapper {
+    /* Nenhuma propriedade flex aqui */
+}
+
+/* Área de Conversa (Lista de Respostas) */
+.respostas-list {
+    /* ADICIONADO: max-height para limitar a altura e garantir a rolagem interna sem afetar o layout externo. */
+    max-height: 500px; /* Valor sugerido. Ajuste conforme o design. */
+    overflow-y: auto; /* Mantém a rolagem APENAS nesta lista */
+    padding: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background-color: var(--color-background-light);
+    /* Adiciona margem inferior para separar do formulário de resposta */
+    margin-bottom: 15px;
+    /* CORREÇÃO DE EMPILHAMENTO: Garante que o conteúdo que rola não tente
+       se posicionar acima do header por algum motivo. */
+    position: relative;
+    z-index: 10;
+}
+
+/* Estilo individual de cada mensagem (resposta) */
+.resposta-item {
+    padding: 1rem;
+    margin-bottom: 15px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-default);
+}
+
+.resposta-item .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.resposta-item .body p {
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* Estilo para a mensagem do USUÁRIO (Cor Primária) */
+.resposta-item.author-user {
+    /* CORREÇÃO: Usando a cor primária (Roxo) com leve transparência para fundo */
+    background-color: rgba(97, 21, 45, 0.05);
+    border-left: 5px solid var(--color-primary);
+    margin-left: 15%; /* Deixa o staff mais estreito */
+}
+
+/* Estilo para a mensagem do STAFF/SUPORTE (Cor Secundária/Neutro) */
+.resposta-item.author-staff {
+    /* CORREÇÃO: Fundo branco ou neutro */
+    background-color: white;
+    /* CORREÇÃO: Borda em Laranja Escuro (Secundário do tema) */
+    border-left: 5px solid var(--laranja-escuro1);
+    margin-right: 15%; /* Deixa o usuário mais estreito */
+}
+
+.form-resposta-container textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* Botão Flutuante 'Scroll to Bottom' */
+.scroll-to-bottom-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    /* CORREÇÃO: Cor de fundo em Laranja Escuro (padrão de botão) */
+    background-color: var(--laranja-escuro1);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
+    box-shadow: var(--shadow-default);
+    cursor: pointer;
+    opacity: 0; /* Escondido por padrão, visível via JS */
+    transition: opacity 0.3s, transform 0.3s;
+    /* CORREÇÃO DE CONFLITO: Z-INDEX OBRIGATORIAMENTE MENOR que o HEADER (1000) */
+    z-index: 999;
+}
+
+.scroll-to-bottom-button:hover {
+    /* CORREÇÃO: Hover em Laranja Médio */
+    background-color: var(--laranja-medio1);
+    transform: scale(1.05);
+}
+
+.scroll-to-bottom-button.show {
+    opacity: 1;
+}
+
+/* ================================
+   SUPORTE - CRIAÇÃO DE TÓPICO
+   (Este arquivo usa principalmente estilos globais)
+=================================== */
+
+/* Container principal para centralização, mantendo a responsividade do reset-box */
+.form-create-suporte {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+}
+
+/* Garante que o campo de mensagem seja grande e redimensionável */
+.form-create-suporte textarea {
+    min-height: 150px;
+    resize: vertical;
+}
+
+/* Estilo para feedback de erro/sucesso via JS */
+.form-feedback {
+    font-size: 0.85rem;
+    padding-top: 5px;
+}
+.form-feedback.error {
+    color: var(--color-danger);
+    font-weight: 600;
+}
+.form-feedback.success {
+    color: var(--color-success);
+}

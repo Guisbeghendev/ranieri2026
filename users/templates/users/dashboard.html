@@ -97,9 +97,24 @@
         </div>
         {# ============================================================================== #}
 
-        {# REMOVIDO: Blocos condicionais is_aluno/is_professor/else que ocupavam o terceiro slot #}
-        {# Se precisar reter as informações de Situação do Aluno/Função do Professor, #}
-        {# será necessário um quarto slot ou reconfigurar o dashboard-grid para 4 colunas #}
+        {# ============================================================================== #}
+        {# 🎯 NOVO CARD: SUPORTE AO CLIENTE #}
+        {# ============================================================================== #}
+        <div class="card card-info">
+            <h3 class="card-title"><i class="fas fa-headset"></i> Suporte e Ajuda</h3>
+            <div class="card-body">
+                <p>Precisa de ajuda com o sistema ou encontrou um problema? Nossa equipe de suporte está pronta para atendê-lo(a).</p>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'suporte:topico_create' %}" class="btn btn-primary btn-block">
+                    <i class="fas fa-ticket-alt"></i> Abrir Novo Chamado
+                </a>
+                <a href="{% url 'suporte:topico_list' %}" class="btn btn-outline-secondary btn-sm mt-2 btn-block">
+                    Ver Meus Chamados
+                </a>
+            </div>
+        </div>
+        {# ============================================================================== #}
 
 
     </div>

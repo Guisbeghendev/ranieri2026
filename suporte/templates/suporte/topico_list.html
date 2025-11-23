@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Meus Chamados de Suporte{% endblock title %}
+
+{% block content %}
+<div class="section-title">
+    <h1>Meus Chamados de Suporte</h1>
+</div>
+
+<div class="mb-3">
+    <!-- Botão para criar novo chamado, usando a classe de ação primária -->
+    <a href="{% url 'suporte:topico_create' %}" class="btn btn-primary primary-action">
+        <i class="fa-solid fa-plus"></i> Novo Chamado
+    </a>
+</div>
+
+{% if object_list %}
+    <!-- Nova classe para listagem de cards de suporte -->
+    <div class="card-list-suporte grid-auto">
+        {% for topico in object_list %}
+        <div class="card card-default">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <!-- Título do Tópico (Link para Detalhe) -->
+                <a href="{% url 'suporte:topico_detail' pk=topico.pk %}" class="text-primary" style="font-size: 1.25rem; font-weight: 600; line-height: 1.2;">
+                    {{ topico.assunto }}
+                </a>
+
+                <!-- Status (Badge) -->
+                {% if topico.status == 'ABERTO' %}
+                    <span class="badge badge-danger">Aberto</span>
+                {% elif topico.status == 'ANDAMENTO' %}
+                    <span class="badge badge-warning">Em Andamento</span>
+                {% elif topico.status == 'FECHADO' %}
+                    <span class="badge badge-success">Fechado</span>
+                {% else %}
+                    <span class="badge badge-info">{{ topico.status }}</span>
+                {% endif %}
+            </div>
+
+            <div class="card-body">
+                <p class="m-0"><strong>Usuário:</strong> {{ topico.autor.username }}</p>
+                <p class="m-0"><strong>Departamento:</strong> {{ topico.departamento }}</p>
+                <p class="m-0 mt-1"><strong>Criado:</strong> {{ topico.data_criacao|naturaltime }}</p>
+                <p class="m-0"><strong>Atualizado:</strong> {{ topico.data_ultima_atualizacao|naturaltime }}</p>
+            </div>
+
+            <div class="card-footer">
+                <!-- Botão light para ver detalhes -->
+                <a href="{% url 'suporte:topico_detail' pk=topico.pk %}" class="btn btn-light btn-sm">Ver Detalhes <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Implementação de Paginação Simples (Usando classes utilitárias) -->
+    {% if is_paginated %}
+    <div class="pagination mt-3 text-center">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-outline btn-sm">&laquo; Anterior</a>
+        {% endif %}
+
+        <span class="current" style="margin: 0 1rem; font-weight: 600;">
+            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}.
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="btn btn-outline btn-sm">Próxima &raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+{% else %}
+    <div class="alert alert-info text-center">
+        <p>Você não tem chamados de suporte abertos ou criados.</p>
+        <p class="mt-2"><a href="{% url 'suporte:topico_create' %}" class="btn btn-secondary">Abrir Novo Chamado</a></p>
+    </div>
+{% endif %}
+
+{% block extra_js %}
+    <script src="{% static 'suporte/js/topico_list.js' %}"></script>
+{% endblock extra_js %}
+
+{% endblock content %}

@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Chamado #{{ topico.pk }} - {{ topico.assunto }}{% endblock title %}
+
+{% block content %}
+<div class="section-title">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+        <h1>Chamado #{{ topico.pk }}</h1>
+        {% if topico.status == 'NOVO' %}
+            <span class="badge badge-danger large">Status: Novo</span>
+        {% elif topico.status == 'ATND' %}
+            <span class="badge badge-warning large">Status: Em Atendimento</span>
+        {% elif topico.status == 'AGRD' %}
+            <span class="badge badge-info large">Status: Aguardando Informação</span>
+        {% elif topico.status == 'RESOLV' or topico.status == 'FECH' %}
+            <span class="badge badge-success large">Status: Encerrado</span>
+        {% else %}
+            <span class="badge badge-info large">Status: {{ topico.get_status_display|default:topico.status }}</span>
+        {% endif %}
+    </div>
+    <h2 style="font-size: 1.5rem; color: var(--color-text-secondary); margin-top: 0.5rem;">{{ topico.assunto }}</h2>
+</div>
+
+<div class="topico-detail-grid">
+
+    <div class="respostas-wrapper">
+        <h3 class="mb-2" style="font-size: 1.2rem;">Conversa</h3>
+
+        <div class="respostas-list" id="respostas-list">
+
+            {% for mensagem in mensagens %}
+                {% if mensagem.autor.is_staff or mensagem.autor.is_superuser %}
+                    <div class="resposta-item author-staff">
+                {% else %}
+                    <div class="resposta-item author-user">
+                {% endif %}
+                    <div class="header">
+                        <strong>
+                            {{ mensagem.autor.username }}
+                            {% if mensagem.autor.is_staff or mensagem.autor.is_superuser %} (Suporte){% endif %}
+                        </strong>
+                        <small>
+                            {% if forloop.first %}
+                                Criou em {{ mensagem.timestamp|naturaltime }}
+                            {% else %}
+                                Respondeu em {{ mensagem.timestamp|naturaltime }}
+                            {% endif %}
+                        </small>
+                    </div>
+                    <div class="body">
+                        <p>{{ mensagem.conteudo|linebreaksbr }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if topico.status != 'FECH' %}
+            <div class="form-resposta-container mt-4">
+                <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">Adicionar Resposta</h3>
+                <form method="post" action="{% url 'suporte:topico_responder' pk=topico.pk %}">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit" class="btn btn-primary primary-action mt-2">Enviar Resposta</button>
+                </form>
+            </div>
+        {% else %}
+            <div class="alert alert-warning mt-4 text-center">
+                Este chamado está fechado. Você não pode adicionar novas respostas.
+            </div>
+        {% endif %}
+
+    </div>
+
+    <div class="sidebar">
+        <div class="card detail-card">
+            <div class="card-header">
+                Detalhes do Chamado
+            </div>
+            <div class="card-body">
+                <p><strong>Autor:</strong> {{ topico.criador.username }}</p>
+                <p><strong>Tipo de Usuário:</strong> {{ topico.criador.get_user_type_display|default:"Não definido" }}</p>
+                <p><strong>Criado em:</strong> {{ topico.criado_em|date:"d/m/Y H:i" }}</p>
+                <p><strong>Última Atualização:</strong> {{ topico.atualizado_em|naturaltime }}</p>
+            </div>
+        </div>
+
+        <div class="card actions-card mt-3">
+            <div class="card-header">Ações</div>
+            <div class="card-body">
+                {% if topico.status != 'FECH' and topico.criador == user or user.is_staff or user.is_superuser %}
+                    <form method="post" action="{% url 'suporte:topico_fechar' pk=topico.pk %}" style="margin-bottom: 0.5rem;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success btn-block" onclick="return confirm('Tem certeza que deseja fechar este chamado?');">
+                            <i class="fa-solid fa-lock"></i> Fechar Chamado
+                        </button>
+                    </form>
+                {% elif topico.status == 'FECH' and topico.criador == user or user.is_staff or user.is_superuser %}
+                    <form method="post" action="{% url 'suporte:topico_reabrir' pk=topico.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-warning btn-block" onclick="return confirm('Tem certeza que deseja reabrir este chamado?');">
+                            <i class="fa-solid fa-lock-open"></i> Reabrir Chamado
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if user.is_staff or user.is_superuser %}
+            {% if status_form %}
+            <div class="card workflow-card mt-3">
+                <div class="card-header text-primary">
+                    <i class="fa-solid fa-cogs"></i> Controle (Staff)
+                </div>
+                <form method="post" action="{% url 'suporte:topico_update_status' pk=topico.pk %}" class="card-body">
+                    {% csrf_token %}
+
+                    <div class="form-group">
+                        <label class="form-label" for="{{ status_form.status.id_for_label }}">{{ status_form.status.label }}:</label>
+                        {{ status_form.status }}
+                        {% for error in status_form.status.errors %}
+                            <div class="form-feedback error">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="form-group mt-2">
+                        <label class="form-label" for="{{ status_form.admin_responsavel.id_for_label }}">{{ status_form.admin_responsavel.label }}:</label>
+                        {{ status_form.admin_responsavel }}
+                         {% for error in status_form.admin_responsavel.errors %}
+                            <div class="form-feedback error">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    {% if status_form.non_field_errors %}
+                        {% for error in status_form.non_field_errors %}
+                            <div class="form-feedback error">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <button type="submit" class="btn btn-secondary primary-action btn-block mt-3">
+                        <i class="fa-solid fa-save"></i> Salvar Fluxo
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        {% endif %}
+
+    </div>
+</div>
+
+<button id="scroll-to-bottom-button" class="scroll-to-bottom-button" title="Ir para o final da conversa">
+    <i class="fa-solid fa-arrow-down"></i>
+</button>
+
+{% endblock content %}
+
+{% block extra_js %}
+    <script src="{% static 'suporte/js/topico_detail.js' %}"></script>
+{% endblock extra_js %}

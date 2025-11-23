@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Abrir Novo Chamado{% endblock title %}
+
+{% block content %}
+<div class="form-create-suporte">
+    <div class="reset-box" style="max-width: 600px;">
+        <div class="reset-header">
+            <h2>Abrir Novo Chamado de Suporte</h2>
+            <p>Por favor, preencha os detalhes do seu problema ou solicitação.</p>
+        </div>
+        <div class="reset-body">
+            <form method="post">
+                {% csrf_token %}
+
+                {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <strong>Por favor, corrija os seguintes erros:</strong>
+                        <ul>
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <li>{{ field.label }}: {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                        {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
+                <!-- Renderiza os campos do formulário -->
+                {% for field in form %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.help_text %}
+                            <small class="form-text text-muted">{{ field.help_text }}</small>
+                        {% endif %}
+                        <!-- Adiciona um placeholder para validação JS ou feedback -->
+                        <div id="{{ field.id_for_label }}_feedback" class="form-feedback" style="display: none;"></div>
+                    </div>
+                {% endfor %}
+
+                <button type="submit" id="submit-button" class="btn btn-primary primary-action btn-block mt-3">
+                    <i class="fa-solid fa-plus"></i> Abrir Chamado
+                </button>
+            </form>
+        </div>
+        <div class="reset-footer text-center">
+            <a href="{% url 'suporte:topico_list' %}" class="text-secondary">Voltar para a lista de chamados</a>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+    <script src="{% static 'suporte/js/topico_create.js' %}"></script>
+{% endblock extra_js %}

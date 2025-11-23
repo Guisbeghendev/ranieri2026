@@ -1742,78 +1742,73 @@ CHAT (Canal Individual)
  */
 
 .chat-bubble {
-    padding: 0.05rem 0.5rem; /* padding interno vert - horiz */
-    max-width: 80%; /* Ajuste de largura */
-    font-size: 0.875rem; /* tamanho da fonte */
-    line-height: 1; /* Valor recomendado para compactação */
-    /* CORREÇÃO: Sombra padrão do tema */
+    padding: 0.5rem 1rem;
+    max-width: 80%;
+    font-size: 0.875rem;
+    /* AJUSTE: Reduz o line-height para 1.1 para diminuir o espaço vertical DENTRO da mensagem (se o texto tiver múltiplas linhas) */
+    line-height: 1.1;
     box-shadow: var(--shadow-default);
     transition: all 0.15s ease-in-out;
-    white-space: pre-wrap; /* Mantém a quebra de linha do conteúdo */
+    white-space: pre-wrap;
+    display: block;
 }
 
 /* 2. Estilos da Bolha de Mensagem do Usuário Atual (Você) */
 .user-message {
-    /* 🚨 CORREÇÃO: Aplica a variável de cor ROXO PASTEL */
     background-color: var(--roxo-pastel);
-    color: white; /* Cor da fonte em branco para contraste */
-    /* Cantos arredondados: 1.5rem no lado que aponta para o centro, 0.25rem na quina superior direita */
+    color: white;
     border-radius: 1.5rem 0.25rem 1.5rem 1.5rem;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
-    margin-left: auto; /* Garante que fique à direita */
+    margin-left: auto;
 }
 
 /* Estilos internos para a mensagem do Usuário */
 .user-message .message-sender {
-     font-weight: 600; /* Negrito */
-     margin-bottom: 0; /* ✅ CORREÇÃO DE ESPAÇAMENTO: Remove a margem original de 0.25rem */
-     /* 🚨 CORREÇÃO: Cor do nome em BRANCO para contraste */
+     font-weight: 600;
+     /* AJUSTE: Reduz a margem para 0.1rem nas mensagens enviadas anteriormente (para mensagens já enviadas) */
+     margin-bottom: 0.1rem;
      color: white;
 }
+
 .user-message .message-timestamp {
-     display: inline; /* ✅ CORREÇÃO DE ESPAÇAMENTO: Permite que o horário flua ao lado da mensagem */
+     display: block;
      font-size: 0.75rem;
-     margin-top: 0; /* ✅ CORREÇÃO DE ESPAÇAMENTO: Remove a margem original de 0.25rem */
-     margin-left: 0.5rem; /* Adiciona um pequeno espaço para não colar na mensagem */
+     /* AJUSTE: Aumenta a margem superior para dar mais espaço ao timestamp na mensagem recém-enviada */
+     margin-top: 0.35rem;
+     margin-left: 0;
      text-align: right;
      opacity: 0.8;
-     /* CORREÇÃO: Timestamp em Branco Suave */
      color: rgba(255, 255, 255, 0.8);
 }
 
 /* 3. Estilos da Bolha de Mensagem de Outros Usuários */
 .other-message {
-    /* 🚨 CORREÇÃO: Aplica a variável de cor LARANJA PASTEL */
     background-color: var(--laranja-pastel);
-    /* 🚨 CORREÇÃO: Cor de texto padrão (PRETO) para contraste no fundo claro */
     color: var(--color-text);
-    /* Cantos arredondados: 0.25rem na quina superior esquerda, 1.5rem nos outros */
     border-radius: 0.25rem 1.5rem 1.5rem 1.5rem;
-    /* CORREÇÃO: Borda leve */
     border: 1px solid var(--color-border);
-    /* CORREÇÃO: Sombra padrão do tema */
     box-shadow: var(--shadow-default);
-    margin-right: auto; /* Garante que fique à esquerda */
+    margin-right: auto;
 }
 
 /* Estilos internos para a mensagem de Outros */
 .other-message .message-sender {
      font-weight: 600;
-     margin-bottom: 0; /* ✅ CORREÇÃO DE ESPAÇAMENTO: Remove a margem original de 0.25rem */
-     /* 🚨 CORREÇÃO: Cor do nome em ROXO PRINCIPAL para destaque */
+     /* AJUSTE: Reduz a margem para 0.1rem nas mensagens de outros usuários */
+     margin-bottom: 0.1rem;
      color: var(--color-primary);
 }
+
 .other-message .message-timestamp {
-     display: inline; /* ✅ CORREÇÃO DE ESPAÇAMENTO: Permite que o horário flua ao lado da mensagem */
+     display: block;
      font-size: 0.75rem;
-     margin-top: 0; /* ✅ CORREÇÃO DE ESPAÇAMENTO: Remove a margem original de 0.25rem */
-     margin-left: 0.5rem; /* Adiciona um pequeno espaço para não colar na mensagem */
+     /* AJUSTE: Reduz o espaço acima do timestamp nas mensagens de outros usuários */
+     margin-top: 0.2rem;
+     margin-left: 0;
      text-align: right;
      opacity: 0.8;
-     /* CORREÇÃO: Cor de texto secundária */
      color: var(--color-text-light);
 }
-
 
 /* ================================
 LISTA DE CANAIS (CHAT LIST)

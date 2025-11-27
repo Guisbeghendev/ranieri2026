@@ -248,11 +248,22 @@ class ProfessorAdicionalInline(admin.TabularInline):
     verbose_name_plural = _("Professores Adicionais da Turma")
 
 
+class RegistroAlunoInline(admin.TabularInline):
+    """Exibe todos os alunos (RegistroAluno) da turma."""
+    model = RegistroAluno
+    extra = 0
+    fields = ('nome_completo', 'ra_numero', 'ra_digito_verificador', 'usuario')
+    readonly_fields = ('usuario',)  # O campo 'usuario' mostra se o CustomUser foi criado
+    search_fields = ('nome_completo', 'ra_numero')
+    verbose_name = _("Aluno da Turma")
+    verbose_name_plural = _("Alunos da Turma")
+
+
 class TurmaAdmin(admin.ModelAdmin):
     list_display = ('nome', 'ano_letivo', 'ativo', 'professor_regente', 'display_adicionais')
     list_filter = ('ativo', 'ano_letivo')
     search_fields = ('nome', 'professor_regente__nome_completo')
-    inlines = [ProfessorAdicionalInline]
+    inlines = [ProfessorAdicionalInline, RegistroAlunoInline]  # ADICIONADO RegistroAlunoInline
     fields = ('nome', 'ano_letivo', 'ativo', 'professor_regente')
 
     def display_adicionais(self, obj):
@@ -420,19 +431,7 @@ class JSONUploadAdmin(admin.ModelAdmin):
                         }
                     )
 
-                    # Cria ou atualiza o CustomUser (se ele ainda não existir)
-                    if created or aluno.usuario is None:
-                        username = f"a{ra_numero}"
-
-                        # A criação de CustomUser aqui garante que novos alunos tenham login
-                        CustomUser.objects.get_or_create(
-                            username=username,
-                            defaults={
-                                'tipo_usuario': CustomUserTipo.ALUNO,
-                                'registro_aluno': aluno,
-                                'email': f"{username}@escola.com.br"
-                            }
-                        )
+                    # CORREÇÃO APLICADA: NENHUM CustomUser ou Profile é criado aqui.
 
                     if created:
                         create_count += 1

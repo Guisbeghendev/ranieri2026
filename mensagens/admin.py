@@ -161,7 +161,20 @@ class CanalAdmin(admin.ModelAdmin):
     def get_readonly_fields(self, request, obj=None):
         fields = super().get_readonly_fields(request, obj)
         if obj:
-            fields += ('grupo', 'criador', 'slug')
+            # CORREÇÃO: Remove 'criador' para permitir que seja editável na página de alteração.
+            # O campo 'criador' foi removido desta lista para permitir a alteração do criador
+            # em canais existentes.
+            fields = list(fields)  # Converte para lista para permitir manipulação
+
+            # Adiciona os campos que devem ser somente leitura na edição
+            readonly = ('grupo', 'slug')
+            fields.extend(readonly)
+
+            # Remove 'criador' da lista se estiver presente para permitir a edição
+            if 'criador' in fields:
+                fields.remove('criador')
+
+            return tuple(fields)  # Retorna como tupla
         return fields
 
     def save_model(self, request, obj, form, change):
@@ -178,7 +191,10 @@ class CanalAdmin(admin.ModelAdmin):
     grupo_nome.short_description = 'Grupo Associado'
 
     def criador_nome(self, obj):
-        return obj.criador.get_full_name() or obj.criador.username
+        # CORREÇÃO: Verifica se obj.criador não é None antes de acessar atributos.
+        if obj.criador:
+            return obj.criador.get_full_name() or obj.criador.username
+        return _("N/A (Sem Criador)")
 
     criador_nome.short_description = 'Criador'
 

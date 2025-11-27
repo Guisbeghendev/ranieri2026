@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Gerenciar Galerias - Repositório{% endblock %}
+
+{% block content %}
+
+<div class="dashboard-main-container">
+    <div class="dashboard-header mb-3">
+        <h1 class="header-title">Área do Fotógrafo</h1>
+        <p class="header-subtitle">Gestão de Mídias e Galerias</p>
+    </div>
+
+    {# Exibição das mensagens do Django #}
+    {% if messages %}
+        <ul class="messages p-0">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <div class="card p-3">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="margin: 0;">Lista de Galerias</h2>
+            <a href="{% url 'repositorio:criar_galeria' %}" class="btn btn-secondary">
+                <i class="fas fa-plus mr-1"></i> Nova Galeria
+            </a>
+        </div>
+
+        <div class="card-body p-0">
+            {% if object_list %}
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Capa</th>
+                                <th>Título/Descrição</th>
+                                <th>Status</th>
+                                <th>Itens</th>
+                                <th>Criado/Editado</th>
+                                <th style="text-align: center;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for galeria in object_list %}
+                            <tr>
+                                <td>
+                                    {# Exibe a miniatura se houver (o campo de capa é opcional) #}
+                                    {% if galeria.capa %}
+                                        <img src="{{ galeria.capa.url }}" alt="Capa" class="table-gallery-thumb">
+                                    {% else %}
+                                        <span class="text-secondary" style="font-size: 0.85rem;">Sem capa</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <h3 class="m-0" style="font-size: 1rem; color: var(--color-primary-dark);">
+                                        {# CORRIGIDO: 'titulo' para 'nome' #}
+                                        {{ galeria.nome }}
+                                    </h3>
+                                    <p class="m-0" style="font-size: 0.85rem; color: var(--color-text-light);">
+                                        {{ galeria.descricao|truncatechars:50 }}
+                                    </p>
+                                </td>
+                                <td>
+                                    {% if galeria.status == 'PR' %}
+                                        <span class="badge badge-status badge-warning">Rascunho</span>
+                                    {% elif galeria.status == 'PB' %}
+                                        <span class="badge badge-status badge-success">Publicada</span>
+                                    {% elif galeria.status == 'AR' %}
+                                        <span class="badge badge-status badge-danger">Arquivada</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge badge-info">{{ galeria.imagens_count }}</span>
+                                </td>
+                                <td>
+                                    <p class="m-0" style="font-size: 0.8rem;">
+                                        Criação: {{ galeria.criado_em|date:"d/m/Y" }}
+                                    </p>
+                                    {# CORRIGIDO: 'atualizado_em' para 'alterado_em' #}
+                                    {% if galeria.alterado_em %}
+                                    <p class="m-0" style="font-size: 0.8rem; color: var(--color-text-light);">
+                                        Editado: {{ galeria.alterado_em|date:"d/m/Y" }}
+                                    </p>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: center;">
+                                    <div class="table-actions-group mx-auto">
+                                        {# Link para Editar (reutiliza a view de criação) #}
+                                        <a href="{% url 'repositorio:editar_galeria' pk=galeria.pk %}"
+                                           class="btn btn-outline btn-icon-sm"
+                                           title="Editar detalhes">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+
+                                        {# Link para Gerenciar Imagens (ATIVADO E CORRIGIDO) #}
+                                        <a href="{% url 'repositorio:gerenciar_imagens_galeria' pk=galeria.pk %}"
+                                           class="btn btn-secondary btn-icon-sm"
+                                           title="Gerenciar e anexar imagens">
+                                            <i class="fas fa-images"></i>
+                                        </a>
+
+                                        {# Botão de Excluir: ADICIONADO data-delete-url com a URL correta do Django #}
+                                        <button class="btn btn-danger btn-icon-sm"
+                                                title="Excluir (Rascunho)"
+                                                data-galeria-pk="{{ galeria.pk }}"
+                                                data-delete-url="{% url 'repositorio:excluir_galeria' pk=galeria.pk %}"
+                                                onclick="confirmDelete(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    Você ainda não criou nenhuma galeria. Utilize o botão **Nova Galeria** para começar.
+                </div>
+            {% endif %}
+        </div>
+        {# Rodapé com links de paginação, se houver #}
+        {# A Paginação será adicionada conforme sua necessidade #}
+    </div>
+</div>
+
+{# Formulário oculto para submissão de exclusão via JS #}
+<form id="delete-form" method="post" style="display: none;">
+    {% csrf_token %}
+    {# O PK e a action serão definidos dinamicamente pelo JS #}
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/repositorio/gerenciar_galerias.js' %}"></script>
+{% endblock %}

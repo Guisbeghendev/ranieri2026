@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Upload de Imagens - Repositório{% endblock %}
+
+{% block content %}
+
+<div class="dashboard-main-container">
+    <div class="dashboard-header mb-3">
+        <h1 class="header-title">Área do Fotógrafo</h1>
+        <p class="header-subtitle">Gestão de Mídias e Galerias</p>
+    </div>
+
+    {# Exibição das mensagens do Django #}
+    {% if messages %}
+        <ul class="messages p-0">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <div class="card p-3">
+        <h2 class="card-header">Upload de Novas Imagens</h2>
+        <div class="card-body">
+            <p class="section-description">
+                Selecione uma ou mais imagens em alta resolução. O sistema fará o upload e processará as miniaturas em segundo plano.
+            </p>
+
+            <form method="post" enctype="multipart/form-data" id="upload-form">
+                {% csrf_token %}
+
+                <div class="form-group mb-4" id="id_arquivos_group">
+                    <label class="form-label" for="id_arquivos">{{ form.arquivos.label }}</label>
+
+                    {# Área visual de Drag and Drop #}
+                    <div class="file-upload-wrapper" id="file-upload-area">
+                        <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                        <p class="upload-label-text">
+                            Clique para selecionar ou arraste e solte arquivos aqui
+                        </p>
+                        <p class="upload-info-text" id="file-count-text">
+                            Nenhum arquivo selecionado.
+                        </p>
+                    </div>
+
+                    {# Input de arquivo real (oculto) #}
+                    {{ form.arquivos }}
+
+                    <small class="form-help">Tipos permitidos: JPG, PNG. O sistema suporta upload múltiplo.</small>
+
+                    {# Exibição de erros do campo (se houver) #}
+                    {% for error in form.arquivos.errors %}
+                        <p class="form-error">{{ error }}</p>
+                    {% endfor %}
+                </div>
+
+                <div class="text-center mt-3">
+                    <button type="submit" class="btn btn-primary btn-lg" id="submit-button" disabled>
+                        <i class="fas fa-upload mr-1"></i> Iniciar Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/repositorio/upload_imagem.js' %}"></script>
+{% endblock %}

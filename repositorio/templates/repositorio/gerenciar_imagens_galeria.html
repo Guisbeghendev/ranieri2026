@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Gerenciar Imagens da Galeria: {{ galeria.nome }}{% endblock %}
+
+{% block content %}
+
+<div class="dashboard-main-container">
+    <div class="dashboard-header mb-3">
+        <h1 class="header-title">Gerenciar Conteúdo</h1>
+        {# CORRIGIDO: galeria.titulo -> galeria.nome #}
+        <p class="header-subtitle">Galeria: <span class="text-primary font-bold">{{ galeria.nome }}</span></p>
+    </div>
+
+    {# Exibição das mensagens do Django #}
+    {% if messages %}
+        <ul class="messages p-0">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <div class="card p-3">
+        <div class="card-header mb-3">
+            <h2 class="section-title">Anexar e Remover Imagens</h2>
+            <p class="section-description">
+                Clique nas imagens para selecioná-las ou desmarcá-las da galeria. Apenas as imagens marcadas serão salvas.
+            </p>
+        </div>
+
+        <form method="post" id="image-selection-form">
+            {% csrf_token %}
+
+            {% if todas_imagens_repositorio %}
+                <div class="image-picker-grid">
+                    {% for imagem in todas_imagens_repositorio %}
+                        {# O cartão da imagem é o alvo do clique JS #}
+                        <div class="image-card {% if imagem in galeria.imagens.all or imagem.galeria.pk == galeria.pk %}is-selected{% endif %}" data-image-id="{{ imagem.pk }}">
+                            <img src="{{ imagem.miniatura.url }}" alt="{{ imagem.nome_original }}" class="image-card-thumb">
+
+                            {# Checkbox oculto. O nome 'imagens' deve corresponder ao campo do Formulário de gerenciamento ou ser lido na View #}
+                            <input type="checkbox"
+                                   name="imagens"
+                                   value="{{ imagem.pk }}"
+                                   id="checkbox_{{ imagem.pk }}"
+                                   {% if imagem in galeria.imagens.all or imagem.galeria.pk == galeria.pk %}checked{% endif %}>
+
+                            {# Indicador visual de seleção #}
+                            <span class="selection-indicator">
+                                <i class="fas fa-check"></i>
+                            </span>
+
+                            <div class="image-card-info">
+                                {{ imagem.nome_original|truncatechars:30 }}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-warning">
+                    Nenhuma imagem disponível no repositório para anexar. Faça o upload primeiro.
+                </div>
+            {% endif %}
+
+            <div class="text-right card-footer mt-4">
+                <a href="{% url 'repositorio:gerenciar_galerias' %}" class="btn btn-back mr-2">
+                    <i class="fas fa-arrow-left mr-1"></i> Voltar para Galerias
+                </a>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save mr-1"></i> Salvar Imagens Anexadas
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/repositorio/gerenciar_imagens_galeria.js' %}"></script>
+{% endblock %}

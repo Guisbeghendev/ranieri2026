@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% load static %}
+{% load django_bootstrap5 %}
+
+{% block title %}
+    {% if form.instance.pk %}
+        {# CORRIGIDO: form.instance.titulo -> form.instance.nome #}
+        Editar Galeria: {{ form.instance.nome }}
+    {% else %}
+        Criar Nova Galeria
+    {% endif %}
+    - Repositório
+{% endblock %}
+
+{% block content %}
+
+<div class="dashboard-main-container">
+    <div class="dashboard-header mb-3">
+        <h1 class="header-title">Área do Fotógrafo</h1>
+        <p class="header-subtitle">Gestão de Mídias e Galerias</p>
+    </div>
+
+    {# Exibição das mensagens do Django #}
+    {% if messages %}
+        <ul class="messages p-0">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <div class="card p-3">
+        {# Verifica se é Edição ou Criação para definir o título #}
+        <h2 class="card-header">
+            {% if form.instance.pk %}
+                {# CORRIGIDO: form.instance.titulo -> form.instance.nome #}
+                Editar Galeria: **{{ form.instance.nome }}**
+            {% else %}
+                Criar Nova Galeria
+            {% endif %}
+        </h2>
+
+        <div class="card-body">
+            <p class="section-description">
+                Preencha os dados básicos da galeria. Após a criação, você poderá vincular as imagens que foram enviadas pelo painel de Upload.
+            </p>
+
+            <form method="post">
+                {% csrf_token %}
+
+                {# Título da Galeria (CORRIGIDO: form.titulo -> form.nome) #}
+                <div class="form-group mb-4">
+                    <label class="form-label" for="{{ form.nome.id_for_label }}">{{ form.nome.label }}</label>
+                    {{ form.nome }}
+                    <small class="form-help">{{ form.nome.help_text }}</small>
+                    {% for error in form.nome.errors %}
+                        <p class="form-error">{{ error }}</p>
+                    {% endfor %}
+                </div>
+
+                {# Descrição da Galeria #}
+                <div class="form-group mb-4">
+                    <label class="form-label" for="{{ form.descricao.id_for_label }}">{{ form.descricao.label }}</label>
+                    {{ form.descricao }}
+                    <small class="form-help">{{ form.descricao.help_text }}</small>
+                    {% for error in form.descricao.errors %}
+                        <p class="form-error">{{ error }}</p>
+                    {% endfor %}
+                </div>
+
+                {# Status da Galeria (Rascunho/Pública/Arquivada) #}
+                <div class="form-group mb-4">
+                    <label class="form-label">{{ form.status.label }}</label>
+                    {{ form.status }}
+                    <small class="form-help">{{ form.status.help_text }}</small>
+                    {% for error in form.status.errors %}
+                        <p class="form-error">{{ error }}</p>
+                    {% endfor %}
+                </div>
+
+                {# Configuração de Watermark (ADICIONADO) #}
+                <div class="form-group mb-4">
+                    <label class="form-label">{{ form.watermark_config.label }}</label>
+                    {{ form.watermark_config }}
+                    <small class="form-help">{{ form.watermark_config.help_text }}</small>
+                    {% for error in form.watermark_config.errors %}
+                        <p class="form-error">{{ error }}</p>
+                    {% endfor %}
+                </div>
+
+                {# Grupos de Acesso (CheckboxSelectMultiple) (CORRIGIDO: form.grupos -> form.grupos_acesso) #}
+                <div class="form-group mb-4">
+                    <label class="form-label">{{ form.grupos_acesso.label }}</label>
+                    {# O Django renderiza os widgets de múltipla escolha. Usa-se o `ul` list-style: none no main.css #}
+                    {{ form.grupos_acesso }}
+                    <small class="form-help">Selecione os grupos de usuários que terão acesso a esta galeria no App Galerias.</small>
+                    {% for error in form.grupos_acesso.errors %}
+                        <p class="form-error">{{ error }}</p>
+                    {% endfor %}
+                </div>
+
+                <div class="text-right card-footer mt-3">
+                    {# Botão de Voltar #}
+                    <a href="{% url 'repositorio:gerenciar_galerias' %}" class="btn btn-back mr-2">
+                        Voltar
+                    </a>
+
+                    {# Botão de Salvar/Criar #}
+                    <button type="submit" class="btn btn-primary">
+                        {% if form.instance.pk %}
+                            <i class="fas fa-save mr-1"></i> Salvar Alterações
+                        {% else %}
+                            <i class="fas fa-plus-circle mr-1"></i> Criar Galeria
+                        {% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

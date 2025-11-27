@@ -3,8 +3,9 @@ from django.contrib.auth.models import AbstractUser, Group as AuthGroup
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.db.models import signals
-from django.db.models.signals import post_save
-from django.dispatch import receiver
+# As importações de signals (post_save, receiver) não são mais necessárias aqui
+# from django.db.models.signals import post_save
+# from django.dispatch import receiver
 
 
 # ==============================================================================
@@ -93,10 +94,6 @@ class Turma(models.Model):
         verbose_name=_("Turma Ativa")
     )
 
-    # Este campo será adicionado DEPOIS da classe RegistroProfessor ser definida
-    # pois a declaração `Turma.add_to_class` no código original está correta
-    # e deve ser mantida após a classe RegistroProfessor.
-
     class Meta:
         verbose_name = _("Turma")
         verbose_name_plural = _("Turmas")
@@ -115,7 +112,7 @@ class RegistroProfessor(RegistroBase):
         verbose_name=_("Tipo de Professor")
     )
     turmas = models.ManyToManyField(
-        Turma,
+        'Turma', # CORREÇÃO: Usar string para referência futura
         blank=True,
         related_name='professores_adicionais',
         verbose_name=_("Turmas Adicionais")
@@ -275,11 +272,12 @@ class CustomUser(AbstractUser):
         verbose_name=_("Pode gerenciar todas as galerias")
     )
 
-    # ATUALIZADO: on_delete=models.CASCADE em todos os OneToOneFields.
-    # A exclusão do CustomUser deleta em cascata o Registro e o Profile associado.
+    # CORREÇÃO: on_delete alterado de CASCADE para SET_NULL em todos os Registros.
+    # Se o CustomUser for deletado, a Entidade de Registro permanece, mas a ligação
+    # com o usuário é quebrada (definida como NULL).
     registro_aluno = models.OneToOneField(
         RegistroAluno,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL, # <--- CORRIGIDO
         null=True,
         blank=True,
         related_name='usuario',
@@ -287,7 +285,7 @@ class CustomUser(AbstractUser):
     )
     registro_professor = models.OneToOneField(
         RegistroProfessor,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL, # <--- CORRIGIDO
         null=True,
         blank=True,
         related_name='usuario',
@@ -295,7 +293,7 @@ class CustomUser(AbstractUser):
     )
     registro_colaborador = models.OneToOneField(
         RegistroColaborador,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL, # <--- CORRIGIDO
         null=True,
         blank=True,
         related_name='usuario',
@@ -303,7 +301,7 @@ class CustomUser(AbstractUser):
     )
     registro_responsavel = models.OneToOneField(
         RegistroResponsavel,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL, # <--- CORRIGIDO
         null=True,
         blank=True,
         related_name='usuario',
@@ -311,7 +309,7 @@ class CustomUser(AbstractUser):
     )
     registro_ure = models.OneToOneField(
         RegistroURE,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL, # <--- CORRIGIDO
         null=True,
         blank=True,
         related_name='usuario',
@@ -319,7 +317,7 @@ class CustomUser(AbstractUser):
     )
     registro_visitante = models.OneToOneField(
         RegistroOutrosVisitantes,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL, # <--- CORRIGIDO
         null=True,
         blank=True,
         related_name='usuario',
@@ -416,7 +414,8 @@ class Profile(models.Model):
 
     user = models.OneToOneField(
         CustomUser,
-        # on_delete=models.CASCADE garante que o Profile seja deletado com o CustomUser.
+        # CORRETO: A exclusão do CustomUser DEVE deletar em cascata o Profile,
+        # pois Profile só existe em função do CustomUser.
         on_delete=models.CASCADE,
         related_name='profile',
         verbose_name=_("Usuário Associado")
@@ -543,9 +542,8 @@ class MembroGrupo(models.Model):
         verbose_name=_("Grupo")
     )
 
-    # ATUALIZADO: on_delete=models.CASCADE em todos os ForeignKeys para entidades
-    # de registro. Se uma entidade de registro for deletada (o que acontece
-    # quando o CustomUser é deletado), a associação MembroGrupo deve ser limpa.
+    # Correto: on_delete=models.CASCADE. Se o Registro (Aluno, Professor, etc.) for apagado,
+    # a associação MembroGrupo DEVE ser apagada em cascata.
     aluno = models.ForeignKey(
         RegistroAluno,
         on_delete=models.CASCADE,
@@ -669,11 +667,6 @@ class JSONUpload(models.Model):
 
 
 # ==============================================================================
-# 6. SIGNALS (Garante a Integridade Referencial)
+# 6. SIGNALS (Garante a Integridade Referencial) - Removido o duplicado
 # ==============================================================================
-
-@receiver(post_save, sender=CustomUser)
-def create_user_profile(sender, instance, created, **kwargs):
-    """Cria um objeto Profile automaticamente quando um novo CustomUser é criado."""
-    if created:
-        Profile.objects.create(user=instance)
+# O signal post_save que cria o Profile foi movido para users/signals.py.

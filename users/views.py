@@ -223,113 +223,108 @@ def registration_create(request):
                     tipo_usuario == CustomUserTipo.COLABORADOR.value
             )
 
-            try:
-                with transaction.atomic():
-                    registro_obj = None
+            # 🎯 CORREÇÃO DE DEBUG: Removido o bloco try...except que estava capturando
+            # o erro fatal (500) do Python e o transformando em uma mensagem genérica (200).
+            # O erro REAL será exibido no console agora.
 
-                    # 1. CRIAÇÃO OU VÍNCULO DA ENTIDADE DE REGISTRO
+            with transaction.atomic():
+                registro_obj = None
+                field_name = None  # NOVO: Variável para armazenar o nome do campo FK
 
-                    if tipo_usuario == CustomUserTipo.ALUNO.value:
-                        # O form.clean já buscou e validou o objeto RegistroAluno
-                        registro_obj = registros_a_vincular['aluno_registro']
+                # 1. CRIAÇÃO OU VÍNCULO DA ENTIDADE DE REGISTRO
 
-                    elif tipo_usuario == CustomUserTipo.PROFESSOR.value:
-                        # CORREÇÃO: Usa o objeto RegistroProfessor encontrado pelo forms.py
-                        if 'professor_registro' in registros_a_vincular:
-                            registro_obj = registros_a_vincular['professor_registro']
-                            # Atualiza o campo específico do objeto pré-existente
-                            registro_obj.tipo_professor = data['tipo_professor']
-                            registro_obj.save()
-                        # Se não estiver no 'registros_a_vincular', o form.clean() já lançou um erro.
+                if tipo_usuario == CustomUserTipo.ALUNO.value:
+                    # O form.clean já buscou e validou o objeto RegistroAluno
+                    registro_obj = registros_a_vincular['aluno_registro']
+                    field_name = 'registro_aluno'
 
-                    elif tipo_usuario == CustomUserTipo.COLABORADOR.value:
-                        # REVERTIDO: Cria novo RegistroColaborador (com is_active=False por padrão)
-                        registro_obj = RegistroColaborador.objects.create(
-                            nome_completo=nome_completo,
-                            funcao=data['funcao_colaborador']
-                        )
+                elif tipo_usuario == CustomUserTipo.PROFESSOR.value:
+                    # CORREÇÃO: Usa o objeto RegistroProfessor encontrado pelo forms.py
+                    if 'professor_registro' in registros_a_vincular:
+                        registro_obj = registros_a_vincular['professor_registro']
+                        # Atualiza o campo específico do objeto pré-existente
+                        registro_obj.tipo_professor = data['tipo_professor']
+                        registro_obj.save()
+                        field_name = 'registro_professor'
+                    # Se não estiver no 'registros_a_vincular', o form.clean() já lançou um erro.
 
-                    elif tipo_usuario == CustomUserTipo.RESPONSAVEL.value:
-                        # Cria novo RegistroResponsavel e adiciona dependentes
-                        registro_obj = RegistroResponsavel.objects.create(
-                            nome_completo=nome_completo
-                        )
-                        # O M2M é salvo APÓS o objeto, mas como estamos no atomic block, é seguro
-                        if 'dependentes' in registros_a_vincular:
-                            registro_obj.alunos.set(registros_a_vincular['dependentes'])
-
-                    elif tipo_usuario == CustomUserTipo.URE.value:
-                        # Cria novo RegistroURE
-                        registro_obj = RegistroURE.objects.create(
-                            nome_completo=nome_completo,
-                            funcao=data['funcao_ure']
-                        )
-
-                    elif tipo_usuario == CustomUserTipo.OUTRO_VISITANTE.value:
-                        # Cria novo RegistroOutrosVisitantes
-                        registro_obj = RegistroOutrosVisitantes.objects.create(
-                            nome_completo=nome_completo,
-                            descricao=data['descricao_vinculo']
-                        )
-
-                    # 2. CRIAÇÃO DO CUSTOMUSER e VÍNCULO
-
-                    # Mapeia nome_completo para first_name e last_name
-                    partes_nome = nome_completo.split(' ', 1)
-                    first_name = partes_nome[0]
-                    last_name = partes_nome[1] if len(partes_nome) > 1 else ''
-
-                    new_user = CustomUser.objects.create_user(
-                        username=data['username'],
-                        email=data['email'],
-                        password=data['password'],
-                        tipo_usuario=tipo_usuario,
-                        first_name=first_name,
-                        last_name=last_name,
-                        # Aplica a regra de aprovação manual
-                        is_active=is_active_initial
+                elif tipo_usuario == CustomUserTipo.COLABORADOR.value:
+                    # REVERTIDO: Cria novo RegistroColaborador (com is_active=False por padrão)
+                    registro_obj = RegistroColaborador.objects.create(
+                        nome_completo=nome_completo,
+                        funcao=data['funcao_colaborador']
                     )
+                    field_name = 'registro_colaborador'
 
-                    # 3. Faz o link OneToOne
-                    if registro_obj:
-                        if tipo_usuario == CustomUserTipo.ALUNO.value:
-                            new_user.registro_aluno = registro_obj
-                        elif tipo_usuario == CustomUserTipo.PROFESSOR.value:
-                            new_user.registro_professor = registro_obj
-                        elif tipo_usuario == CustomUserTipo.COLABORADOR.value:
-                            new_user.registro_colaborador = registro_obj
-                        elif tipo_usuario == CustomUserTipo.RESPONSAVEL.value:
-                            new_user.registro_responsavel = registro_obj
-                        elif tipo_usuario == CustomUserTipo.URE.value:
-                            new_user.registro_ure = registro_obj
-                        elif tipo_usuario == CustomUserTipo.OUTRO_VISITANTE.value:
-                            new_user.registro_visitante = registro_obj
+                elif tipo_usuario == CustomUserTipo.RESPONSAVEL.value:
+                    # Cria novo RegistroResponsavel e adiciona dependentes
+                    registro_obj = RegistroResponsavel.objects.create(
+                        nome_completo=nome_completo
+                    )
+                    # O M2M é salvo APÓS o objeto, mas como estamos no atomic block, é seguro
+                    if 'dependentes' in registros_a_vincular:
+                        registro_obj.alunos.set(registros_a_vincular['dependentes'])
+                    field_name = 'registro_responsavel'
 
-                        # Salva o vínculo no CustomUser
-                        # NOTE: Este save dispara o post_save que cria o Profile
-                        new_user.save()
+                elif tipo_usuario == CustomUserTipo.URE.value:
+                    # Cria novo RegistroURE
+                    registro_obj = RegistroURE.objects.create(
+                        nome_completo=nome_completo,
+                        funcao=data['funcao_ure']
+                    )
+                    field_name = 'registro_ure'
 
-                        # O signal post_save cuidará da criação do Profile.
+                elif tipo_usuario == CustomUserTipo.OUTRO_VISITANTE.value:
+                    # Cria novo RegistroOutrosVisitantes
+                    registro_obj = RegistroOutrosVisitantes.objects.create(
+                        nome_completo=nome_completo,
+                        descricao=data['descricao_vinculo']
+                    )
+                    field_name = 'registro_visitante'
 
-                    messages.success(request, f'Cadastro concluído com sucesso! Bem-vindo(a), {first_name}.')
+                # 2. CRIAÇÃO DO CUSTOMUSER (Primeiro Save que dispara o signal e cria o Profile)
 
-                    if is_active_initial:
-                        # Se ativo (Aluno, Responsável, URE, Outros), faz o login automático
-                        auth_login(request, new_user)
-                        return redirect(reverse('users:dashboard'))
-                    else:
-                        # Se inativo (Professor ou Colaborador), informa sobre a aprovação
-                        messages.info(request,
-                                      f"Sua conta de {new_user.get_tipo_usuario_display()} foi criada e está pendente de aprovação administrativa. Você será notificado após a ativação.")
-                        # 🎯 CORREÇÃO: Adicionado () em get_tipo_usuario_display() para evitar functools.partial
-                        return redirect(reverse('users:login'))  # Redireciona para a página de login
+                # Mapeia nome_completo para first_name e last_name
+                partes_nome = nome_completo.split(' ', 1)
+                first_name = partes_nome[0]
+                last_name = partes_nome[1] if len(partes_nome) > 1 else ''
 
+                # Chamada de create_user JÁ SALVA o objeto e dispara o post_save (cria o Profile)
+                new_user = CustomUser.objects.create_user(
+                    username=data['username'],
+                    email=data['email'],
+                    password=data['password'],
+                    tipo_usuario=tipo_usuario,
+                    first_name=first_name,
+                    last_name=last_name,
+                    # Aplica a regra de aprovação manual
+                    is_active=is_active_initial
+                )
 
-            except Exception as e:
-                # Se algo falhar (ex: IntegrityError ou falha no save()), o atomic reverte
-                messages.error(request,
-                               f'Ocorreu um erro inesperado durante o cadastro. Por favor, tente novamente.')
-                # Opcional: print(e) para debug
+                # 3. Faz o link OneToOne (SEGUNDO SAVE - ONDE ESTAVA O ERRO DE INTEGRIDADE)
+                if registro_obj and field_name:
+                    # Atribui a FK ao objeto CustomUser na memória
+                    setattr(new_user, field_name, registro_obj)
+
+                    # CORREÇÃO CRÍTICA: Use update_fields para persistir o vínculo (FK)
+                    # sem disparar o post_save signal uma segunda vez.
+                    new_user.save(update_fields=[field_name])
+
+                # O signal post_save já cuidou da criação do Profile no primeiro save (do create_user).
+
+                messages.success(request, f'Cadastro concluído com sucesso! Bem-vindo(a), {first_name}.')
+
+                if is_active_initial:
+                    # Se ativo (Aluno, Responsável, URE, Outros), faz o login automático
+                    auth_login(request, new_user)
+                    return redirect(reverse('users:dashboard'))
+                else:
+                    # Se inativo (Professor ou Colaborador), informa sobre a aprovação
+                    messages.info(request,
+                                  f"Sua conta de {new_user.get_tipo_usuario_display()} foi criada e está pendente de aprovação administrativa. Você será notificado após a ativação.")
+                    # 🎯 CORREÇÃO: Adicionado () em get_tipo_usuario_display() para evitar functools.partial
+                    return redirect(reverse('users:login'))  # Redireciona para a página de login
+
 
         # Se o form não for válido (inclui erros do clean()), re-renderiza
         else:

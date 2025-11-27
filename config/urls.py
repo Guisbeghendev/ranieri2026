@@ -27,8 +27,8 @@ urlpatterns = [
     # 🎯 NOVO: URLs do App de Suporte (Help Desk)
     path('suporte/', include(('suporte.urls', 'suporte'), namespace='suporte')),
 
-    # URLs do App Administrativo (Interface Customizada para Fotógrafo)
-    # path('repositorio-admin/', include('repositorio.urls')),
+    # 🎯 NOVO: URLs do App Administrativo (Interface Customizada para Fotógrafo)
+    path('repositorio-admin/', include(('repositorio.urls', 'repositorio'), namespace='repositorio')),
 ]
 
 # Configuração para servir STATIC e MEDIA em ambiente de desenvolvimento
@@ -37,4 +37,4 @@ if settings.DEBUG:
     # Apenas para garantir que o Django sirva os arquivos estáticos e de mídia em DEV
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
     urlpatterns += static(settings.MEDIA_URL,
-                          document_root=settings.MEDIA_ROOT)  # Descomentar quando MEDIA_ROOT for definido
+                          document_root=settings.MEDIA_ROOT)

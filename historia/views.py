@@ -27,29 +27,47 @@ class LivroDigitalView(TemplateView):
             # Se o parâmetro for inválido (não é um número), assume a página 1
             capitulo_ordem = 1
 
-        # 2. Busca o Capítulo Atual
-        try:
-            # Usa get_object_or_404 para buscar pelo campo 'ordem_exibicao'
-            capitulo_atual = HistoricoCapitulo.objects.get(ordem_exibicao=capitulo_ordem)
-        except HistoricoCapitulo.DoesNotExist:
-            # Se a página solicitada não existir (ex: /historia/?page=999), retorna 404
-            raise Http404("Capítulo não encontrado ou sequência inválida.")
+        capitulo_atual = None
+        proximo_capitulo = None
+        capitulo_anterior = None
+        total_capitulos = HistoricoCapitulo.objects.count()
 
-        # 3. Busca o Próximo e o Anterior (sem gerar exceção se não existirem)
+        # 2. Busca o Capítulo Atual (Somente se houver capítulos e a ordem for válida)
+        if total_capitulos > 0:
+            try:
+                # Se a ordem solicitada for maior que o total ou menor que 1, tentamos buscar o primeiro.
+                if capitulo_ordem > total_capitulos or capitulo_ordem < 1:
+                    capitulo_ordem = 1
 
-        # Próximo Capítulo
-        ordem_proximo = capitulo_ordem + 1
-        proximo_capitulo = HistoricoCapitulo.objects.filter(
-            ordem_exibicao=ordem_proximo
-        ).first()
+                # Busca o capítulo pela ordem. Se não existir, a exceção é capturada abaixo.
+                capitulo_atual = HistoricoCapitulo.objects.get(ordem_exibicao=capitulo_ordem)
 
-        # Capítulo Anterior
-        ordem_anterior = capitulo_ordem - 1
-        capitulo_anterior = HistoricoCapitulo.objects.filter(
-            ordem_exibicao=ordem_anterior
-        ).first()
+            except HistoricoCapitulo.DoesNotExist:
+                # Se o capítulo específico não for encontrado, mas o total > 0,
+                # e não conseguimos reverter para a página 1 (o que é improvável se a ordem for bem mantida),
+                # levantamos o 404, mas a lógica acima já tenta garantir que isso não ocorra
+                # se pelo menos um capítulo existir.
+                # No entanto, se total_capitulos for 0, simplesmente 'capitulo_atual' permanece None.
+                if capitulo_ordem > 0:
+                    # Para tratar o caso em que a ordem solicitada é válida, mas o objeto sumiu
+                    raise Http404("Capítulo não encontrado ou sequência inválida.")
+
+        # 3. Busca o Próximo e o Anterior (somente se houver um capítulo atual)
+        if capitulo_atual:
+            # Próximo Capítulo
+            ordem_proximo = capitulo_ordem + 1
+            proximo_capitulo = HistoricoCapitulo.objects.filter(
+                ordem_exibicao=ordem_proximo
+            ).first()
+
+            # Capítulo Anterior
+            ordem_anterior = capitulo_ordem - 1
+            capitulo_anterior = HistoricoCapitulo.objects.filter(
+                ordem_exibicao=ordem_anterior
+            ).first()
 
         # 4. Adiciona os dados ao contexto do template
+        # Se 'capitulo_atual' for None, o template deve exibir a mensagem de "sem conteúdo".
         context['capitulo'] = capitulo_atual
         context['capitulo_ordem'] = capitulo_ordem
 
@@ -58,6 +76,6 @@ class LivroDigitalView(TemplateView):
         context['capitulo_anterior'] = capitulo_anterior
 
         # Total de capítulos (útil para exibir "Página X de Y")
-        context['total_capitulos'] = HistoricoCapitulo.objects.count()
+        context['total_capitulos'] = total_capitulos
 
         return context

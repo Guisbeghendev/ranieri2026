@@ -6,78 +6,175 @@
 {% block content %}
 
 <div class="dashboard-main-container">
-    <div class="dashboard-header mb-3">
-        <h1 class="header-title">Gerenciar Conteúdo</h1>
-        {# CORRIGIDO: galeria.titulo -> galeria.nome #}
-        <p class="header-subtitle">Galeria: <span class="text-primary font-bold">{{ galeria.nome }}</span></p>
-    </div>
+<div class="dashboard-header mb-3">
+<h1 class="header-title">Gerenciar Conteúdo</h1>
+<p class="header-subtitle">Galeria: <span class="text-primary font-bold">{{ galeria.nome }}</span></p>
+</div>
 
-    {# Exibição das mensagens do Django #}
-    {% if messages %}
-        <ul class="messages p-0">
-            {% for message in messages %}
-                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
+{# Exibição das mensagens do Django #}
+{% if messages %}
+    <ul class="messages p-0">
+        {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
 
-    <div class="card p-3">
-        <div class="card-header mb-3">
-            <h2 class="section-title">Anexar e Remover Imagens</h2>
-            <p class="section-description">
-                Clique nas imagens para selecioná-las ou desmarcá-las da galeria. Apenas as imagens marcadas serão salvas.
-            </p>
-        </div>
+<div class="card p-3">
+    <div class="card-header mb-3">
+        <h2 class="section-title">Anexar e Remover Imagens</h2>
+        <p class="section-description">
+            Clique nas imagens para selecioná-las ou desmarcá-las da galeria. Apenas as imagens marcadas serão salvas.
+        </p>
 
-        <form method="post" id="image-selection-form">
-            {% csrf_token %}
-
-            {% if todas_imagens_repositorio %}
-                <div class="image-picker-grid">
-                    {% for imagem in todas_imagens_repositorio %}
-                        {# O cartão da imagem é o alvo do clique JS #}
-                        <div class="image-card {% if imagem in galeria.imagens.all or imagem.galeria.pk == galeria.pk %}is-selected{% endif %}" data-image-id="{{ imagem.pk }}">
-                            <img src="{{ imagem.miniatura.url }}" alt="{{ imagem.nome_original }}" class="image-card-thumb">
-
-                            {# Checkbox oculto. O nome 'imagens' deve corresponder ao campo do Formulário de gerenciamento ou ser lido na View #}
-                            <input type="checkbox"
-                                   name="imagens"
-                                   value="{{ imagem.pk }}"
-                                   id="checkbox_{{ imagem.pk }}"
-                                   {% if imagem in galeria.imagens.all or imagem.galeria.pk == galeria.pk %}checked{% endif %}>
-
-                            {# Indicador visual de seleção #}
-                            <span class="selection-indicator">
-                                <i class="fas fa-check"></i>
-                            </span>
-
-                            <div class="image-card-info">
-                                {{ imagem.nome_original|truncatechars:30 }}
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
+        {# NOVO: Indicador de Capa Atual #}
+        <div id="capa-atual-info" class="mt-2 p-2 border rounded bg-light-gray d-flex align-items-center">
+            <h4 class="m-0 mr-2 font-weight-bold" style="font-size: 1rem;">Capa Atual:</h4>
+            {% if galeria.capa and galeria.capa.arquivo_processado %}
+                {# Adiciona a miniatura da capa #}
+                <img id="capa-thumb"
+                     src="{{ galeria.capa.arquivo_processado.url }}"
+                     alt="Capa da Galeria"
+                     class="thumb-capa-indicator mr-2"
+                     style="width: 30px; height: 30px; object-fit: cover; border-radius: 3px;">
+                <span id="capa-text" class="text-success font-weight-bold">
+                    ID: {{ galeria.capa.pk }} ({{ galeria.capa.nome_arquivo_original|truncatechars:20 }})
+                </span>
             {% else %}
-                <div class="alert alert-warning">
-                    Nenhuma imagem disponível no repositório para anexar. Faça o upload primeiro.
-                </div>
+                {# Placeholder para a miniatura (invisível quando não há capa) #}
+                <img id="capa-thumb"
+                     src="https://placehold.co/30x30/ccc/fff?text=?"
+                     alt="Nenhuma Capa"
+                     class="thumb-capa-indicator mr-2"
+                     style="width: 30px; height: 30px; object-fit: cover; border-radius: 3px; display: none;">
+                <span id="capa-text" class="text-secondary">Nenhuma capa definida.</span>
             {% endif %}
-
-            <div class="text-right card-footer mt-4">
-                <a href="{% url 'repositorio:gerenciar_galerias' %}" class="btn btn-back mr-2">
-                    <i class="fas fa-arrow-left mr-1"></i> Voltar para Galerias
-                </a>
-
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save mr-1"></i> Salvar Imagens Anexadas
-                </button>
-            </div>
-        </form>
+            {# Placeholder para o ID da capa atual, útil para o JS #}
+            <span id="current-cover-id" data-cover-id="{{ galeria.capa.pk|default:'' }}" style="display: none;"></span>
+        </div>
     </div>
+
+    <form method="post" id="image-selection-form">
+        {% csrf_token %}
+
+        {% if todas_imagens_repositorio %}
+            <div class="image-picker-grid">
+                {% for imagem in todas_imagens_repositorio %}
+                    {# APLICADO: Adiciona data-image-url e data-original-name para o JS #}
+                    <div class="image-card
+                                {% if imagem.pk in imagens_vinculadas_pks %}is-selected{% endif %}
+                                {% if galeria.capa.pk == imagem.pk %}is-cover{% endif %}"
+                         data-image-id="{{ imagem.pk }}"
+                         data-image-url="{% if imagem.arquivo_processado %}{{ imagem.arquivo_processado.url }}{% endif %}"
+                         data-original-name="{{ imagem.nome_arquivo_original|truncatechars:20 }}">
+
+                        {% if imagem.arquivo_processado %}
+                            <img src="{{ imagem.arquivo_processado.url }}"
+                                 alt="{{ imagem.nome_arquivo_original }}"
+                                 class="image-card-thumb">
+                        {% else %}
+                            <div class="image-card-thumb placeholder-no-file">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <p>Erro de Arquivo!</p>
+                            </div>
+                        {% endif %}
+
+                        {# Checkbox oculto #}
+                        <input type="checkbox"
+                               name="imagens"
+                               value="{{ imagem.pk }}"
+                               id="checkbox_{{ imagem.pk }}"
+                               {% if imagem.pk in imagens_vinculadas_pks %}checked{% endif %}>
+
+                        {# Indicador visual de seleção #}
+                        <span class="selection-indicator">
+                            <i class="fas fa-check"></i>
+                        </span>
+
+                        {# NOVO: Indicador de Capa #}
+                        <span class="cover-indicator" title="Capa da Galeria">
+                            <i class="fas fa-star"></i>
+                        </span>
+
+                        {# NOVO: Botão/Área para Definir como Capa #}
+                        <div class="image-card-actions">
+                            <button type="button"
+                                    class="btn btn-sm btn-set-cover js-set-cover-btn"
+                                    data-image-pk="{{ imagem.pk }}"
+                                    data-galeria-pk="{{ galeria.pk }}"
+                                    title="Definir como Capa">
+                                <i class="fas fa-image mr-1"></i> Capa
+                            </button>
+                        </div>
+
+                        <div class="image-card-info">
+                            {{ imagem.nome_arquivo_original|truncatechars:30 }}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-warning">
+                Nenhuma imagem processada e disponível para anexar. Faça o upload ou aguarde o processamento.
+            </div>
+        {% endif %}
+
+        <div class="text-right card-footer mt-4">
+            <a href="{% url 'repositorio:gerenciar_galerias' %}" class="btn btn-back mr-2">
+                <i class="fas fa-arrow-left mr-1"></i> Voltar para Galerias
+            </a>
+
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save mr-1"></i> Salvar Imagens Anexadas
+            </button>
+        </div>
+    </form>
+</div>
+
+{# NOVO: Estrutura do Modal Customizado para feedback (Substitui alert()) #}
+<div id="custom-modal" class="custom-modal-overlay hidden">
+    <div class="custom-modal-content">
+        <h3 id="modal-title"></h3>
+        <p id="modal-message"></p>
+        <button id="modal-close-btn" class="btn btn-sm btn-primary mt-3">OK</button>
+    </div>
+</div>
+
 </div>
 
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/repositorio/gerenciar_imagens_galeria.js' %}"></script>
+<script>
+    // FIX CORRIGIDO: Geramos a URL com o placeholder '0' para satisfazer o requisito <int:imagem_pk> do Django.
+    // O erro NoReverseMatch ocorria porque o template tentava resolver a URL com a string 'IMAGEM_PK' no lugar de um número inteiro.
+    const DEFINIR_CAPA_URL_TEMPLATE_RAW = "{% url 'repositorio:definir_capa_galeria' galeria_pk=galeria.pk imagem_pk=0 %}";
+
+    // Depois, substituímos o '0' pela string 'IMAGEM_PK' que o JS usará para injeção.
+    const DEFINIR_CAPA_URL_TEMPLATE = DEFINIR_CAPA_URL_TEMPLATE_RAW.replace('/capa/0/definir/', '/capa/IMAGEM_PK/definir/');
+
+    // Expondo a constante globalmente para o arquivo JS externo
+    window.DEFINIR_CAPA_URL_TEMPLATE = DEFINIR_CAPA_URL_TEMPLATE;
+
+
+    // Função global para exibir o modal customizado (Substitui alert() e confirm())
+    function showCustomModal(title, message, type = 'info') {
+        const modal = document.getElementById('custom-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+
+        modalTitle.textContent = title;
+        // Classes de cor são definidas no CSS, mas alternadas no JS
+        modalTitle.className = type === 'error' ? 'text-danger' : 'text-success';
+        modalMessage.textContent = message;
+
+        modal.classList.remove('hidden');
+        modal.querySelector('#modal-close-btn').onclick = () => {
+            modal.classList.add('hidden');
+        };
+    }
+
+</script>
+<script src="{% static 'repositorio/js/gerenciar_imagens_galeria.js' %}"></script>
+
 {% endblock %}

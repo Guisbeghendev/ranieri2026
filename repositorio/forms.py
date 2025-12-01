@@ -45,6 +45,7 @@ class ImagemUploadForm(forms.Form):
 
 class GaleriaForm(forms.ModelForm):
     """Formulário para criar/editar a Galeria."""
+
     class Meta:
         model = Galeria
         # Campos conforme o models.py fornecido:
@@ -54,3 +55,7 @@ class GaleriaForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # Ajusta o widget para M2M de grupos
         self.fields['grupos_acesso'].widget = forms.CheckboxSelectMultiple()
+
+        # CORREÇÃO: Garante que o queryset do campo M2M esteja explicitamente definido
+        # para buscar todos os objetos do modelo Grupo, garantindo que as opções apareçam.
+        self.fields['grupos_acesso'].queryset = Grupo.objects.all()

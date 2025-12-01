@@ -4,25 +4,43 @@ from .views import (
     CriarGaleriaView,
     GerenciarGaleriasView,
     GerenciarImagensGaleriaView,
-    ExcluirGaleriaView,  # Importação da View de Exclusão
+    ExcluirGaleriaView,
+    AssinarUploadView,
+    ConfirmarUploadView,
+    PublicarGaleriaView,
+    ArquivarGaleriaView,
+    DefinirCapaGaleriaView,  # ADICIONADO: Importa a nova view de configuração de capa
 )
 
 app_name = 'repositorio'
 
 urlpatterns = [
-    # 1. Rota de Upload
+    # 1. Rota de Upload (Página de Upload)
     path('upload/', UploadImagemView.as_view(), name='upload_imagem'),
 
-    # 2. Rota de Criação e Edição da Galeria
+    # 1b. Rota para Assinar o Upload S3 (API de Upload)
+    path('upload/assinar/', AssinarUploadView.as_view(), name='assinar_upload'),
+
+    # 1c. Rota para Confirmação do Upload S3
+    path('upload/confirmar/', ConfirmarUploadView.as_view(), name='confirmar_upload'),
+
+    # ROTAS RELACIONADAS A GALERIAS
     path('galeria/criar/', CriarGaleriaView.as_view(), name='criar_galeria'),
     path('galeria/editar/<int:pk>/', CriarGaleriaView.as_view(), name='editar_galeria'),
-
-    # 3. Rota de Exclusão (usada pelo JS)
     path('galeria/excluir/<int:pk>/', ExcluirGaleriaView.as_view(), name='excluir_galeria'),
 
-    # 4. Listagem e Gestão das Galerias do Fotógrafo
-    path('galerias/', GerenciarGaleriasView.as_view(), name='gerenciar_galerias'),
+    # 2. Rota de Publicação de Galeria
+    path('galeria/publicar/<int:pk>/', PublicarGaleriaView.as_view(), name='publicar_galeria'),
 
-    # 5. Gerenciamento de Imagens vinculadas a uma Galeria específica
+    # Rota de Arquivamento de Galeria
+    path('galeria/arquivar/<int:pk>/', ArquivarGaleriaView.as_view(), name='arquivar_galeria'),
+
+    path('galerias/', GerenciarGaleriasView.as_view(), name='gerenciar_galerias'),
     path('galeria/imagens/<int:pk>/', GerenciarImagensGaleriaView.as_view(), name='gerenciar_imagens_galeria'),
+
+    # NOVO: Rota para Definir a Capa da Galeria (Endpoint AJAX)
+    # Recebe o PK da Galeria e o PK da Imagem a ser definida como capa
+    path('galeria/<int:galeria_pk>/capa/<int:imagem_pk>/definir/',
+         DefinirCapaGaleriaView.as_view(),
+         name='definir_capa_galeria'),
 ]

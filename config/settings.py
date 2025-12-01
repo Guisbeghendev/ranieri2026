@@ -8,9 +8,15 @@ import environ
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env(
-    DEBUG=(bool, False)
+    DEBUG=(bool, False),
+    # Adicionando as definições de tipo para Redis/Celery para robustez
+    REDIS_URL=(str, 'redis://localhost:6379/1'),
+    CELERY_BROKER_URL=(str, 'redis://localhost:6379/0'),
+    CELERY_RESULT_BACKEND=(str, 'redis://localhost:6379/0')
 )
 
+# Tenta ler o arquivo .env no diretório base
+# IMPORTANTE: O .env deve estar na raiz do projeto, um nível acima da pasta config.
 environ.Env.read_env(BASE_DIR / '.env')
 
 SECRET_KEY = env('SECRET_KEY')
@@ -50,6 +56,8 @@ INSTALLED_APPS = [
     'suporte',
     # Repositório (USANDO APPS.PY PARA CARREGAR OS SIGNALS)
     'repositorio.apps.RepositorioConfig',
+    # Celery beat para tarefas agendadas
+    'django_celery_beat',
     # Adicionar aqui apps de terceiros como celery-results se necessário
 ]
 
@@ -84,19 +92,21 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 # ==============================================================================
-# 3. BANCO DE DADOS (Configurado MANUALMENTE para PostgreSQL via environ)
+# 3. BANCO DE DADOS (Configuração EXPLICITA para PostgreSQL)
+# CORREÇÃO: Lê cada campo DB_* individualmente, resolvendo o KeyError: 'DATABASE_URL'.
 # ==============================================================================
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('DB_NAME'),        # Lê do .env
-        'USER': env('DB_USER'),        # Lê do .env
-        'PASSWORD': env('DB_PASSWORD'),# Lê do .env
+        'ENGINE': env('DB_ENGINE'),
+        'NAME': env('DB_NAME'),
+        'USER': env('DB_USER'),
+        'PASSWORD': env('DB_PASSWORD'),
         'HOST': env('DB_HOST', default='localhost'),
         'PORT': env('DB_PORT', default='5432'),
     }
 }
+
 
 # ==============================================================================
 # 4. VALIDAÇÃO DE SENHA
@@ -123,6 +133,9 @@ USE_TZ = True
 
 # ==============================================================================
 # 6. ARQUIVOS ESTÁTICOS E MÍDIA (S3)
+#
+# REGRA: Apenas arquivos de MÍDIA do repositório (usando Storage customizado)
+# vão para o S3. Arquivos ESTÁTICOS ficam locais.
 # ==============================================================================
 
 STATIC_URL = 'static/'
@@ -144,24 +157,39 @@ AWS_S3_REGION_NAME = env('AWS_S3_REGION_NAME', default='sa-east-1')
 # Variável de controle para simplificar a lógica (True se S3 estiver configurado)
 USE_S3 = all([AWS_STORAGE_BUCKET_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY])
 
-if USE_S3:
-    # 2. Configurações do Storage (CORRIGIDO: Aponta para a classe customizada)
-    DEFAULT_FILE_STORAGE = 'config.storages_conf.MediaStorage'
-    STATICFILES_STORAGE = 'config.storages_conf.StaticStorage'
+# Configuração do Endpoint S3
+if AWS_S3_REGION_NAME:
+    AWS_S3_ENDPOINT_URL = f'https://s3.{AWS_S3_REGION_NAME}.amazonaws.com'
+else:
+    AWS_S3_ENDPOINT_URL = None
 
-    # URL Base para acesso aos arquivos (necessário para que o Django gere URLs corretas)
-    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com'
-    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
+if USE_S3:
+    # ** CORREÇÃO MANDATÓRIA PARA O ERRO AccessControlListNotSupported **
+    # Desabilita o envio de ACLs, o que é rejeitado por buckets com 'Bucket Owner Enforced'.
+    AWS_DEFAULT_ACL = None
+    AWS_ACL = None
+
+    # 2. Configurações do Storage para MÍDIA (S3)
+
+    # DEFAULT_FILE_STORAGE aponta para o storage privado (para uploads genéricos)
+    DEFAULT_FILE_STORAGE = 'config.storages_conf.PrivateMediaStorage'
 
     # Configurações de segurança e cache
     AWS_S3_SIGNATURE_VERSION = 's3v4'
-    AWS_DEFAULT_ACL = 'public-read'
-    AWS_QUERYSTRING_AUTH = False
+    AWS_S3_VERIFY = True
+
+    # Nova configuração necessária para storages privados:
+    # O MEDIA_URL é usado como URL base para o FileField. Se o S3 for privado, este
+    # valor é apenas um placeholder.
+    MEDIA_URL = '/media-s3-proxy/'
 
 else:
     # Fallback para desenvolvimento local (se o S3 não estiver configurado)
     MEDIA_URL = '/media/'
     MEDIA_ROOT = BASE_DIR / 'media'
+    # Define o DEFAULT_FILE_STORAGE para o sistema de arquivos local
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+
 
 # ==============================================================================
 # 7. CHAVE PRIMÁRIA PADRÃO
@@ -195,9 +223,9 @@ ASGI_APPLICATION = 'config.asgi.application'
 
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels_redis.pubsub.RedisPubSubChannelLayer',
+        'BACKEND': 'channels_redis.pubsub.RedisPubsubChannelLayer',
         'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
+            "hosts": [env('REDIS_URL')],
         },
     },
 }
@@ -206,13 +234,46 @@ CHANNEL_LAYERS = {
 # 11. CONFIGURAÇÕES CELERY (Processamento Assíncrono)
 # ==============================================================================
 
-CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='redis://localhost:6379/0')
+# BROKER e BACKEND (Usando as variáveis definidas no environ.Env)
+CELERY_BROKER_URL = env('CELERY_BROKER_URL')
+CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND')
 
+# Fuso horário para Celery
+CELERY_TIMEZONE = TIME_ZONE
+
+# Configurações de conteúdo para evitar problemas de serialização
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = TIME_ZONE
 
+# Tarefas agendadas (Celery Beat)
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+# Desabilita o agendamento de tarefas padrão (usa o django_celery_beat)
+CELERY_BEAT_FOR_RAVEN = False
+
+# Configurações de tempo limite para tarefas do Celery (adicionado para robustez)
 CELERY_TASK_SOFT_TIME_LIMIT = 600
 CELERY_TASK_TIME_LIMIT = 900
+
+
+# ==============================================================================
+# 12. CONFIGURAÇÕES DE EMAIL (Fallback Simples)
+# ==============================================================================
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Se precisar de configuração SMTP real:
+# EMAIL_HOST = env('EMAIL_HOST', default='smtp.seudominio.com')
+# EMAIL_PORT = env.int('EMAIL_PORT', default=587)
+# EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
+# EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
+# EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+# DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='webmaster@localhost')
+
+# ==============================================================================
+# 13. CONFIGURAÇÕES DA APLICAÇÃO (Específicas do Projeto)
+# ==============================================================================
+
+# Variável usada no app 'repositorio' para limitar o número de uploads por usuário
+MAX_UPLOADS_PER_USER = 1000
+# Variável usada no app 'coral' para definir o número de itens na homepage
+HOMEPAGE_ITEMS_LIMIT = 9

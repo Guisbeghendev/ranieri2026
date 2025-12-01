@@ -1,7 +1,10 @@
 from django.db import models
 from django.conf import settings
-from users.models import Grupo  # Assumindo que 'Grupo' está em 'users/models.py'
-
+from config.storages_conf import PublicMediaStorage, PrivateMediaStorage
+from users.models import Grupo
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
+from django.utils import timezone
 
 # ==============================================================================
 # 1. Configuração da Marca D'água (WatermarkConfig)
@@ -26,7 +29,8 @@ class WatermarkConfig(models.Model):
     )
     arquivo_marca_dagua = models.ImageField(
         upload_to='watermarks/',
-        verbose_name='Arquivo (PNG com Transparência)'
+        verbose_name='Arquivo (PNG com Transparência)',
+        storage=PublicMediaStorage()
     )
     posicao = models.CharField(
         max_length=2,
@@ -51,25 +55,106 @@ class WatermarkConfig(models.Model):
         return self.nome
 
 
+# Adiciona um signal para excluir o arquivo do S3 quando o registro for deletado
+@receiver(pre_delete, sender=WatermarkConfig)
+def delete_watermark_file(sender, instance, **kwargs):
+    """
+    Deleta o arquivo de marca d'água do S3/Storage antes que o objeto seja
+    removido do banco de dados.
+    """
+    if instance.arquivo_marca_dagua:
+        instance.arquivo_marca_dagua.delete(save=False)
+
+
 # ==============================================================================
-# 2. Galeria (Contêiner Principal)
+# 2. Imagem (Rastreamento de Arquivos)
+# ==============================================================================
+class Imagem(models.Model):
+    """
+    Rastreia o arquivo original e o processado (com marca d'água/miniatura)
+    no S3 e o seu status de processamento.
+    """
+    PROCESS_STATUS = [
+        ('UPLOAD_PENDENTE', 'Upload Pendente'),
+        ('UPLOADED', 'Upload Concluído'),
+        ('PROCESSANDO', 'Processando'),
+        ('PROCESSADA', 'Processada'),
+        ('ERRO', 'Erro no Processamento'),
+    ]
+
+    fotografo = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='imagens_enviadas',
+        verbose_name='Fotógrafo'
+    )
+
+    nome_arquivo_original = models.CharField(
+        max_length=255,
+        verbose_name='Nome Original do Arquivo'
+    )
+
+    arquivo_original = models.FileField(
+        upload_to='repo/originais/',
+        max_length=500,
+        verbose_name='Arquivo Original',
+        storage=PrivateMediaStorage()
+    )
+
+    arquivo_processado = models.ImageField(
+        upload_to='repo/processadas/',
+        max_length=500,
+        null=True,
+        blank=True,
+        verbose_name='Arquivo Processado',
+        storage=PublicMediaStorage()
+    )
+
+    # Ligação com a Galeria (Usa string 'Galeria' para evitar importação circular)
+    galeria = models.ForeignKey(
+        'Galeria',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='imagens',
+        verbose_name='Galeria'
+    )
+
+    status_processamento = models.CharField(
+        max_length=20,
+        choices=PROCESS_STATUS,
+        default='UPLOAD_PENDENTE',
+        verbose_name='Status do Processamento'
+    )
+
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Imagem do Repositório'
+        verbose_name_plural = 'Imagens do Repositório'
+
+    def __str__(self):
+        return self.nome_arquivo_original
+
+
+# ==============================================================================
+# 3. Galeria (Contêiner Principal)
 # ==============================================================================
 class Galeria(models.Model):
     """
     Contêiner principal para agrupar imagens e definir quem tem acesso.
     """
     STATUS_CHOICES = [
-        ('RASCUNHO', 'Rascunho'),  # Recém-criada, sem imagens.
-        ('PROCESSANDO', 'Processando'),  # Upload/Processamento em andamento.
-        ('REVISAO', 'Pronta para Revisão'),  # Todas as imagens processadas, aguardando publicação.
-        ('PUBLICADA', 'Publicada'),  # Visível para os grupos designados.
-        ('ARQUIVADA', 'Arquivada'),  # Não visível.
+        ('PR', 'Rascunho'),
+        ('PC', 'Processando'),
+        ('RV', 'Pronta para Revisão'),
+        ('PB', 'Publicada'),
+        ('AR', 'Arquivada'),
     ]
 
     nome = models.CharField(max_length=255, verbose_name='Título da Galeria')
     descricao = models.TextField(blank=True, verbose_name='Descrição')
 
-    # FK para o criador da galeria (o fotógrafo/admin)
     fotografo = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -77,14 +162,22 @@ class Galeria(models.Model):
         verbose_name='Fotógrafo'
     )
 
-    # Acesso: Define quais grupos (App Users) podem ver esta galeria.
     grupos_acesso = models.ManyToManyField(
         Grupo,
         related_name='galerias_acessiveis',
         verbose_name='Grupos com Acesso'
     )
 
-    # Marca D'água Opcional
+    # Capa da Galeria (Referência direta, pois Imagem está definida acima)
+    capa = models.ForeignKey(
+        Imagem,
+        on_delete=models.SET_NULL,
+        related_name='galeria_capa',
+        null=True,
+        blank=True,
+        verbose_name='Imagem de Capa'
+    )
+
     watermark_config = models.ForeignKey(
         WatermarkConfig,
         on_delete=models.SET_NULL,
@@ -94,15 +187,15 @@ class Galeria(models.Model):
     )
 
     status = models.CharField(
-        max_length=20,
+        max_length=2,
         choices=STATUS_CHOICES,
-        default='RASCUNHO',
+        default='PR',
         verbose_name='Status de Publicação'
     )
 
-    # Rastreamento
     criado_em = models.DateTimeField(auto_now_add=True)
     publicada_em = models.DateTimeField(null=True, blank=True)
+    alterado_em = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = 'Galeria'
@@ -112,71 +205,21 @@ class Galeria(models.Model):
     def __str__(self):
         return f"{self.nome} ({self.status})"
 
+    def publicar(self):
+        status_mudou = self.status != 'PB'
+        self.status = 'PB'
+        if status_mudou:
+            self.publicada_em = timezone.now()
+            self.save(update_fields=['status', 'publicada_em', 'alterado_em'])
+        else:
+            self.save(update_fields=['status', 'alterado_em'])
+        return status_mudou
 
-# ==============================================================================
-# 3. Imagem (Rastreamento de Arquivos)
-# ==============================================================================
-class Imagem(models.Model):
-    """
-    Rastreia o arquivo original e o processado (com marca d'água/miniatura)
-    no S3 e o seu status de processamento.
-    """
-    PROCESS_STATUS = [
-        ('PENDENTE', 'Pendente de Upload'),  # O objeto está apenas no banco.
-        ('UPLOADED', 'Upload Concluído'),  # O arquivo original está no S3, aguardando processamento.
-        ('PROCESSANDO', 'Processando'),  # Tarefa Celery em execução.
-        ('PROCESSADA', 'Processada'),  # Miniatura/Watermark criada.
-        ('ERRO', 'Erro no Processamento'),
-    ]
-
-    nome_arquivo_original = models.CharField(
-        max_length=255,
-        verbose_name='Nome Original do Arquivo'
-    )
-
-    # Arquivo original (Full size - pode ser privado/assinado)
-    arquivo_original = models.FileField(
-        upload_to='repo/originais/',
-        max_length=500,  # Caminho longo para S3
-        verbose_name='Arquivo Original'
-    )
-
-    # Arquivo processado (Miniatura/Com Watermark - público para visualização)
-    arquivo_processado = models.ImageField(
-        upload_to='repo/processadas/',
-        max_length=500,  # Caminho longo para S3
-        null=True,
-        blank=True,
-        verbose_name='Arquivo Processado'
-    )
-
-    # Ligação com a Galeria (opcional no upload, obrigatório na publicação)
-    galeria = models.ForeignKey(
-        Galeria,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='imagens',
-        verbose_name='Galeria'
-    )
-
-    # Status de processamento
-    status_processamento = models.CharField(
-        max_length=20,
-        choices=PROCESS_STATUS,
-        default='PENDENTE',
-        verbose_name='Status do Processamento'
-    )
-
-    # Rastreamento
-    criado_em = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        verbose_name = 'Imagem do Repositório'
-        verbose_name_plural = 'Imagens do Repositório'
-
-    def __str__(self):
-        return self.nome_arquivo_original
+    def arquivar(self):
+        status_mudou = self.status != 'AR'
+        self.status = 'AR'
+        self.save(update_fields=['status', 'alterado_em'])
+        return status_mudou
 
 
 # ==============================================================================
@@ -199,11 +242,9 @@ class Curtida(models.Model):
         verbose_name='Imagem Curtida'
     )
 
-    # Rastreamento
     criado_em = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        # Garante que um usuário só possa curtir uma imagem uma única vez
         unique_together = ('usuario', 'imagem')
         verbose_name = 'Curtida'
         verbose_name_plural = 'Curtidas'

@@ -12,15 +12,27 @@
             <li><a href="{% url 'historia:livro_digital' %}">História</a></li>
             {# CORREÇÃO: Aponta para a rota de índice 'coral:index', que exibe os botões de escolha (coral_index.html) #}
             <li><a href="{% url 'coral:index' %}">Coral</a></li>
-            {# 🚨 CORREÇÃO: Link para o Índice Simoninha na Cozinha (Rota 'sim_cozinha:index') #}
+            {# Link para o Índice Simoninha na Cozinha (Rota 'sim_cozinha:index') #}
             <li><a href="{% url 'sim_cozinha:index' %}">Simoninha na Cozinha</a></li>
-            {# 🚨 CORREÇÃO: Link para o Índice Brincando & Dialogando (Rota 'brinc_dialogando:index') #}
+            {# Link para o Índice Brincando & Dialogando (Rota 'brinc_dialogando:index') #}
             <li><a href="{% url 'brinc_dialogando:index' %}">Brincando & Dialogando</a></li>
-            <li><a href="#">Galerias</a></li>
+
+            {# 🚨 ATUALIZAÇÃO: Link para Repositório (anteriormente Galerias). Visibilidade baseada no grupo de acesso. #}
+            {% if user.is_authenticated and user.is_superuser %}
+                {# O superuser pode gerenciar tudo #}
+                <li><a href="{% url 'repositorio:gerenciar_galerias' %}">Repositório</a></li>
+            {% elif user.is_authenticated and user.is_fotografo or user.is_fotografo_master %}
+                {# CORREÇÃO: Fotógrafo (normal ou master) acessa a gestão como "Repositório" #}
+                <li><a href="{% url 'repositorio:gerenciar_galerias' %}">Repositório</a></li>
+            {% else %}
+                {# CORREÇÃO: Usuário padrão ou anônimo vê o link público como "Repositório" #}
+                <li><a href="#">Repositório</a></li>
+            {% endif %}
+
 
             {% if user.is_authenticated %}
                 <li><a href="{% url 'users:dashboard' %}">Painel</a></li>
-                {# ✅ ADIÇÃO CORRIGIDA: Link para a nova rota 'mensagens:chat_list' #}
+                {# ADIÇÃO CORRIGIDA: Link para a nova rota 'mensagens:chat_list' #}
                 <li><a href="{% url 'mensagens:chat_list' %}">Mensagens</a></li>
                 <li>
                     <form method="post" action="{% url 'users:logout' %}">
@@ -29,7 +41,7 @@
                     </form>
                 </li>
             {% else %}
-                {# 🚨 ADIÇÃO: Link para Cadastro #}
+                {# ADIÇÃO: Link para Cadastro #}
                 <li><a href="{% url 'users:register' %}" class="btn-primary">Cadastro</a></li>
                 <li><a href="{% url 'users:login' %}" class="btn-primary btn-logout">Entrar</a></li>
             {% endif %}

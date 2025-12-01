@@ -71,11 +71,11 @@ class GaleriaAdmin(admin.ModelAdmin):
     """
     Configurações de exibição para o modelo Galeria no Admin.
     """
-    # CORREÇÃO: Adiciona 'capa_display' (o campo que mostra a miniatura) na listagem
-    list_display = ('nome', 'capa_display', 'fotografo', 'watermark_config', 'status', 'criado_em')
+    # CORRIGIDO: Adiciona 'data_do_evento' na listagem
+    list_display = ('nome', 'data_do_evento', 'capa_display', 'fotografo', 'watermark_config', 'status', 'criado_em')
 
     # Filtros laterais
-    list_filter = ('status', 'fotografo')
+    list_filter = ('status', 'fotografo', 'data_do_evento') # Adicionado 'data_do_evento'
 
     # Campos pesquisáveis
     search_fields = ('nome', 'descricao')
@@ -84,8 +84,24 @@ class GaleriaAdmin(admin.ModelAdmin):
     filter_horizontal = ('grupos_acesso',)
 
     # Define campos que não podem ser editados após a criação
-    # CORREÇÃO: Adiciona 'capa' aos campos somente leitura (é definida pela tela de gerenciamento, não aqui)
+    # CORRIGIDO: Adiciona 'data_do_evento' aos campos somente leitura (é definida pela tela de gerenciamento, não aqui)
     readonly_fields = ('criado_em', 'publicada_em', 'capa')
+
+    # CAMPOS EXIBIDOS NO FORMULÁRIO: Adiciona 'data_do_evento'
+    fieldsets = (
+        (None, {
+            # Adicionado 'data_do_evento'
+            'fields': ('nome', 'data_do_evento', 'descricao', 'status', 'fotografo')
+        }),
+        ('Configurações', {
+            'fields': ('watermark_config', 'capa'),
+            'classes': ('collapse',),
+        }),
+        ('Acesso', {
+            'fields': ('grupos_acesso',),
+            'description': 'Selecione quais grupos de usuários podem visualizar esta galeria.'
+        }),
+    )
 
     inlines = [ImagemInline]  # Adiciona a listagem de imagens na galeria
 

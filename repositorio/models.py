@@ -5,6 +5,7 @@ from users.models import Grupo
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django.utils import timezone
+from datetime import date # Importação necessária para DateField
 
 # ==============================================================================
 # 1. Configuração da Marca D'água (WatermarkConfig)
@@ -155,6 +156,13 @@ class Galeria(models.Model):
     nome = models.CharField(max_length=255, verbose_name='Título da Galeria')
     descricao = models.TextField(blank=True, verbose_name='Descrição')
 
+    # NOVO CAMPO: Data do Evento
+    data_do_evento = models.DateField(
+        default=date.today, # Define a data atual como padrão no formulário
+        verbose_name='Data do Evento',
+        help_text='A data em que o evento fotografado realmente ocorreu.'
+    )
+
     fotografo = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -200,7 +208,8 @@ class Galeria(models.Model):
     class Meta:
         verbose_name = 'Galeria'
         verbose_name_plural = 'Galerias'
-        ordering = ['-criado_em']
+        # ORDENAÇÃO ATUALIZADA para considerar a data do evento
+        ordering = ['-data_do_evento', '-criado_em']
 
     def __str__(self):
         return f"{self.nome} ({self.status})"

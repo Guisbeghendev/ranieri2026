@@ -48,12 +48,22 @@ Criar Nova Galeria
     <form method="post">
         {% csrf_token %}
 
-        {# Título da Galeria (CORRIGIDO: form.titulo -> form.nome) #}
+        {# Título da Galeria #}
         <div class="form-group mb-4">
             <label class="form-label" for="{{ form.nome.id_for_label }}">{{ form.nome.label }}</label>
             {{ form.nome }}
             <small class="form-help">{{ form.nome.help_text }}</small>
             {% for error in form.nome.errors %}
+                <p class="form-error">{{ error }}</p>
+            {% endfor %}
+        </div>
+
+        {# NOVO CAMPO: Data do Evento #}
+        <div class="form-group mb-4">
+            <label class="form-label" for="{{ form.data_do_evento.id_for_label }}">{{ form.data_do_evento.label }}</label>
+            {{ form.data_do_evento }}
+            <small class="form-help">{{ form.data_do_evento.help_text }}</small>
+            {% for error in form.data_do_evento.errors %}
                 <p class="form-error">{{ error }}</p>
             {% endfor %}
         </div>

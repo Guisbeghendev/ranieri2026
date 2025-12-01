@@ -3,6 +3,7 @@ from django.db import models
 from .models import Imagem, Galeria, WatermarkConfig
 # Assumindo a importação necessária, baseada no seu models.py
 from users.models import Grupo
+from datetime import date  # Importado para DateInput
 
 
 # --------------------------------------------------------------------------
@@ -48,14 +49,27 @@ class GaleriaForm(forms.ModelForm):
 
     class Meta:
         model = Galeria
-        # Campos conforme o models.py fornecido:
-        fields = ['nome', 'descricao', 'status', 'grupos_acesso', 'watermark_config']
+        # CAMPOS ATUALIZADOS: Adicionado 'data_do_evento'
+        fields = ['nome', 'data_do_evento', 'descricao', 'status', 'grupos_acesso', 'watermark_config']
+
+        widgets = {
+            # Novo widget para o campo DateField para melhor experiência do usuário
+            'data_do_evento': forms.DateInput(attrs={'type': 'date'}),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
         # Ajusta o widget para M2M de grupos
         self.fields['grupos_acesso'].widget = forms.CheckboxSelectMultiple()
 
-        # CORREÇÃO: Garante que o queryset do campo M2M esteja explicitamente definido
-        # para buscar todos os objetos do modelo Grupo, garantindo que as opções apareçam.
+        # Garante que o queryset do campo M2M esteja explicitamente definido
         self.fields['grupos_acesso'].queryset = Grupo.objects.all()
+
+        # Opcional: Adiciona classes CSS customizadas a todos os campos (exceto Checkbox/SelectMultiple)
+        # for name, field in self.fields.items():
+        #     if not isinstance(field.widget, (forms.CheckboxSelectMultiple, forms.SelectMultiple)):
+        #         if 'class' in field.widget.attrs:
+        #             field.widget.attrs['class'] += ' form-control'
+        #         else:
+        #             field.widget.attrs['class'] = 'form-control'

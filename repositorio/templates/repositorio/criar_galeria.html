@@ -98,6 +98,26 @@ Criar Nova Galeria
             {% endfor %}
         </div>
 
+        {# NOVO CAMPO: ACESSO PÚBLICO (Checkbox) - AJUSTADO PARA PADRÃO DE GRID #}
+        <div class="form-group mb-4">
+            <label class="form-label">Controle de Acesso Público</label>
+            {# Adiciona a mesma div container e lista para padronizar o estilo visual #}
+            <div class="access-groups-grid-container">
+                <ul>
+                    <li>
+                        <label class="form-label checkbox-label" for="{{ form.acesso_publico.id_for_label }}">
+                            {{ form.acesso_publico }}
+                            {{ form.acesso_publico.label }}
+                        </label>
+                    </li>
+                </ul>
+            </div>
+            <small class="form-help">{{ form.acesso_publico.help_text }}</small>
+            {% for error in form.acesso_publico.errors %}
+                <p class="form-error">{{ error }}</p>
+            {% endfor %}
+        </div>
+
         {# Grupos de Acesso (CheckboxSelectMultiple) - OTIMIZADO PARA GRID #}
         <div class="form-group mb-4">
             <label class="form-label">{{ form.grupos_acesso.label }}</label>

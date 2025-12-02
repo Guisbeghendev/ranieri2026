@@ -170,6 +170,13 @@ class Galeria(models.Model):
         verbose_name='Fotógrafo'
     )
 
+    # NOVO CAMPO: Define se a galeria é pública
+    acesso_publico = models.BooleanField(
+        default=False,
+        verbose_name='Acesso Público',
+        help_text='Se marcado, a galeria é visível para qualquer usuário, mesmo que não esteja logado.'
+    )
+
     grupos_acesso = models.ManyToManyField(
         Grupo,
         related_name='galerias_acessiveis',

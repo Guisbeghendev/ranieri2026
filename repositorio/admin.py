@@ -71,11 +71,12 @@ class GaleriaAdmin(admin.ModelAdmin):
     """
     Configurações de exibição para o modelo Galeria no Admin.
     """
-    # CORRIGIDO: Adiciona 'data_do_evento' na listagem
-    list_display = ('nome', 'data_do_evento', 'capa_display', 'fotografo', 'watermark_config', 'status', 'criado_em')
+    # CORRIGIDO: Adiciona 'data_do_evento' e 'acesso_publico' na listagem
+    list_display = ('nome', 'data_do_evento', 'acesso_publico', 'capa_display', 'fotografo', 'watermark_config', 'status', 'criado_em')
 
     # Filtros laterais
-    list_filter = ('status', 'fotografo', 'data_do_evento') # Adicionado 'data_do_evento'
+    # CORRIGIDO: Adiciona 'acesso_publico' aos filtros
+    list_filter = ('status', 'acesso_publico', 'fotografo', 'data_do_evento')
 
     # Campos pesquisáveis
     search_fields = ('nome', 'descricao')
@@ -87,7 +88,7 @@ class GaleriaAdmin(admin.ModelAdmin):
     # CORRIGIDO: Adiciona 'data_do_evento' aos campos somente leitura (é definida pela tela de gerenciamento, não aqui)
     readonly_fields = ('criado_em', 'publicada_em', 'capa')
 
-    # CAMPOS EXIBIDOS NO FORMULÁRIO: Adiciona 'data_do_evento'
+    # CAMPOS EXIBIDOS NO FORMULÁRIO: Adiciona 'acesso_publico'
     fieldsets = (
         (None, {
             # Adicionado 'data_do_evento'
@@ -98,8 +99,9 @@ class GaleriaAdmin(admin.ModelAdmin):
             'classes': ('collapse',),
         }),
         ('Acesso', {
-            'fields': ('grupos_acesso',),
-            'description': 'Selecione quais grupos de usuários podem visualizar esta galeria.'
+            # CORRIGIDO: Adicionado 'acesso_publico' na seção de acesso
+            'fields': ('acesso_publico', 'grupos_acesso',),
+            'description': 'Define a visibilidade (Pública/Restrita) e quais grupos de usuários podem visualizar esta galeria.'
         }),
     )
 

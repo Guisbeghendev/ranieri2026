@@ -49,8 +49,8 @@ class GaleriaForm(forms.ModelForm):
 
     class Meta:
         model = Galeria
-        # CAMPOS ATUALIZADOS: Adicionado 'data_do_evento'
-        fields = ['nome', 'data_do_evento', 'descricao', 'status', 'grupos_acesso', 'watermark_config']
+        # CORRIGIDO: Adicionado 'acesso_publico' aos campos
+        fields = ['nome', 'data_do_evento', 'descricao', 'status', 'acesso_publico', 'grupos_acesso', 'watermark_config']
 
         widgets = {
             # Novo widget para o campo DateField para melhor experiência do usuário

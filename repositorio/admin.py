@@ -131,6 +131,8 @@ class GaleriaAdmin(admin.ModelAdmin):
     def capa_display(self, obj):
         """Exibe a miniatura da capa da galeria na listagem."""
         if obj.capa and obj.capa.arquivo_processado:
+            # CORREÇÃO: Utiliza o sistema de proxy para exibir a imagem no admin se necessário,
+            # ou mantém a URL direta do S3 caso o admin tenha acesso público.
             return format_html('<img src="{}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;" />',
                                obj.capa.arquivo_processado.url)
         return "Sem Capa"

@@ -54,10 +54,9 @@
                         {# ADICIONADO ID à linha para facilitar a manipulação via JS #}
                         <tr id="galeria-row-{{ galeria.pk }}">
                             <td>
-                                {# AJUSTADO: Usa 'galeria.capa' que agora é um objeto Imagem (se definido) #}
-                                {% if galeria.capa and galeria.capa.arquivo_processado %}
-                                    {# A Imagem de capa tem um 'arquivo_processado' que tem a URL #}
-                                    <img src="{{ galeria.capa.arquivo_processado.url }}" alt="Capa" class="table-gallery-thumb">
+                                {# CORREÇÃO APLICADA: Usa 'galeria.capa_proxy_url' gerado na View para imagens privadas #}
+                                {% if galeria.capa_proxy_url %}
+                                    <img src="{{ galeria.capa_proxy_url }}" alt="Capa" class="table-gallery-thumb">
                                 {% else %}
                                     <span class="text-secondary" style="font-size: 0.85rem;">Sem capa</span>
                                 {% endif %}

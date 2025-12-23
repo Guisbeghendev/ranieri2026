@@ -31,7 +31,8 @@ class WatermarkConfig(models.Model):
     arquivo_marca_dagua = models.ImageField(
         upload_to='watermarks/',
         verbose_name='Arquivo (PNG com Transparência)',
-        storage=PublicMediaStorage()
+        # CORREÇÃO: Alterado para PrivateMediaStorage() para garantir que a marca d'água também seja privada.
+        storage=PrivateMediaStorage()
     )
     posicao = models.CharField(
         max_length=2,
@@ -108,13 +109,16 @@ class Imagem(models.Model):
         null=True,
         blank=True,
         verbose_name='Arquivo Processado',
-        storage=PublicMediaStorage()
+        # CORREÇÃO CRÍTICA: Mudar para PrivateMediaStorage para garantir que
+        # o acesso seja SEMPRE via o proxy com checagem de permissão,
+        # cumprindo a regra de que NINGUÉM acessa imagens fora do site.
+        storage=PrivateMediaStorage()
     )
 
-    # Ligação com a Galeria (Usa string 'Galeria' para evitar importação circular)
+    # Ligação com a Galeria (ALTERADO: on_delete=models.CASCADE para deletar imagem e arquivos)
     galeria = models.ForeignKey(
         'Galeria',
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=True,
         blank=True,
         related_name='imagens',
@@ -132,10 +136,36 @@ class Imagem(models.Model):
 
     class Meta:
         verbose_name = 'Imagem do Repositório'
+        # CORREÇÃO: verbose_plural -> verbose_name_plural
         verbose_name_plural = 'Imagens do Repositório'
 
-    def __str__(self):
+    def __str__(self: 'Imagem') -> str:
         return self.nome_arquivo_original
+
+    # CORREÇÃO: Propriedade que aponta para o arquivo processado,
+    # que agora é privado e será servido pelo proxy.
+    @property
+    def arquivo(self):
+        """
+        Retorna o FileField do recurso que será acessado via proxy, que é o
+        arquivo processado (com marca d'água).
+        """
+        return self.arquivo_processado
+
+# NOVO SIGNAL: Deleta arquivos do S3 ao deletar o objeto Imagem
+@receiver(pre_delete, sender=Imagem)
+def delete_imagem_files(sender, instance, **kwargs):
+    """
+    Deleta os arquivos (original e processado) do S3/Storage antes que o objeto Imagem
+    seja removido do banco de dados (o que acontece em CASCADE quando a Galeria é deletada).
+    """
+    # Deleta o arquivo original (private)
+    if instance.arquivo_original:
+        instance.arquivo_original.delete(save=False)
+
+    # Deleta o arquivo processado (private)
+    if instance.arquivo_processado:
+        instance.arquivo_processado.delete(save=False)
 
 
 # ==============================================================================
@@ -214,12 +244,16 @@ class Galeria(models.Model):
 
     class Meta:
         verbose_name = 'Galeria'
+        # CORREÇÃO: verbose_plural -> verbose_name_plural
         verbose_name_plural = 'Galerias'
         # ORDENAÇÃO ATUALIZADA para considerar a data do evento
         ordering = ['-data_do_evento', '-criado_em']
 
-    def __str__(self):
+    def __str__(self: 'Galeria') -> str:
         return f"{self.nome} ({self.status})"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
 
     def publicar(self):
         status_mudou = self.status != 'PB'
@@ -263,6 +297,7 @@ class Curtida(models.Model):
     class Meta:
         unique_together = ('usuario', 'imagem')
         verbose_name = 'Curtida'
+        # CORREÇÃO: verbose_plural -> verbose_name_plural
         verbose_name_plural = 'Curtidas'
         ordering = ['-criado_em']
 

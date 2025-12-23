@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'brinc_dialogando',
     'mensagens',
     'suporte',
+    'galerias',
     # Repositório (USANDO APPS.PY PARA CARREGAR OS SIGNALS)
     'repositorio.apps.RepositorioConfig',
     # Celery beat para tarefas agendadas
@@ -219,11 +220,13 @@ SESSION_SAVE_EVERY_REQUEST = True
 # 10. CONFIGURAÇÕES DO DJANGO CHANNELS (Tempo Real)
 # ==============================================================================
 
+# Define o protocolo de entrada como ASGI
 ASGI_APPLICATION = 'config.asgi.application'
 
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels_redis.pubsub.RedisPubsubChannelLayer',
+        # Alterado para o backend estável
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
             "hosts": [env('REDIS_URL')],
         },

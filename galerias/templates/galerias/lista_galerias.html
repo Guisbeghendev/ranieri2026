@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Galerias de Eventos{% endblock %}
+
+{% block content %}
+<main class="gallery-list-container">
+
+    <h1 class="text-center">Galerias de Eventos da Escola José Ranieri</h1>
+    <p class="section-subtitle">Confira as fotos dos últimos acontecimentos e projetos da escola.</p>
+
+    {% if galerias_publicas or galerias_exclusivas %}
+
+        {% comment %}
+            ------------------------------------------------
+            1. GALERIAS EXCLUSIVAS (Visíveis apenas para logados com acesso)
+            ------------------------------------------------
+        {% endcomment %}
+        {% if galerias_exclusivas %}
+            <h2 class="segment-title">
+                <i class="fas fa-lock text-secondary" aria-hidden="true"></i> Acesso Exclusivo
+                {% if not request.user.is_authenticated %}
+                    <span class="badge badge-warning btn-sm ml-2">Faça Login para Acessar</span>
+                {% endif %}
+            </h2>
+            <div class="gallery-grid mb-4">
+                {% for galeria in galerias_exclusivas %}
+                    <div class="gallery-card">
+                        <a href="{% url 'galerias:detalhe_galeria' pk=galeria.pk %}">
+                            <img src="{{ galeria.capa_proxy_url }}" alt="Capa da galeria: {{ galeria.nome }}" class="gallery-card-image">
+                        </a>
+                        <div class="gallery-card-content">
+                            <h3 class="gallery-card-title">
+                                <a href="{% url 'galerias:detalhe_galeria' pk=galeria.pk %}">{{ galeria.nome }}</a>
+                            </h3>
+                            <div class="gallery-card-meta">
+                                {# CORREÇÃO FINAL: data_evento alterado para data_do_evento #}
+                                <span><i class="fas fa-calendar-alt"></i> Data: {{ galeria.data_do_evento|date:"d/m/Y" }}</span>
+                                <span class="exclusive-badge"><i class="fas fa-user-lock"></i> Exclusiva</span>
+                            </div>
+                            <a href="{% url 'galerias:detalhe_galeria' pk=galeria.pk %}" class="btn btn-secondary btn-sm">Ver Fotos <i class="fas fa-arrow-right"></i></a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% comment %}
+            ------------------------------------------------
+            2. GALERIAS PÚBLICAS (Visíveis para todos)
+            ------------------------------------------------
+        {% endcomment %}
+        {% if galerias_publicas %}
+            <h2 class="segment-title">
+                <i class="fas fa-globe-americas text-primary" aria-hidden="true"></i> Acesso Público
+            </h2>
+            <div class="gallery-grid">
+                {% for galeria in galerias_publicas %}
+                    <div class="gallery-card">
+                        <a href="{% url 'galerias:detalhe_galeria' pk=galeria.pk %}">
+                            <img src="{{ galeria.capa_proxy_url }}" alt="Capa da galeria: {{ galeria.nome }}" class="gallery-card-image">
+                        </a>
+                        <div class="gallery-card-content">
+                            <h3 class="gallery-card-title">
+                                <a href="{% url 'galerias:detalhe_galeria' pk=galeria.pk %}">{{ galeria.nome }}</a>
+                            </h3>
+                            <div class="gallery-card-meta">
+                                {# CORREÇÃO FINAL: data_evento alterado para data_do_evento #}
+                                <span><i class="fas fa-calendar-alt"></i> Data: {{ galeria.data_do_evento|date:"d/m/Y" }}</span>
+                            </div>
+                            <a href="{% url 'galerias:detalhe_galeria' pk=galeria.pk %}" class="btn btn-primary btn-sm">Ver Fotos <i class="fas fa-arrow-right"></i></a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+    {% else %}
+        <div class="alert alert-info text-center">
+            <p><i class="fas fa-info-circle"></i> Nenhuma galeria pública ou exclusiva disponível no momento.</p>
+        </div>
+    {% endif %}
+
+</main>
+{% endblock %}

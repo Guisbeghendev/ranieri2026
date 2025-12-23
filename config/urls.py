@@ -1,7 +1,10 @@
+# config/urls.py
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
+# Importa a View do app 'galerias' para uso na configuração global
+from galerias.views import PrivateMediaProxyView
 
 urlpatterns = [
     # URLs da administração padrão do Django
@@ -21,7 +24,6 @@ urlpatterns = [
 
     # URLs dos Apps de Conteúdo Restrito
     path('simoninha-na-cozinha/', include(('sim_cozinha.urls', 'sim_cozinha'), namespace='sim_cozinha')),
-    # path('galerias/', include('galerias.urls')),
     path('mensagens/', include('mensagens.urls', namespace='mensagens')),
 
     # 🎯 NOVO: URLs do App de Suporte (Help Desk)
@@ -29,12 +31,18 @@ urlpatterns = [
 
     # 🎯 NOVO: URLs do App Administrativo (Interface Customizada para Fotógrafo)
     path('repositorio-admin/', include(('repositorio.urls', 'repositorio'), namespace='repositorio')),
+
+    # 1. Rota de Proxy de Mídia (ROOT /medias3/) - CORREÇÃO DO ERRO 3
+    # Captura qualquer path (caminho de arquivo S3) após 'medias3/'
+    re_path(r'^medias3/(?P<path>.*)$', PrivateMediaProxyView.as_view(), name='private_media_proxy'),
+
+    # 2. URLs de Conteúdo (Prefixadas /galerias/)
+    # Inclui TODAS as rotas do app 'galerias'
+    path('galerias/', include(('galerias.urls', 'galerias'), namespace='galerias')),
 ]
 
 # Configuração para servir STATIC e MEDIA em ambiente de desenvolvimento
-# Em produção, o Apache/Nginx (Proxy Reverso) cuidará disso
 if settings.DEBUG:
-    # Apenas para garantir que o Django sirva os arquivos estáticos e de mídia em DEV
+    # Apenas para garantir que o Django sirva os arquivos estáticos (CORRETO)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-    urlpatterns += static(settings.MEDIA_URL,
-                          document_root=settings.MEDIA_ROOT)
+    # REMOVIDO: A linha urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

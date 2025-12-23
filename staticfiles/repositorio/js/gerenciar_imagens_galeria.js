@@ -1,10 +1,48 @@
 (function() {
     'use strict';
 
-    // A função showCustomModal é definida no template HTML e deve estar disponível aqui
-    if (typeof showCustomModal !== 'function') {
-        console.error("Erro: A função showCustomModal não está definida. O modal de feedback não funcionará.");
+    // ----------------------------------------------------------------------
+    // Variáveis e Funções Essenciais (Movidas do HTML)
+    // ----------------------------------------------------------------------
+
+    /**
+     * Função global para exibir o modal customizado (Substitui alert() e confirm())
+     */
+    function showCustomModal(title, message, type = 'info') {
+        const modal = document.getElementById('custom-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+
+        modalTitle.textContent = title;
+        // CORREÇÃO: Usa 'text-danger' para 'error' e 'text-success' para 'success'
+        modalTitle.className = type === 'error' ? 'text-danger' : 'text-success';
+        modalMessage.textContent = message;
+
+        modal.classList.remove('hidden');
+        modal.querySelector('#modal-close-btn').onclick = () => {
+            modal.classList.add('hidden');
+        };
     }
+
+    // Lendo a URL dinâmica do data-attribute no container principal
+    const dashboardContainer = document.querySelector('.dashboard-main-container');
+    const DEFINIR_CAPA_URL_TEMPLATE_RAW = dashboardContainer ? dashboardContainer.getAttribute('data-definir-capa-url-raw') : null;
+
+    if (!DEFINIR_CAPA_URL_TEMPLATE_RAW) {
+        showCustomModal('Erro Fatal', 'A URL de definição de capa não foi carregada no template HTML. Verifique o atributo data-definir-capa-url-raw.', 'error');
+        return;
+    }
+
+    // CORREÇÃO CRÍTICA: O erro anterior estava na lógica de substituição de placeholder.
+    // O valor '0' (placeholder) precisa ser substituído por uma string única para ser usada
+    // como template dentro da função 'setGalleryCover'.
+    // A regex `/0\/?$/` substituía o 0, mas dependia de como o Django gerou o reverso.
+    // Usaremos a substituição simples de '0' pela string 'IMAGEM_PK' para garantir a criação do template.
+    const DEFINIR_CAPA_URL_TEMPLATE = DEFINIR_CAPA_URL_TEMPLATE_RAW.replace('/0/', '/IMAGEM_PK/');
+
+    // ----------------------------------------------------------------------
+    // Inicialização de Elementos
+    // ----------------------------------------------------------------------
 
     const imageCards = document.querySelectorAll('.image-card');
     const form = document.getElementById('image-selection-form');
@@ -15,15 +53,14 @@
     const capaThumb = document.getElementById('capa-thumb');
     const capaText = document.getElementById('capa-text');
 
-    // URL template é definido no HTML
-    // NOTA: O bloco <script> no HTML garante que esta constante existe no escopo global (window) ou no topo do script.
-    const DEFINIR_CAPA_URL_TEMPLATE = window.DEFINIR_CAPA_URL_TEMPLATE;
-
-
     if (imageCards.length === 0 || !form) {
         console.warn('Elementos essenciais não encontrados para inicializar o JS.');
         return;
     }
+
+    // ----------------------------------------------------------------------
+    // Funções
+    // ----------------------------------------------------------------------
 
     /**
      * Alterna o estado de seleção visual e o checkbox.
@@ -59,15 +96,17 @@
         const imagemPk = button.getAttribute('data-image-pk');
         const card = button.closest('.image-card');
         const imageUrl = card.getAttribute('data-image-url');
-        const originalName = card.getAttribute('data-original-name'); // Pego do data-attribute no HTML
+        const originalName = card.getAttribute('data-original-name');
 
-
-        if (!DEFINIR_CAPA_URL_TEMPLATE) {
-            showCustomModal('Erro de Configuração', 'A URL de definição de capa não foi configurada corretamente. Contate o suporte.', 'error');
+        // Verifica se imagemPk é válido. Se for '0', o template está malformado.
+        if (!imagemPk || imagemPk === '0') {
+            showCustomModal('Erro de Dados', 'ID da imagem (PK) inválido ou não encontrado no botão de capa.', 'error');
+            button.disabled = false;
             return;
         }
 
-        // CORREÇÃO: Substituímos o PLACEHOLDER de STRING 'IMAGEM_PK' pelo valor real do PK.
+
+        // Usa DEFINIR_CAPA_URL_TEMPLATE e substitui o placeholder pela imagemPk
         const url = DEFINIR_CAPA_URL_TEMPLATE.replace('IMAGEM_PK', imagemPk);
 
         // Busca o CSRF token
@@ -81,20 +120,15 @@
         fetch(url, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-Requested-With': 'XMLHttpRequest', // Indica que é uma requisição AJAX
+                'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRFToken': csrfToken
-            },
-            // Corpo vazio é suficiente
-            body: ''
+            }
         })
         .then(response => {
             if (!response.ok) {
-                // Tenta ler o erro do JSON de resposta (se o servidor o enviou)
                 return response.json().then(err => {
                     throw new Error(err.erro || `Erro de Servidor (${response.status})`);
                 }).catch(() => {
-                    // Lança um erro genérico se o corpo não for JSON
                     throw new Error(`Erro na requisição: Status ${response.status}`);
                 });
             }
@@ -102,47 +136,47 @@
         })
         .then(data => {
             if (data.sucesso) {
-                // 1. Feedback visual customizado (Substitui alert())
+                // 1. Feedback visual customizado
                 showCustomModal('Sucesso', data.message, 'success');
 
-                // 2. Atualiza o indicador de capa (remove de todos e adiciona ao novo)
+                // 2. Atualiza o indicador de capa (remove capa antiga e marca a nova)
                 document.querySelectorAll('.image-card').forEach(c => {
                     c.classList.remove('is-cover');
                 });
                 card.classList.add('is-cover');
 
-                // 3. Garante que a imagem está selecionada (anexada)
+                // 3. CORREÇÃO CRÍTICA (MANTIDA): Garante que a imagem está selecionada/anexada
                 const checkbox = card.querySelector('input[type="checkbox"][name="imagens"]');
                 if (checkbox && !checkbox.checked) {
                     checkbox.checked = true;
+                    // Garante o estado visual de seleção
                     card.classList.add('is-selected');
                 }
 
                 // 4. Atualiza o indicador de capa no topo da página
                 if (capaThumb && capaText) {
-                    capaThumb.src = imageUrl;
-                    // Garante que a miniatura da capa aparece se estava oculta
+                    // A view `DefinirCapaGaleriaView` retorna `capa_url`.
+                    const finalImageUrl = data.capa_url || imageUrl;
+
+                    capaThumb.src = finalImageUrl;
                     capaThumb.style.display = 'block';
                     capaText.innerHTML = `ID: ${imagemPk} (${originalName})`;
 
-                    // Atualiza o ID da capa para referência futura
                     if (currentCoverIdElement) {
                         currentCoverIdElement.setAttribute('data-cover-id', imagemPk);
                     }
                 }
 
             } else {
-                // O servidor retornou 200, mas o campo 'sucesso' é falso
                 showCustomModal('Erro', `Falha ao definir capa: ${data.erro}`, 'error');
             }
         })
         .catch(error => {
             console.error('Erro AJAX:', error);
-            // 5. Exibe o erro de comunicação ou servidor (Substitui alert())
             showCustomModal('Erro de Comunicação', error.message, 'error');
         })
         .finally(() => {
-            // Reativa o botão e restaura o conteúdo original
+            // Reativa o botão
             button.disabled = false;
             button.innerHTML = originalButtonContent;
         });
@@ -150,7 +184,7 @@
 
 
     // ----------------------------------------------------------------------
-    // Inicialização
+    // Inicialização de Listeners
     // ----------------------------------------------------------------------
 
     // 1. Adiciona o listener de clique a cada cartão de imagem para seleção

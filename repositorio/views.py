@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse  # IMPORTADO REVERSE
 from django.views.generic import View, ListView, CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
@@ -16,6 +16,11 @@ from users.models import Grupo
 from django.contrib.auth import get_user_model
 import traceback
 from django.db.models import Prefetch
+
+# --- ADICIONADO PARA WEBSOCKET ---
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+# --------------------------------
 
 from .models import Imagem, Galeria, WatermarkConfig
 from .tasks import processar_imagem_task
@@ -106,9 +111,17 @@ class AssinarUploadView(FotografoRequiredMixin, View):
     def post(self, request):
         nome_arquivo_original = request.POST.get('nome_arquivo')
         mime_type = request.POST.get('tipo_mime')
+        galeria_id = request.POST.get('galeria_id')
 
         if not nome_arquivo_original or not mime_type:
             return JsonResponse({'erro': 'Nome do arquivo e tipo MIME são obrigatórios.'}, status=400)
+
+        galeria = None
+        if galeria_id:
+            if request.user.is_superuser or request.user.is_fotografo_master:
+                galeria = get_object_or_404(Galeria, pk=galeria_id)
+            else:
+                galeria = get_object_or_404(Galeria, pk=galeria_id, fotografo=request.user)
 
         nome_base, extensao = os.path.splitext(nome_arquivo_original)
         extensao_limpa = extensao.lstrip('.')
@@ -150,7 +163,8 @@ class AssinarUploadView(FotografoRequiredMixin, View):
                 nome_arquivo_original=nome_arquivo_original,
                 arquivo_original=caminho_s3,
                 status_processamento='UPLOAD_PENDENTE',
-                fotografo=request.user
+                fotografo=request.user,
+                galeria=galeria
             )
 
             return JsonResponse({
@@ -272,12 +286,6 @@ class GerenciarGaleriasView(FotografoRequiredMixin, ListView):
             queryset = Galeria.objects.filter(fotografo=user)
 
         # ADIÇÃO: Otimização para carregar o objeto de capa
-        # Garante que a Imagem de capa seja carregada para evitar N+1 no template
-        # A Imagem de capa é carregada, e o seu Foreign Key (capa__arquivo_processado) também.
-        # CORREÇÃO: Removido 'capa__arquivo_processado' pois arquivo_processado é um campo de arquivo/não relacional (ImageField)
-        # e não deve ser usado em select_related diretamente, a menos que ele seja um FK/OneToOne.
-        # Apenas 'capa' (que é um ForeignKey para Imagem) é permitido.
-        # Se 'arquivo_processado' for um campo de arquivo na Imagem, ele é acessado via Python após a Imagem ser carregada.
         queryset = queryset.select_related('capa')
 
         # Anota a contagem de imagens em todas as galerias
@@ -299,6 +307,21 @@ class GerenciarGaleriasView(FotografoRequiredMixin, ListView):
 
         context[
             'is_fotografo_master_or_superuser'] = self.request.user.is_superuser or self.request.user.is_fotografo_master
+
+        # CORREÇÃO CRÍTICA: Itera sobre as galerias e anexa a URL do proxy da capa
+        for galeria in context['object_list']:
+            if galeria.capa and galeria.capa.arquivo_processado:
+                try:
+                    # Gera a URL segura para servir a imagem de capa (proxy)
+                    galeria.capa_proxy_url = reverse(
+                        'private_media_proxy',
+                        kwargs={'path': galeria.capa.arquivo_processado.name}
+                    )
+                except Exception:
+                    # Em caso de erro na geração (e.g., URL reversa não existe), define como None
+                    galeria.capa_proxy_url = None
+            else:
+                galeria.capa_proxy_url = None
 
         return context
 
@@ -400,8 +423,13 @@ class GerenciarImagensGaleriaView(FotografoRequiredMixin, View):
 
             imagens_a_desvincular_qs.update(galeria=None)
 
-            # 2. Vincular as imagens PROCESSADAS e PERMITIDAS à galeria
-            Imagem.objects.filter(pk__in=imagens_selecionadas_pks_finais).update(galeria=galeria)
+            # 2. Vincular e re-processar para aplicar marca d'água
+            novas_imagens = Imagem.objects.filter(pk__in=imagens_selecionadas_pks_finais)
+            novas_imagens.update(galeria=galeria)
+
+            # DISPARA O PROCESSAMENTO PARA TODAS AS SELECIONADAS PARA GARANTIR MARCA D'ÁGUA
+            for img in novas_imagens:
+                processar_imagem_task.delay(img.id)
 
         messages.success(request, f'Imagens da galeria "{galeria.nome}" atualizadas com sucesso.')
         return redirect('repositorio:gerenciar_imagens_galeria', pk=galeria.pk)
@@ -420,6 +448,11 @@ class DefinirCapaGaleriaView(FotografoRequiredMixin, View):
     def post(self, request, galeria_pk, imagem_pk):
         user = request.user
 
+        # Filtro de permissão para a Imagem
+        imagem_filter = {'pk': imagem_pk, 'status_processamento': 'PROCESSADA'}
+        if not user.is_superuser and not user.is_fotografo_master:
+            imagem_filter['fotografo'] = user
+
         try:
             # 1. Recupera a Galeria (garante permissão)
             if user.is_superuser or user.is_fotografo_master:
@@ -427,25 +460,15 @@ class DefinirCapaGaleriaView(FotografoRequiredMixin, View):
             else:
                 galeria = get_object_or_404(Galeria, pk=galeria_pk, fotografo=user)
 
-            # 2. Recupera a Imagem (garante que ela é permitida e processada)
+            # 2. Recupera a Imagem (garante que ela é permitida, processada E pertence ao usuário/Master)
             imagem = get_object_or_404(
                 Imagem,
-                pk=imagem_pk,
-                status_processamento='PROCESSADA',
-                # A imagem deve estar vinculada à galeria OU estar disponível para vinculação
-                # Para simplificar, garantimos que ela exista e esteja processada, e o usuário tenha permissão.
-                # A view de seleção já garante que as imagens são do fotógrafo/permitidas.
+                **imagem_filter
             )
 
             # 3. VERIFICAÇÃO ADICIONAL: A imagem deve estar vinculada à galeria ou ser uma imagem
             # que o usuário tem permissão para anexar e está no repositório.
-            # Se a imagem não estiver vinculada, ela é anexada automaticamente.
             if imagem.galeria != galeria:
-                # Opcional: Se a imagem não está anexada, anexe-a automaticamente antes de definir como capa.
-                # Se a lógica de capa for SÓ para imagens já anexadas, remova este bloco.
-                # Assumindo que a capa PODE ser uma imagem do repositório, mas deve estar pelo menos
-                # disponível/permitida.
-
                 # Se a imagem estiver em outra galeria, não permite a capa.
                 if imagem.galeria is not None:
                     return JsonResponse({
@@ -458,20 +481,32 @@ class DefinirCapaGaleriaView(FotografoRequiredMixin, View):
                         user.is_superuser or user.is_fotografo_master or imagem.fotografo == user):
                     imagem.galeria = galeria
                     imagem.save(update_fields=['galeria'])
+                    processar_imagem_task.delay(imagem.id)
                 else:
                     return JsonResponse({
                         'sucesso': False,
                         'erro': 'A imagem selecionada não está disponível para ser anexada e definida como capa.'
                     }, status=400)
 
+            # GARANTE que a imagem está anexada à galeria correta.
+            # Este check garante que a operação de anexo (se necessária) foi bem-sucedida antes de definir a capa.
+            if imagem.galeria != galeria:
+                return JsonResponse({
+                    'sucesso': False,
+                    'erro': 'Falha ao anexar a imagem à galeria. Operação abortada.'
+                }, status=500)
+
             # 4. Define a capa e salva a galeria
             galeria.capa = imagem
             galeria.save(update_fields=['capa', 'alterado_em'])
 
+            # Geração da URL do Proxy
+            capa_url_proxy = reverse('private_media_proxy', kwargs={'path': imagem.arquivo_processado.name})
+
             return JsonResponse({
                 'sucesso': True,
                 'message': f'Imagem {imagem.pk} definida como capa da galeria "{galeria.nome}".',
-                'capa_url': imagem.arquivo_processado.url  # Retorna a URL da capa para atualização do front
+                'capa_url': capa_url_proxy  # RETORNA A URL DO PROXY
             })
 
         except Imagem.DoesNotExist:
@@ -525,6 +560,18 @@ class PublicarGaleriaView(FotografoRequiredMixin, View):
         publicado = galeria.publicar()
 
         if publicado:
+            # --- NOTIFICAÇÃO WEBSOCKET ---
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                "galerias_status_updates",
+                {
+                    "type": "status_update",
+                    "galeria_id": galeria.pk,
+                    "status_code": galeria.status,
+                    "status_display": galeria.get_status_display()
+                }
+            )
+            # -----------------------------
             message = f'Galeria "{galeria.nome}" publicada com sucesso!'
         else:
             message = f'Galeria "{galeria.nome}" já estava publicada.'
@@ -565,6 +612,18 @@ class ArquivarGaleriaView(FotografoRequiredMixin, View):
         arquivado = galeria.arquivar()
 
         if arquivado:
+            # --- NOTIFICAÇÃO WEBSOCKET ---
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                "galerias_status_updates",
+                {
+                    "type": "status_update",
+                    "galeria_id": galeria.pk,
+                    "status_code": galeria.status,
+                    "status_display": galeria.get_status_display()
+                }
+            )
+            # -----------------------------
             message = f'Galeria "{galeria.nome}" arquivada com sucesso!'
         else:
             message = f'Galeria "{galeria.nome}" já estava arquivada.'

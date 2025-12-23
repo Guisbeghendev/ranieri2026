@@ -1,14 +1,20 @@
 import os
 import io
 # Importações necessárias para manipular arquivos e tarefas assíncronas
-from PIL import Image
+from PIL import Image, ImageOps
 from django.core.files.base import ContentFile
 from celery import shared_task
-from .models import Imagem, WatermarkConfig
+from .models import Imagem, WatermarkConfig, Galeria
 from django.conf import settings
 # Importação de logging para debug
 import logging
-import traceback # Necessário para registrar o traceback em caso de erro
+import traceback  # Necessário para registrar o traceback em caso de erro
+
+# --- ADICIONADO PARA WEBSOCKET ---
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+
+# --------------------------------
 
 # Configuração de logging
 logger = logging.getLogger(__name__)
@@ -98,8 +104,8 @@ def processar_imagem_task(imagem_id):
     (miniatura e watermark) e fazer upload do resultado (Público).
     """
     try:
-        # Tenta obter a instância da imagem
-        imagem = Imagem.objects.get(pk=imagem_id)
+        # Tenta obter a instância da imagem com select_related para otimizar o acesso à galeria e watermark
+        imagem = Imagem.objects.select_related('galeria__watermark_config').get(pk=imagem_id)
     except Imagem.DoesNotExist:
         logger.error(f"Imagem com ID {imagem_id} não encontrada.")
         return
@@ -126,6 +132,9 @@ def processar_imagem_task(imagem_id):
         image_stream = io.BytesIO(content)
         # Tenta abrir a imagem
         original_img = Image.open(image_stream)
+
+        # Corrige a orientação da imagem baseada no EXIF (evita fotos deitadas/invertidas)
+        original_img = ImageOps.exif_transpose(original_img)
 
         # 3. Criar miniatura e otimizar (in-place)
         # Converte para RGB se necessário, garantindo que a imagem base seja tratável.
@@ -180,6 +189,10 @@ def processar_imagem_task(imagem_id):
         # O nome do arquivo salvo no S3 é essencial para o FileField funcionar corretamente
         file_name = f"{imagem.pk}_{base}_processed.jpg"
 
+        # Remove o arquivo processado antigo se existir (limpeza no S3 para re-processamento)
+        if imagem.arquivo_processado:
+            imagem.arquivo_processado.delete(save=False)
+
         # Cria um ContentFile para o Django fazer o upload
         django_file = ContentFile(output_buffer.getvalue(), name=file_name)
 
@@ -188,8 +201,25 @@ def processar_imagem_task(imagem_id):
 
         # 7. Atualizar status final e salvar a imagem no banco.
         imagem.status_processamento = 'PROCESSADA'
-        # Salvando a instância com os campos atualizados (status e o caminho do arquivo processado)
-        imagem.save(update_fields=['status_processamento', 'arquivo_processado'])
+
+        # CORREÇÃO: Removida a atualização de status da Galeria daqui para evitar loop.
+        # O Signal verificar_status_galeria_apos_processamento cuidará de mudar a galeria para 'RV'.
+        imagem.save(update_fields=['status_processamento', 'arquivo_processado', 'galeria'])
+
+        # --- NOTIFICAÇÃO WEBSOCKET APÓS SUCESSO ---
+        if galeria:
+            galeria.refresh_from_db()
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                "galerias_status_updates",
+                {
+                    "type": "status_update",
+                    "galeria_id": galeria.pk,
+                    "status_code": galeria.status,
+                    "status_display": galeria.get_status_display()
+                }
+            )
+        # ------------------------------------------
 
         logger.info(f"Processamento da Imagem {imagem_id} concluído. Arquivo: {imagem.arquivo_processado.name}")
 
@@ -202,5 +232,19 @@ def processar_imagem_task(imagem_id):
         # Tenta salvar o status de erro
         try:
             imagem.save(update_fields=['status_processamento'])
+
+            # Notifica erro via WebSocket (opcional para manter sync)
+            if galeria:
+                galeria.refresh_from_db()
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    "galerias_status_updates",
+                    {
+                        "type": "status_update",
+                        "galeria_id": galeria.pk,
+                        "status_code": galeria.status,
+                        "status_display": galeria.get_status_display()
+                    }
+                )
         except Exception as save_e:
             logger.error(f"Erro ao salvar status 'ERRO' para imagem {imagem_id}: {save_e}")

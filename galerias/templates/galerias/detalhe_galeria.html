@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% load static %}
+{% load dict_utils %}
+
+{% block title %}{{ galeria.nome }} - Galerias{% endblock %}
+
+{% block content %}
+<main>
+    <div class="gallery-detail-header">
+        <h1 class="gallery-detail-title">{{ galeria.nome }}</h1>
+        <p class="gallery-detail-subtitle">{{ galeria.descricao }}</p>
+
+        <div class="gallery-detail-info">
+            <span>
+                <i class="fas fa-calendar-alt"></i>
+                Data do Evento: <strong>{{ galeria.data_do_evento|date:"d/m/Y" }}</strong>
+            </span>
+            <span>
+                <i class="fas fa-camera"></i>
+                Fotógrafo: <strong>{{ galeria.fotografo.nome_completo|default:"Não Informado" }}</strong>
+            </span>
+            {% if not galeria.acesso_publico %}
+                <span class="exclusive-badge">
+                    <i class="fas fa-user-lock"></i> Exclusiva
+                </span>
+            {% endif %}
+        </div>
+
+        <div class="mt-2">
+            <span class="like-count">
+                <i class="fas fa-heart text-primary"></i> Total de Curtidas na Galeria: <strong id="total-likes">{{ curtidas_totais_galeria }}</strong>
+            </span>
+        </div>
+    </div>
+
+    <div class="image-detail-grid">
+        {% for imagem in galeria.imagens.all %}
+            <div class="image-detail-card" id="image-card-{{ imagem.pk }}">
+
+                {# ATUALIZAÇÃO 1: Adicionado o data-index (essencial para o Alpine navegar na galeria) #}
+                <a href="{{ imagem.proxy_url }}"
+                   class="lightbox-trigger"
+                   data-index="{{ forloop.counter0 }}"
+                   data-title="{{ galeria.nome }} - Foto {{ forloop.counter }}">
+
+                    <img
+                        src="{{ imagem.proxy_url }}"
+                        alt="{{ galeria.nome }} Foto {{ forloop.counter }}"
+                        class="image-detail-thumb"
+                    >
+                    <div class="lightbox-overlay">
+                         <i class="fas fa-search-plus"></i>
+                    </div>
+                </a>
+
+                <div class="image-actions-footer">
+                    <span class="like-count">
+                        <i class="fas fa-heart text-primary"></i>
+                        <span id="likes-count-{{ imagem.pk }}">{{ imagem.curtidas.count }}</span>
+                    </span>
+
+                    {% if request.user.is_authenticated %}
+                        <button
+                            class="like-button {% if curtidas_pelo_usuario|get_item:imagem.pk %}is-liked{% endif %}"
+                            data-image-pk="{{ imagem.pk }}"
+                            data-url="{% url 'galerias:curtir_imagem' imagem_pk=imagem.pk %}"
+                            aria-label="Curtir ou Descurtir esta imagem">
+
+                            <i class="fas fa-heart like-icon"></i>
+                            <span>{% if curtidas_pelo_usuario|get_item:imagem.pk %}Descurtir{% else %}Curtir{% endif %}</span>
+                        </button>
+                    {% else %}
+                        <a href="{% url 'users:login' %}" class="btn btn-sm btn-outline is-disabled" title="Faça login para curtir esta imagem">
+                            <i class="fas fa-heart"></i> Curtir
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-4 alert alert-warning text-center">
+                <p><i class="fas fa-exclamation-triangle"></i> Esta galeria ainda não possui imagens.</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    {# ATUALIZAÇÃO 2: SUBSTITUÍDO o bloco <dialog> pela ESTRUTURA LIGHTBOX ALPINE.JS #}
+    <div x-data="galleryLightbox()"
+         x-init="initTriggers()"
+         @keydown.escape.window="closeLightbox()"
+         x-cloak>
+
+        {# O Modal em si #}
+        <div x-show="isOpen"
+             class="lightbox-alpine-modal"
+             @click.self="closeLightbox()"
+             x-transition:enter="lightbox-transition-enter"
+             x-transition:enter-start="lightbox-transition-enter-start"
+             x-transition:enter-end="lightbox-transition-enter-end">
+
+            {# Botão Fechar #}
+            <button class="lightbox-close" @click="closeLightbox()" aria-label="Fechar">&times;</button>
+
+            <div class="lightbox-content-wrapper">
+
+                {# Botão Anterior #}
+                <button class="lightbox-prev" @click.stop="prevImage()" :disabled="currentIndex === 0" x-show="gallery.length > 1" aria-label="Imagem anterior">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+
+                {# Imagem e Legenda (Usa :src="currentImage.url" que pega o href do link) #}
+                <figure class="lightbox-figure">
+                    <img :src="currentImage.url"
+                         :alt="currentImage.title"
+                         class="lightbox-content">
+
+                    <figcaption x-text="currentImage.title" class="lightbox-caption"></figcaption>
+                </figure>
+
+                {# Botão Próximo #}
+                <button class="lightbox-next" @click.stop="nextImage()" :disabled="currentIndex === gallery.length - 1" x-show="gallery.length > 1" aria-label="Próxima imagem">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    {# FIM: ESTRUTURA LIGHTBOX ALPINE.JS #}
+
+</main>
+
+{% if request.user.is_authenticated %}
+    <script src="{% static 'galerias/js/curtir_imagem.js' %}"></script>
+{% endif %}
+
+{# ATUALIZAÇÃO 3: Substituída a referência para o novo script Alpine.js #}
+<script src="{% static 'galerias/js/alpine_lightbox.js' %}"></script>
+{% endblock %}

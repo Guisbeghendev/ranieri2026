@@ -2548,3 +2548,376 @@ LISTA DE CANAIS (CHAT LIST)
     from { opacity: 0; transform: scale(0.9); }
     to { opacity: 1; transform: scale(1); }
 }
+
+
+/* ================================
+   GALERIAS (LISTAGEM E DETALHE)
+=================================== */
+
+/* Container para a listagem (usado em lista_galerias.html) */
+.gallery-list-container {
+    padding: 1rem 0;
+    margin-bottom: 2rem;
+}
+
+/* Título de seção segmentada (Públicas / Exclusivas) */
+.segment-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-primary-dark);
+    margin-top: 2rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--color-border);
+}
+
+/* Layout de grid para os cartões de galeria */
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+/* Card individual da Galeria */
+.gallery-card {
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-default);
+    border: 1px solid var(--color-border);
+    overflow: hidden;
+    transition: transform var(--transition), box-shadow var(--transition);
+}
+.gallery-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.15); /* Sombra um pouco mais forte */
+}
+
+/* Imagem de capa da Galeria */
+.gallery-card-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    display: block;
+}
+
+/* Conteúdo de texto do Card */
+.gallery-card-content {
+    padding: 1rem;
+}
+
+.gallery-card-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.gallery-card-meta {
+    font-size: 0.85rem;
+    color: var(--color-text-light);
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Destaque para Galerias Exclusivas */
+.exclusive-badge {
+    background: var(--laranja-escuro1);
+    color: white;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: var(--radius);
+    display: inline-block;
+    margin-top: -0.25rem;
+}
+
+
+/* ----------------------------------
+   DETALHE DA GALERIA
+----------------------------------- */
+
+/* Header da página de Detalhe */
+.gallery-detail-header {
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 1rem;
+}
+
+.gallery-detail-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--color-primary);
+    margin-bottom: 0.5rem;
+}
+
+.gallery-detail-subtitle {
+    font-size: 1.1rem;
+    color: var(--color-text);
+    font-weight: 500;
+    margin-bottom: 0.75rem;
+}
+
+.gallery-detail-info {
+    font-size: 0.9rem;
+    color: var(--color-text-light);
+    display: flex;
+    gap: 1.5rem;
+}
+.gallery-detail-info strong {
+    color: var(--preto1);
+    font-weight: 600;
+}
+
+
+/* Container de Imagens no Detalhe */
+.image-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem 0;
+}
+
+/* Card de Imagem Individual (no Detalhe) */
+.image-detail-card {
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-default);
+    border: 1px solid var(--color-border);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.image-detail-thumb {
+    width: 100%;
+    height: 200px; /* Altura fixa para consistência */
+    object-fit: cover;
+    display: block;
+}
+
+.image-actions-footer {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+
+/* LIGHTBOX GALERIA (ALPIN E.JS) */
+
+/* Previne rolagem do fundo quando o modal está aberto (Usado pelo JS do Alpine) */
+body.modal-open {
+    overflow: hidden;
+}
+
+/* Oculta o conteúdo antes que o Alpine o inicialize */
+[x-cloak] { display: none !important; }
+
+/* 1. Modal (Overlay) - Substitui o .lightbox-modal antigo */
+.lightbox-alpine-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.95); /* Fundo bem escuro */
+    z-index: 2147483647; /* Z-Index Máximo para garantir sobreposição total */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 2. Botão Fechar (X) - Reutiliza a classe, ajustando para o Alpine Modal */
+.lightbox-close {
+    position: absolute; /* Usamos absolute dentro do .lightbox-alpine-modal */
+    top: 20px;
+    right: 30px;
+    color: #fff;
+    font-size: 40px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    z-index: 10;
+    transition: color 0.2s;
+}
+.lightbox-close:hover {
+    color: #ccc;
+}
+
+/* 3. Container da Imagem e Navegação */
+.lightbox-content-wrapper {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 4. Imagem Principal */
+.lightbox-content {
+    display: block;
+    max-width: 100%;
+    max-height: 80vh; /* Deixa espaço para a legenda */
+    object-fit: contain;
+}
+
+/* 5. Legenda (Caption) - Mudar de #lightbox-caption para a classe usada no Alpine */
+.lightbox-caption {
+    color: #fff;
+    text-align: center;
+    padding: 10px 0;
+    font-size: 1.1rem;
+}
+.lightbox-figure {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0; /* Remove margem padrão do <figure> */
+}
+
+/* 6. Botões de Navegação (Anterior/Próximo) - NOVO */
+.lightbox-prev, .lightbox-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.4);
+    color: white;
+    border: none;
+    padding: 15px 10px; /* Ajuste o padding para ser mais fino */
+    font-size: 2rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border-radius: 4px;
+    height: 60px;
+    width: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+}
+/* Posicionamento dos botões (levemente afastados da imagem) */
+.lightbox-prev { left: -60px; }
+.lightbox-next { right: -60px; }
+
+@media (max-width: 768px) {
+    /* Em telas pequenas, coloca os botões mais próximos */
+    .lightbox-prev { left: 10px; }
+    .lightbox-next { right: 10px; }
+}
+
+.lightbox-prev:hover, .lightbox-next:hover {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.lightbox-prev:disabled, .lightbox-next:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* 7. Transições Alpine (Opcional, para um efeito suave) */
+.lightbox-transition-enter-start {
+    opacity: 0;
+}
+.lightbox-transition-enter-end {
+    opacity: 1;
+}
+.lightbox-transition-enter {
+    transition: opacity 0.3s ease;
+}
+
+/* Estilos para as miniaturas (MANTIDOS do seu código original) */
+
+.image-detail-card > a {
+    position: relative;
+    display: block;
+    line-height: 0;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.lightbox-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    cursor: pointer;
+}
+
+.lightbox-overlay i {
+    color: white;
+    font-size: 3rem;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+}
+
+.image-detail-card > a:hover .lightbox-overlay {
+    opacity: 1;
+}
+
+/* ----------------------------------
+   INTERAÇÃO (CURTIR)
+----------------------------------- */
+
+/* Botão de Curtida */
+.like-button {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: 1px solid var(--laranja-escuro1);
+    background-color: white;
+    color: var(--laranja-escuro1);
+    border-radius: 9999px; /* Pill shape */
+    cursor: pointer;
+    transition: all var(--transition);
+    box-shadow: none;
+    text-decoration: none;
+    line-height: 1; /* Garante alinhamento vertical */
+}
+
+/* Estado Curtido */
+.like-button.is-liked {
+    background-color: var(--laranja-escuro1);
+    color: white;
+    border-color: var(--laranja-medio1);
+}
+
+.like-button:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-default);
+    border-color: var(--laranja-medio1);
+}
+
+.like-button.is-liked:hover {
+    background-color: var(--laranja-medio1);
+}
+
+.like-icon {
+    font-size: 1.1rem;
+    margin-right: 0.5rem;
+    /* Usa a cor do botão */
+}
+.like-icon.is-liked {
+    /* Sem necessidade de mudança de cor aqui, pois a cor do texto é herdada */
+}
+
+/* Contador de Curtidas */
+.like-count {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-primary);
+}

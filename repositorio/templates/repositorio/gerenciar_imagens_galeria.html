@@ -5,7 +5,9 @@
 
 {% block content %}
 
-<div class="dashboard-main-container">
+{# 1. CORREÇÃO DA PASSAGEM DE VARIÁVEL: A URL dinâmica é passada via data-attribute #}
+<div class="dashboard-main-container"
+     data-definir-capa-url-raw="{% url 'repositorio:definir_capa_galeria' galeria_pk=galeria.pk imagem_pk=0 %}">
 <div class="dashboard-header mb-3">
 <h1 class="header-title">Gerenciar Conteúdo</h1>
 <p class="header-subtitle">Galeria: <span class="text-primary font-bold">{{ galeria.nome }}</span></p>
@@ -31,9 +33,9 @@
         <div id="capa-atual-info" class="mt-2 p-2 border rounded bg-light-gray d-flex align-items-center">
             <h4 class="m-0 mr-2 font-weight-bold" style="font-size: 1rem;">Capa Atual:</h4>
             {% if galeria.capa and galeria.capa.arquivo_processado %}
-                {# Adiciona a miniatura da capa #}
+                {# 2. CORREÇÃO DE URL: private_media_proxy para a Capa no cabeçalho #}
                 <img id="capa-thumb"
-                     src="{{ galeria.capa.arquivo_processado.url }}"
+                     src="{% url 'private_media_proxy' path=galeria.capa.arquivo_processado.name %}"
                      alt="Capa da Galeria"
                      class="thumb-capa-indicator mr-2"
                      style="width: 30px; height: 30px; object-fit: cover; border-radius: 3px;">
@@ -65,11 +67,13 @@
                                 {% if imagem.pk in imagens_vinculadas_pks %}is-selected{% endif %}
                                 {% if galeria.capa.pk == imagem.pk %}is-cover{% endif %}"
                          data-image-id="{{ imagem.pk }}"
-                         data-image-url="{% if imagem.arquivo_processado %}{{ imagem.arquivo_processado.url }}{% endif %}"
+                         {# 3. CORREÇÃO DE URL: private_media_proxy para o data-image-url (Usado pelo JS) #}
+                         data-image-url="{% if imagem.arquivo_processado %}{% url 'private_media_proxy' path=imagem.arquivo_processado.name %}{% endif %}"
                          data-original-name="{{ imagem.nome_arquivo_original|truncatechars:20 }}">
 
                         {% if imagem.arquivo_processado %}
-                            <img src="{{ imagem.arquivo_processado.url }}"
+                            {# 4. CORREÇÃO DE URL: private_media_proxy para o SRC da imagem na grid #}
+                            <img src="{% url 'private_media_proxy' path=imagem.arquivo_processado.name %}"
                                  alt="{{ imagem.nome_arquivo_original }}"
                                  class="image-card-thumb">
                         {% else %}
@@ -145,36 +149,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-    // FIX CORRIGIDO: Geramos a URL com o placeholder '0' para satisfazer o requisito <int:imagem_pk> do Django.
-    // O erro NoReverseMatch ocorria porque o template tentava resolver a URL com a string 'IMAGEM_PK' no lugar de um número inteiro.
-    const DEFINIR_CAPA_URL_TEMPLATE_RAW = "{% url 'repositorio:definir_capa_galeria' galeria_pk=galeria.pk imagem_pk=0 %}";
-
-    // Depois, substituímos o '0' pela string 'IMAGEM_PK' que o JS usará para injeção.
-    const DEFINIR_CAPA_URL_TEMPLATE = DEFINIR_CAPA_URL_TEMPLATE_RAW.replace('/capa/0/definir/', '/capa/IMAGEM_PK/definir/');
-
-    // Expondo a constante globalmente para o arquivo JS externo
-    window.DEFINIR_CAPA_URL_TEMPLATE = DEFINIR_CAPA_URL_TEMPLATE;
-
-
-    // Função global para exibir o modal customizado (Substitui alert() e confirm())
-    function showCustomModal(title, message, type = 'info') {
-        const modal = document.getElementById('custom-modal');
-        const modalTitle = document.getElementById('modal-title');
-        const modalMessage = document.getElementById('modal-message');
-
-        modalTitle.textContent = title;
-        // Classes de cor são definidas no CSS, mas alternadas no JS
-        modalTitle.className = type === 'error' ? 'text-danger' : 'text-success';
-        modalMessage.textContent = message;
-
-        modal.classList.remove('hidden');
-        modal.querySelector('#modal-close-btn').onclick = () => {
-            modal.classList.add('hidden');
-        };
-    }
-
-</script>
 <script src="{% static 'repositorio/js/gerenciar_imagens_galeria.js' %}"></script>
-
 {% endblock %}

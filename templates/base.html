@@ -5,21 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Escola Prof. José Ranieri - PEI{% endblock %}</title>
 
-    <!-- Carrega os arquivos estáticos (CSS, JS) -->
     {% load static %}
-    <!-- Link para o CSS principal (main.css) -->
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
 
-    <!-- Link para ícones (Font Awesome) - Essencial para acessibilidade e design -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
     {% block extra_head %}{% endblock %}
 </head>
 <body>
-    <!-- HEADER (Cabeçalho da página, incluindo navegação) -->
     {% include "includes/_header.html" %}
 
-    <!-- MENSAGENS DO DJANGO -->
     <main class="container">
         {% if messages %}
             <div class="mt-2 mb-2">
@@ -31,18 +26,19 @@
             </div>
         {% endif %}
 
-        <!-- CONTEÚDO PRINCIPAL (Bloco que os templates herdam) -->
         <section class="main-content">
             {% block content %}
-                <!-- Conteúdo específico do template filho será inserido aqui -->
-            {% endblock %}
+                {% endblock %}
         </section>
     </main>
 
-    <!-- FOOTER (Rodapé da página) -->
     {% include "includes/_footer.html" %}
 
-    <!-- Scripts Javascript globais (opcional) -->
     {% block extra_js %}{% endblock %}
+
+    {# INCLUSÃO CRÍTICA: Alpine.js adicionado globalmente #}
+    {# O 'defer' garante que ele seja executado apenas após o HTML ser carregado. #}
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
 </body>
 </html>

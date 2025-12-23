@@ -6,7 +6,39 @@
     // ----------------------------------------------------------------------
     const actionForms = document.querySelectorAll('.js-action-form');
     const deleteForm = document.getElementById('delete-form');
+    // Adiciona uma verificação defensiva caso o formulário de exclusão não exista (embora deva existir)
     const csrfToken = deleteForm ? deleteForm.querySelector('[name=csrfmiddlewaretoken]').value : null;
+
+    // ----------------------------------------------------------------------
+    // CONFIGURAÇÃO WEBSOCKET (STATUS EM TEMPO REAL)
+    // ----------------------------------------------------------------------
+    const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const statusSocket = new WebSocket(
+        protocol + window.location.host + '/ws/repositorio/galerias/'
+    );
+
+    statusSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        const pk = data.galeria_id;
+        const newStatus = data.status_code;
+
+        // Atualiza a linha da galeria
+        updateGalleryRow(pk, newStatus);
+
+        // Feedback visual (piscar a linha)
+        const row = document.getElementById(`galeria-row-${pk}`);
+        if (row) {
+            row.style.transition = 'background-color 0.5s';
+            row.style.backgroundColor = '#d1ecf1';
+            setTimeout(() => {
+                row.style.backgroundColor = '';
+            }, 3000);
+        }
+    };
+
+    statusSocket.onclose = function(e) {
+        console.error('WebSocket de status fechado inesperadamente');
+    };
 
     if (!actionForms.length || !csrfToken) {
         // console.warn("Forms de ação não encontrados ou CSRF token ausente.");
@@ -86,9 +118,10 @@
      * @returns {HTMLElement} O elemento form criado.
      */
     function createActionForm(action, pk, btnClass, iconClass, title) {
+        // ATENÇÃO: Verifique se as URLs abaixo correspondem exatamente às suas URLs configuradas no Django.
         const url = action === 'publicar'
-            ? `/repositorio/galeria/publicar/${pk}/` // Ajuste a URL base conforme sua configuração de rotas
-            : `/repositorio/galeria/arquivar/${pk}/`;
+            ? `/repositorio-admin/galeria/publicar/${pk}/` // Ajuste a URL base conforme sua configuração de rotas
+            : `/repositorio-admin/galeria/arquivar/${pk}/`;
 
         const formHtml = `
             <form method="post"
@@ -162,8 +195,13 @@
         })
         .finally(() => {
             // Reativa o botão original (caso a atualização da linha tenha falhado)
+            // Se updateGalleryRow funcionou, este botão foi substituído, mas mantemos o finally
+            // para garantir que o estado visual do botão seja restaurado em caso de erro.
             button.disabled = false;
-            button.innerHTML = originalHtml;
+            if (!document.getElementById(`galeria-row-${pk}`).querySelector(`[data-action="${action}"]`)) {
+                 // Se o botão não foi substituído (erro na atualização da linha), restauramos o HTML original
+                 button.innerHTML = originalHtml;
+            }
         });
     }
 

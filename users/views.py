@@ -10,9 +10,10 @@ from django.contrib.auth import login as auth_login
 from django.db.models import Q  # NOVO: Import necessário para queries complexas
 
 # ==============================================================================
-# 🎯 CORREÇÃO CRÍTICA: Importar modelos do app 'mensagens'
+# 🎯 CORREÇÕES DE IMPORTAÇÃO: Modelos de outros apps
 # ==============================================================================
 from mensagens.models import Canal, UltimaLeituraUsuario, Mensagem
+from repositorio.models import Galeria  # <--- ADICIONADO PARA O DASHBOARD
 
 # Importar modelos e formulários
 from .forms import (
@@ -447,21 +448,44 @@ class UserPasswordChangeView(PasswordChangeView):
 
 
 # ==============================================================================
-# 3. VISTA DA DASHBOARD (ATUALIZADA)
+# 3. VISTA DA DASHBOARD (ATUALIZADA COM GALERIAS E PROXY S3)
 # ==============================================================================
 
 @login_required
 def dashboard(request):
     """
-    Vista principal após o login. Adiciona o contexto administrativo e de chat.
+    Vista principal após o login. Adiciona o contexto administrativo, chat e galerias.
+    Lógica de proxy para S3 privado baseada no app galerias.
     """
     context = {}
 
     # Adiciona o contexto de aprovação se o usuário for Admin/Staff
     context.update(get_pending_users_context(request))
 
-    # 🎯 NOVO: Adiciona a lista de canais com mensagens não lidas
+    # 🎯 Adiciona a lista de canais com mensagens não lidas
     canais_nao_lidos_list = get_chat_notifications(request.user)
     context['canais_nao_lidos'] = canais_nao_lidos_list
+
+    # 🎯 Busca as 3 últimas galerias públicas e publicadas
+    ultimas_galerias = Galeria.objects.filter(
+        acesso_publico=True,
+        status='PB'
+    ).select_related('capa').order_by('-data_do_evento', '-criado_em')[:3]
+
+    # Gera a URL do proxy para cada capa (Lógica extraída de galerias/views.py)
+    for galeria in ultimas_galerias:
+        if galeria.capa and galeria.capa.arquivo_processado:
+            try:
+                # Usa o reverse para a rota do proxy do app galerias
+                galeria.capa_proxy_url = reverse(
+                    'galerias:private_media_proxy',
+                    kwargs={'path': galeria.capa.arquivo_processado.name}
+                )
+            except Exception:
+                galeria.capa_proxy_url = None
+        else:
+            galeria.capa_proxy_url = None
+
+    context['ultimas_galerias_publicas'] = ultimas_galerias
 
     return render(request, 'users/dashboard.html', context)

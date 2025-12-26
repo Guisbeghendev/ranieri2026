@@ -17,18 +17,22 @@
             {# Link para o Índice Brincando & Dialogando #}
             <li><a href="{% url 'brinc_dialogando:index' %}">Brincando & Dialogando</a></li>
 
-            {# 🚨 CORREÇÃO: Link para Listagem de Galerias (Visível para TODOS) #}
-            <li><a href="{% url 'galerias:lista_galerias' %}">Galerias</a></li>
+            {# Lógica de links separados para Galerias #}
+            <li><a href="{% url 'galerias:lista_publicas' %}">Galerias Públicas</a></li>
 
-            {# 🚨 Link para Repositório / Gestão (Visível apenas se o usuário tiver permissão de gestão) #}
-            {% if user.is_authenticated and user.is_superuser or user.is_fotografo or user.is_fotografo_master %}
-                <li><a href="{% url 'repositorio:gerenciar_galerias' %}">Repositório</a></li>
+            {% if user.is_authenticated %}
+                <li><a href="{% url 'galerias:lista_galerias' %}">Galerias Restritas</a></li>
             {% endif %}
 
+            {# Link para Repositório / Gestão #}
+            {% if user.is_authenticated %}
+                {% if user.is_superuser or user.is_fotografo or user.is_fotografo_master %}
+                    <li><a href="{% url 'repositorio:gerenciar_galerias' %}">Repositório</a></li>
+                {% endif %}
+            {% endif %}
 
             {% if user.is_authenticated %}
                 <li><a href="{% url 'users:dashboard' %}">Painel</a></li>
-                {# Link para a nova rota de Mensagens/Chat #}
                 <li><a href="{% url 'mensagens:chat_list' %}">Mensagens</a></li>
                 <li>
                     <form method="post" action="{% url 'users:logout' %}">
@@ -37,7 +41,6 @@
                     </form>
                 </li>
             {% else %}
-                {# Link para Cadastro #}
                 <li><a href="{% url 'users:register' %}" class="btn-primary">Cadastro</a></li>
                 <li><a href="{% url 'users:login' %}" class="btn-primary btn-logout">Entrar</a></li>
             {% endif %}
@@ -51,7 +54,6 @@
 </header>
 
 <script>
-    // Lógica JavaScript para o menu responsivo (Hamburger)
     document.addEventListener('DOMContentLoaded', function() {
         const hamburger = document.getElementById('hamburger-menu');
         const navUl = document.getElementById('main-nav-ul');

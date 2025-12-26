@@ -1,10 +1,10 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.contrib.auth.models import Group as AuthGroup
 from django.utils.translation import gettext_lazy as _
 
 # Importa os modelos necessários
-from .models import CustomUser, Profile, Grupo, TipoGrupo, CustomUserTipo
+from .models import CustomUser, Profile, Grupo, TipoGrupo, CustomUserTipo, MembroGrupo
 
 
 @receiver(post_save, sender=CustomUser)
@@ -52,3 +52,29 @@ def handle_user_and_group_creation(sender, instance, created, **kwargs):
             # Log de erro, caso o grupo falhe em ser criado, o que é improvável
             # mas garante robustez.
             print(f"ERRO: Grupo '{FREE_GROUP_NAME}' não encontrado para associação do usuário {instance.username}.")
+
+
+@receiver(post_save, sender=MembroGrupo)
+def sincronizar_membro_grupo_save(sender, instance, created, **kwargs):
+    """
+    Quando um Registro é adicionado a um MembroGrupo,
+    adiciona o Usuário vinculado ao grupo de autenticação do Django.
+    """
+    registro = instance.registro
+    if registro and hasattr(registro, 'usuario') and registro.usuario:
+        user = registro.usuario
+        # Adiciona o usuário ao auth_group do Django vinculado ao Grupo de Audiência
+        user.groups.add(instance.grupo.auth_group)
+
+
+@receiver(post_delete, sender=MembroGrupo)
+def sincronizar_membro_grupo_delete(sender, instance, **kwargs):
+    """
+    Quando um vínculo de MembroGrupo é removido,
+    remove o Usuário do grupo de autenticação do Django.
+    """
+    registro = instance.registro
+    if registro and hasattr(registro, 'usuario') and registro.usuario:
+        user = registro.usuario
+        # Remove o usuário do auth_group do Django
+        user.groups.remove(instance.grupo.auth_group)

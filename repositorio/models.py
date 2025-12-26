@@ -210,7 +210,8 @@ class Galeria(models.Model):
     grupos_acesso = models.ManyToManyField(
         Grupo,
         related_name='galerias_acessiveis',
-        verbose_name='Grupos com Acesso'
+        verbose_name='Grupos com Acesso',
+        blank=True
     )
 
     # Capa da Galeria (Referência direta, pois Imagem está definida acima)

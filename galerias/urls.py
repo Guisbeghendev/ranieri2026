@@ -1,20 +1,22 @@
-# galerias/urls.py (CORRIGIDO)
+# galerias/urls.py
 from django.urls import path
 from . import views
-# REMOVIDO: from .views import PrivateMediaProxyView
 
 app_name = 'galerias'
 
 urlpatterns = [
-    # 1. Listagem de todas as galerias acessíveis (Públicas e Exclusivas)
-    path('', views.GaleriaListView.as_view(), name='lista_galerias'),
+    # 1. Vitrine Pública (Apenas conteúdo público - Acessível por todos)
+    path('', views.GaleriaPublicaListView.as_view(), name='lista_publicas'),
 
-    # 2. Detalhe da Galeria (Exibição das Imagens)
+    # 2. Listagem Restrita (Apenas conteúdo exclusivo - Acessível apenas por logados)
+    path('exclusivas/', views.GaleriaListView.as_view(), name='lista_galerias'),
+
+    # 3. Detalhe da Galeria (Exibição das Imagens - Mixin valida se é pública ou restrita)
     path('detalhe/<int:pk>/', views.GaleriaDetailView.as_view(), name='detalhe_galeria'),
 
-    # 3. Endpoint de Interação: Curtir/Descurtir (AJAX/POST)
-    # Recebe o PK da Imagem para registrar/remover a curtida
+    # 4. Endpoint de Interação: Curtir/Descurtir (AJAX/POST)
     path('interacao/curtir/<int:imagem_pk>/', views.CurtirView.as_view(), name='curtir_imagem'),
 
-    # Rota do Proxy de Mídia Privada S3 (REMOVIDA DAQUI)
+    # 5. Proxy de Média Privada S3
+    path('media-proxy/<path:path>', views.PrivateMediaProxyView.as_view(), name='private_media_proxy'),
 ]

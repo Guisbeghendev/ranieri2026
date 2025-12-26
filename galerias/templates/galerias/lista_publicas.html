@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Galerias Públicas{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="text-center mb-4">Galerias Públicas</h1>
+    <p class="text-center section-subtitle mb-5">Confira os eventos abertos da nossa escola.</p>
+
+    <div class="row g-4">
+        {% for galeria in galerias %}
+        <div class="col-md-4 col-sm-6">
+            <div class="card h-100 shadow-sm border-0">
+                <a href="{% url 'galerias:detalhe_galeria' galeria.pk %}">
+                    {% if galeria.capa_proxy_url %}
+                    <img src="{{ galeria.capa_proxy_url }}" class="card-img-top" alt="{{ galeria.nome }}" style="height: 250px; object-fit: cover;">
+                    {% else %}
+                    <img src="{% static 'images/default-gallery-cover.jpg' %}" class="card-img-top" style="height: 250px; object-fit: cover;">
+                    {% endif %}
+                </a>
+
+                <div class="card-body">
+                    <h5 class="card-title">{{ galeria.nome }}</h5>
+                    <p class="card-text text-muted small">
+                        <i class="fas fa-calendar-alt"></i> {{ galeria.data_do_evento|date:"d/m/Y" }}
+                    </p>
+                    <a href="{% url 'galerias:detalhe_galeria' galeria.pk %}" class="btn btn-primary w-100">
+                        Ver Fotos
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <div class="alert alert-info">Nenhuma galeria pública disponível no momento.</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

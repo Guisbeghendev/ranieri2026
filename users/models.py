@@ -3,10 +3,6 @@ from django.contrib.auth.models import AbstractUser, Group as AuthGroup
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.db.models import signals
-# As importações de signals (post_save, receiver) não são mais necessárias aqui
-# from django.db.models.signals import post_save
-# from django.dispatch import receiver
-
 
 # ==============================================================================
 # CHOICES E ENUMS DO PROJETO
@@ -112,7 +108,7 @@ class RegistroProfessor(RegistroBase):
         verbose_name=_("Tipo de Professor")
     )
     turmas = models.ManyToManyField(
-        'Turma', # CORREÇÃO: Usar string para referência futura
+        'Turma',
         blank=True,
         related_name='professores_adicionais',
         verbose_name=_("Turmas Adicionais")
@@ -139,7 +135,6 @@ Turma.add_to_class('professor_regente', models.ForeignKey(
 
 def validate_regente_type(sender, instance, **kwargs):
     if instance.professor_regente and instance.professor_regente.tipo_professor != TipoProfessor.REGENTE:
-        # Aumentei o nível da exceção de ValidationError para o Django Signals funcionar corretamente
         raise signals.django_dispatch.Signal.Exception(
             _('O professor regente deve ter o tipo de professor definido como "Regente".')
         )
@@ -160,8 +155,6 @@ class RegistroAluno(RegistroBase):
     )
     turma = models.ForeignKey(
         Turma,
-        # Mantido PROTECT. Se a Turma for deletada, a exclusão será impedida
-        # enquanto houver alunos nela.
         on_delete=models.PROTECT,
         related_name='alunos',
         verbose_name=_("Turma")
@@ -272,12 +265,9 @@ class CustomUser(AbstractUser):
         verbose_name=_("Pode gerenciar todas as galerias")
     )
 
-    # CORREÇÃO: on_delete alterado de CASCADE para SET_NULL em todos os Registros.
-    # Se o CustomUser for deletado, a Entidade de Registro permanece, mas a ligação
-    # com o usuário é quebrada (definida como NULL).
     registro_aluno = models.OneToOneField(
         RegistroAluno,
-        on_delete=models.SET_NULL, # <--- CORRIGIDO
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='usuario',
@@ -285,7 +275,7 @@ class CustomUser(AbstractUser):
     )
     registro_professor = models.OneToOneField(
         RegistroProfessor,
-        on_delete=models.SET_NULL, # <--- CORRIGIDO
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='usuario',
@@ -293,7 +283,7 @@ class CustomUser(AbstractUser):
     )
     registro_colaborador = models.OneToOneField(
         RegistroColaborador,
-        on_delete=models.SET_NULL, # <--- CORRIGIDO
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='usuario',
@@ -301,7 +291,7 @@ class CustomUser(AbstractUser):
     )
     registro_responsavel = models.OneToOneField(
         RegistroResponsavel,
-        on_delete=models.SET_NULL, # <--- CORRIGIDO
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='usuario',
@@ -309,7 +299,7 @@ class CustomUser(AbstractUser):
     )
     registro_ure = models.OneToOneField(
         RegistroURE,
-        on_delete=models.SET_NULL, # <--- CORRIGIDO
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='usuario',
@@ -317,7 +307,7 @@ class CustomUser(AbstractUser):
     )
     registro_visitante = models.OneToOneField(
         RegistroOutrosVisitantes,
-        on_delete=models.SET_NULL, # <--- CORRIGIDO
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='usuario',
@@ -353,11 +343,7 @@ class CustomUser(AbstractUser):
         verbose_name_plural = _("Usuários")
 
     def clean(self):
-        """Garante que apenas UMA Entidade de Registro esteja vinculada."""
         super().clean()
-
-        # REMOVIDO: A lógica de 'skip_link_validation' que era específica do Wizard.
-        # Agora o clean() SEMPRE valida a regra de negócio.
 
         vinculos = [
             self.registro_aluno, self.registro_professor, self.registro_colaborador,
@@ -372,7 +358,6 @@ class CustomUser(AbstractUser):
                 _('Um usuário pode estar vinculado a, no máximo, uma única Entidade de Registro.')
             )
 
-        # Lógica original que checa se falta o vínculo (para usuários não-ADMIN)
         if self.tipo_usuario != CustomUserTipo.ADMIN and num_vinculos == 0:
             raise ValidationError(
                 _('Usuários não-Administradores devem estar vinculados a uma Entidade de Registro (Aluno, Professor, etc.).')
@@ -380,7 +365,6 @@ class CustomUser(AbstractUser):
 
     @property
     def registro(self):
-        """Propriedade para acessar o registro vinculado de forma simplificada."""
         if self.registro_aluno:
             return self.registro_aluno
         elif self.registro_professor:
@@ -410,12 +394,8 @@ class CustomUser(AbstractUser):
 # ==============================================================================
 
 class Profile(models.Model):
-    """Informações adicionais do usuário, fora do modelo base (CustomUser)."""
-
     user = models.OneToOneField(
         CustomUser,
-        # CORRETO: A exclusão do CustomUser DEVE deletar em cascata o Profile,
-        # pois Profile só existe em função do CustomUser.
         on_delete=models.CASCADE,
         related_name='profile',
         verbose_name=_("Usuário Associado")
@@ -427,8 +407,6 @@ class Profile(models.Model):
         verbose_name=_("Data de Nascimento")
     )
 
-    # CORREÇÃO: Campo 'endereco' reinserido como bloco de texto (conforme solicitado).
-    # Campos de endereço separados (cep, logradouro, etc.) foram removidos.
     endereco = models.TextField(
         null=True,
         blank=True,
@@ -488,8 +466,6 @@ class Profile(models.Model):
 # ==============================================================================
 
 class Grupo(models.Model):
-    """Adiciona metadados ao modelo Group padrão do Django (AuthGroup)."""
-
     auth_group = models.OneToOneField(
         AuthGroup,
         on_delete=models.CASCADE,
@@ -528,7 +504,6 @@ class Grupo(models.Model):
 
     @property
     def membros(self):
-        """Retorna os membros CustomUser que pertencem a este grupo."""
         return self.auth_group.customuser_set.all()
 
 
@@ -542,8 +517,7 @@ class MembroGrupo(models.Model):
         verbose_name=_("Grupo")
     )
 
-    # Correto: on_delete=models.CASCADE. Se o Registro (Aluno, Professor, etc.) for apagado,
-    # a associação MembroGrupo DEVE ser apagada em cascata.
+    # CORREÇÃO: OneToOneField alterado para ForeignKey para permitir múltiplos grupos
     aluno = models.ForeignKey(
         RegistroAluno,
         on_delete=models.CASCADE,
@@ -592,7 +566,6 @@ class MembroGrupo(models.Model):
         verbose_name_plural = _("Membros do Grupo de Audiência")
 
     def clean(self):
-        """Garante que apenas UMA das Entidades de Registro seja preenchida."""
         registros = [
             self.aluno, self.professor, self.colaborador,
             self.responsavel, self.ure, self.visitante
@@ -607,7 +580,6 @@ class MembroGrupo(models.Model):
 
     @property
     def registro(self):
-        """Retorna a instância de registro vinculada."""
         if self.aluno:
             return self.aluno
         elif self.professor:
@@ -637,11 +609,6 @@ class MembroGrupo(models.Model):
 # ==============================================================================
 
 class JSONUpload(models.Model):
-    """
-    Modelo para gerenciar o upload de arquivos JSON via Admin.
-    O processamento e exclusão do arquivo/objeto ocorre no Admin.
-    """
-    # CORREÇÃO INCLUÍDA: O campo 'turma' é obrigatório para o Admin.
     turma = models.ForeignKey(
         'Turma',
         on_delete=models.CASCADE,
@@ -662,11 +629,4 @@ class JSONUpload(models.Model):
         verbose_name_plural = _("Upload de Seeders JSON")
 
     def __str__(self):
-        # A representação agora inclui a turma, evitando erro no admin
         return f"Arquivo {self.json_file.name} para {self.turma.nome} em {self.uploaded_at.strftime('%Y-%m-%d %H:%M')}"
-
-
-# ==============================================================================
-# 6. SIGNALS (Garante a Integridade Referencial) - Removido o duplicado
-# ==============================================================================
-# O signal post_save que cria o Profile foi movido para users/signals.py.

@@ -3,9 +3,9 @@
 {% block title %}Dashboard - Bem-vindo(a), {{ user.first_name }}{% endblock title %}
 
 {% block content %}
-
 <div class="dashboard-main-container">
 
+    {# cabeçalho dashboard #}
     <div class="dashboard-header mb-2">
         <h1 class="header-title">
             Bem-vindo(a), {{ user.first_name }}!
@@ -14,7 +14,9 @@
             Seu Painel de Controle ({{ user.get_tipo_usuario_display }})
         </p>
     </div>
+    {# fim cabeçalho dashboard #}
 
+    {# msg ao usuario #}
     {% if messages %}
         <ul class="messages mb-2">
             {% for message in messages %}
@@ -25,8 +27,12 @@
 
     {% include 'users/includes/approval_section.html' %}
 
+    {# fim msg ao usuario #}
+
+    {# grid dashboard #}
     <div class="dashboard-grid">
 
+        {# card resumo profile #}
         <div class="card card-primary">
             <h3 class="card-title">Minha Conta</h3>
             <div class="card-body">
@@ -38,7 +44,9 @@
                 <a href="{% url 'users:profile' %}" class="btn btn-back btn-sm">Ver Perfil Completo</a>
             </div>
         </div>
+        {# fim card resumo profile #}
 
+        {# card resumo ações rapidas #}
         <div class="card card-secondary">
             <h3 class="card-title">Ações Rápidas</h3>
             <div class="card-body action-list">
@@ -53,9 +61,38 @@
                 </a>
             </div>
         </div>
+        {# fim card resumo ações rapidas #}
 
+        {# CARD central msgs #}
+        <div class="card card-warning">
+            <h3 class="card-title"><i class="fas fa-bell"></i> Central de Mensagens</h3>
+            <div class="card-body">
+                {% if canais_nao_lidos %}
+                    <p class="text-danger">
+                        Você tem **{{ canais_nao_lidos|length }}** mensage{{ canais_nao_lidos|length|pluralize:"m,ns" }} não lida{{ canais_nao_lidos|length|pluralize:"s" }}:
+                    </p>
+                    <ul class="list-unstyled mt-2 notification-list">
+                        {% for canal in canais_nao_lidos %}
+                            <li>
+                                <a href="{% url 'mensagens:canal_chat' slug=canal.slug %}" class="btn btn-sm btn-outline-danger mb-1 btn-block text-left">
+                                    <i class="fas fa-comment-dots"></i> **{{ canal.nome }}** (Ler)
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>
+                        <i class="fas fa-check-circle text-success"></i> Sem novas mensagens ou avisos urgentes.
+                    </p>
+                    <a href="{% url 'mensagens:chat_list' %}" class="btn btn-sm btn-outline-secondary mt-2">
+                        Ver todos os Canais
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        {# fim CARD central msgs #}
 
-        {# 🎯 CARD: ÚLTIMAS GALERIAS PÚBLICAS #}
+        {# CARD ÚLTIMAS GALERIAS PÚBLICAS #}
         <div class="card card-success">
             <h3 class="card-title"><i class="fas fa-images"></i> Galerias Públicas</h3>
             <div class="card-body">
@@ -86,41 +123,51 @@
                 {% endif %}
             </div>
             <div class="card-footer">
-                <a href="{% url 'galerias:lista_publicas' %}" class="btn btn-sm btn-outline-success btn-block">
+                <a href="{% url 'galerias:lista_galerias' %}" class="btn btn-sm btn-outline-success btn-block">
                     Ver Galerias Completa
                 </a>
             </div>
         </div>
+        {# fim CARD ÚLTIMAS GALERIAS PÚBLICAS #}
 
-
-        <div class="card card-warning">
-            <h3 class="card-title"><i class="fas fa-bell"></i> Central de Mensagens</h3>
+        {# CARD ÚLTIMAS GALERIAS DOS MEUS GRUPOS - exclisivas #}
+        <div class="card card-success">
+            <h3 class="card-title"><i class="fas fa-images"></i> Galerias Exclusivas</h3>
             <div class="card-body">
-                {% if canais_nao_lidos %}
-                    <p class="text-danger">
-                        Você tem **{{ canais_nao_lidos|length }}** mensage{{ canais_nao_lidos|length|pluralize:"m,ns" }} não lida{{ canais_nao_lidos|length|pluralize:"s" }}:
-                    </p>
-                    <ul class="list-unstyled mt-2 notification-list">
-                        {% for canal in canais_nao_lidos %}
-                            <li>
-                                <a href="{% url 'mensagens:canal_chat' slug=canal.slug %}" class="btn btn-sm btn-outline-danger mb-1 btn-block text-left">
-                                    <i class="fas fa-comment-dots"></i> **{{ canal.nome }}** (Ler)
+                {% if ultimas_galerias_privadas %}
+                    <p class="small text-muted mb-2">Últimas atualizações exclusivas:</p>
+                    <ul class="list-unstyled">
+                        {% for galeria in ultimas_galerias_privadas %}
+                            <li class="mb-2 border-bottom pb-1">
+                                <a href="{% url 'galerias:detalhe_galeria' pk=galeria.pk %}" class="text-decoration-none d-flex align-items-center">
+                                    {% if galeria.capa_proxy_url %}
+                                        <img src="{{ galeria.capa_proxy_url }}" alt="Capa" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;" class="me-2">
+                                    {% else %}
+                                        <div class="bg-light d-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px; border-radius: 4px;">
+                                            <i class="fas fa-lock text-muted"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div style="min-width: 0;">
+                                        <span class="d-block text-dark fw-bold text-truncate" style="font-size: 0.9rem;">{{ galeria.nome }}</span>
+                                        <small class="text-muted" style="font-size: 0.75rem;">{{ galeria.data_do_evento|date:"d/m/Y" }}</small>
+                                    </div>
                                 </a>
                             </li>
                         {% endfor %}
                     </ul>
                 {% else %}
-                    <p>
-                        <i class="fas fa-check-circle text-success"></i> Sem novas mensagens ou avisos urgentes.
-                    </p>
-                    <a href="{% url 'mensagens:chat_list' %}" class="btn btn-sm btn-outline-secondary mt-2">
-                        Ver todos os Canais
-                    </a>
+                    <p class="text-muted">Nenhuma galeria restrita encontrada para seus grupos.</p>
                 {% endif %}
             </div>
+            <div class="card-footer">
+                <a href="{% url 'galerias:lista_galerias' %}" class="btn btn-sm btn-outline-info btn-block">
+                    Ver Todas do Grupo
+                </a>
+            </div>
         </div>
+        {# fim CARD ÚLTIMAS GALERIAS DOS MEUS GRUPOS - exclisivas #}
 
-
+        {# card suporte #}
         <div class="card card-info">
             <h3 class="card-title"><i class="fas fa-headset"></i> Suporte e Ajuda</h3>
             <div class="card-body">
@@ -135,13 +182,18 @@
                 </a>
             </div>
         </div>
+        {# card suporte #}
 
     </div>
+    {# fim grid dashboard #}
 
+    {# alert #}
     <div class="main-content-area mt-2">
         <div class="alert-info">
-            Esta é a área de atividades recentes e notificações.
+            Escola Professor José Ranieri!
         </div>
     </div>
+    {# fim alert #}
+
 </div>
 {% endblock content %}

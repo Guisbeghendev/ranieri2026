@@ -247,7 +247,7 @@ def registration_create(request):
                         registro_obj.tipo_professor = data['tipo_professor']
                         registro_obj.save()
                         field_name = 'registro_professor'
-                    # Se não estiver no 'registros_a_vincular', o form.clean() já lançou um erro.
+                    # Se não estiver no 'registros_a_vincular', o form.clean() ya lançou um erro.
 
                 elif tipo_usuario == CustomUserTipo.COLABORADOR.value:
                     # REVERTIDO: Cria novo RegistroColaborador (com is_active=False por padrão)
@@ -466,26 +466,39 @@ def dashboard(request):
     canais_nao_lidos_list = get_chat_notifications(request.user)
     context['canais_nao_lidos'] = canais_nao_lidos_list
 
-    # 🎯 Busca as 3 últimas galerias públicas e publicadas
-    ultimas_galerias = Galeria.objects.filter(
+    # 🎯 1. Busca as 3 últimas galerias públicas e publicadas
+    ultimas_galerias_publicas = Galeria.objects.filter(
         acesso_publico=True,
         status='PB'
     ).select_related('capa').order_by('-data_do_evento', '-criado_em')[:3]
 
-    # Gera a URL do proxy para cada capa (Lógica extraída de galerias/views.py)
-    for galeria in ultimas_galerias:
-        if galeria.capa and galeria.capa.arquivo_processado:
-            try:
-                # Usa o reverse para a rota do proxy do app galerias
-                galeria.capa_proxy_url = reverse(
-                    'galerias:private_media_proxy',
-                    kwargs={'path': galeria.capa.arquivo_processado.name}
-                )
-            except Exception:
-                galeria.capa_proxy_url = None
-        else:
-            galeria.capa_proxy_url = None
+    # 🎯 2. Busca as 3 últimas galerias dos grupos do usuário (E que sejam PÚBLICAS)
+    user_groups = request.user.groups.all()
+    ultimas_galerias_privadas = Galeria.objects.filter(
+        acesso_publico=True,  # CORREÇÃO: Filtro E (Público + Grupo)
+        status='PB',
+        grupos_acesso__auth_group__in=user_groups
+    ).distinct().select_related('capa').order_by('-data_do_evento', '-criado_em')[:3]
 
-    context['ultimas_galerias_publicas'] = ultimas_galerias
+    # Função interna para injetar as URLs do proxy (Lógica extraída de galerias/views.py)
+    def inject_proxy_urls(galerias_qs):
+        for galeria in galerias_qs:
+            if galeria.capa and galeria.capa.arquivo_processado:
+                try:
+                    # Usa o reverse para a rota do proxy do app galerias
+                    galeria.capa_proxy_url = reverse(
+                        'galerias:private_media_proxy',
+                        kwargs={'path': galeria.capa.arquivo_processado.name}
+                    )
+                except Exception:
+                    galeria.capa_proxy_url = None
+            else:
+                galeria.capa_proxy_url = None
+
+    inject_proxy_urls(ultimas_galerias_publicas)
+    inject_proxy_urls(ultimas_galerias_privadas)
+
+    context['ultimas_galerias_publicas'] = ultimas_galerias_publicas
+    context['ultimas_galerias_privadas'] = ultimas_galerias_privadas
 
     return render(request, 'users/dashboard.html', context)

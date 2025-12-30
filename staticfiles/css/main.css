@@ -737,6 +737,28 @@ footer {
   }
 }
 
+/* Estilo Único e Exclusivo para os botões de Login/Cadastro da Home */
+#home-auth-unique-container {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 25px;
+}
+
+@media (max-width: 768px) {
+    #home-auth-unique-container {
+        flex-direction: column; /* Empilha os botões para não encavalar */
+        align-items: center;
+        padding: 0 20px;
+    }
+
+    #home-auth-unique-container .btn-lg {
+        width: 100%; /* Largura total no celular */
+        max-width: 320px;
+        margin-right: 0 !important; /* Mata qualquer margem padrão do projeto */
+    }
+}
+
 /* ================================
    PROFILE (VIEW MODE)
 =================================== */
@@ -2554,13 +2576,11 @@ LISTA DE CANAIS (CHAT LIST)
    GALERIAS (LISTAGEM E DETALHE)
 =================================== */
 
-/* Container para a listagem (usado em lista_galerias.html) */
 .gallery-list-container {
     padding: 1rem 0;
     margin-bottom: 2rem;
 }
 
-/* Título de seção segmentada (Públicas / Exclusivas) */
 .segment-title {
     font-size: 1.5rem;
     font-weight: 700;
@@ -2571,68 +2591,126 @@ LISTA DE CANAIS (CHAT LIST)
     border-bottom: 2px solid var(--color-border);
 }
 
-/* Layout de grid para os cartões de galeria */
 .gallery-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: 1fr; /* Empilhado no celular */
     gap: 1.5rem;
 }
 
-/* Card individual da Galeria */
 .gallery-card {
     background: white;
     border-radius: var(--radius);
     box-shadow: var(--shadow-default);
     border: 1px solid var(--color-border);
     overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
     transition: transform var(--transition), box-shadow var(--transition);
 }
-.gallery-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.15); /* Sombra um pouco mais forte */
-}
 
-/* Imagem de capa da Galeria */
 .gallery-card-image {
     width: 100%;
-    height: 200px;
+    height: 250px;
     object-fit: cover;
     display: block;
 }
 
-/* Conteúdo de texto do Card */
+.grid-dashboard-galerias {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 1rem !important;
+}
+
+.gallery-card-dash-item {
+    display: flex !important;
+    align-items: center !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 0 4px 0 !important;
+    margin: 0 !important;
+    border-bottom: 1px solid var(--color-border) !important;
+    border-radius: 0 !important;
+    text-decoration: none !important;
+    flex: 1 1 30% !important;
+    min-width: 0 !important;
+}
+
+.gallery-card-dash-thumb {
+    width: 40px !important;
+    height: 40px !important;
+    object-fit: cover;
+    border-radius: 4px;
+    display: block;
+    flex-shrink: 0;
+}
+
+/* RESPONSIVIDADE */
+@media (min-width: 768px) {
+    .gallery-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Lado a lado em telas maiores */
+    }
+}
+
+@media (max-width: 480px) {
+    .gallery-card-dash-item {
+        flex: 1 1 100% !important;
+    }
+    .gallery-card-image {
+        height: 200px;
+    }
+}
+
 .gallery-card-content {
     padding: 1rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 .gallery-card-title {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: 700;
     color: var(--color-primary);
     margin-bottom: 0.5rem;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
 }
 
 .gallery-card-meta {
     font-size: 0.85rem;
     color: var(--color-text-light);
     margin-bottom: 1rem;
-    display: flex;
-    justify-content: space-between;
 }
 
-/* Destaque para Galerias Exclusivas */
-.exclusive-badge {
-    background: var(--laranja-escuro1);
-    color: white;
-    padding: 0.3rem 0.6rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    border-radius: var(--radius);
-    display: inline-block;
-    margin-top: -0.25rem;
+.grupo-galeria-section {
+    display: block;
+    width: 100%;
+    clear: both;
+    margin-bottom: 3rem; /* Espaço entre grupos empilhados */
+}
+
+/* AJUSTES DASHBOARD SUPORTE */
+.dashboard-support-container {
+    width: 100%;
+    margin-bottom: 2rem;
+}
+
+.dashboard-support-container .card {
+    width: 100%;
+}
+
+/* DASHBOARD GRID (ESTRUTURA DE COLUNAS) */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
 }
 
 

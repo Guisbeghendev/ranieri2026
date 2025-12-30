@@ -448,14 +448,14 @@ class UserPasswordChangeView(PasswordChangeView):
 
 
 # ==============================================================================
-# 3. VISTA DA DASHBOARD (ATUALIZADA COM GALERIAS E PROXY S3)
+# 3. VISTA DA DASHBOARD (🎯 MODIFICADA: 3 GALERIAS POR GRUPO)
 # ==============================================================================
 
 @login_required
 def dashboard(request):
     """
     Vista principal após o login. Adiciona o contexto administrativo, chat e galerias.
-    Lógica de proxy para S3 privado baseada no app galerias.
+    Exibe 3 galerias públicas e as 3 últimas de cada grupo do usuário separadamente.
     """
     context = {}
 
@@ -465,20 +465,6 @@ def dashboard(request):
     # 🎯 Adiciona a lista de canais com mensagens não lidas
     canais_nao_lidos_list = get_chat_notifications(request.user)
     context['canais_nao_lidos'] = canais_nao_lidos_list
-
-    # 🎯 1. Busca as 3 últimas galerias públicas e publicadas
-    ultimas_galerias_publicas = Galeria.objects.filter(
-        acesso_publico=True,
-        status='PB'
-    ).select_related('capa').order_by('-data_do_evento', '-criado_em')[:3]
-
-    # 🎯 2. Busca as 3 últimas galerias dos grupos do usuário (E que sejam PÚBLICAS)
-    user_groups = request.user.groups.all()
-    ultimas_galerias_privadas = Galeria.objects.filter(
-        acesso_publico=True,  # CORREÇÃO: Filtro E (Público + Grupo)
-        status='PB',
-        grupos_acesso__auth_group__in=user_groups
-    ).distinct().select_related('capa').order_by('-data_do_evento', '-criado_em')[:3]
 
     # Função interna para injetar as URLs do proxy (Lógica extraída de galerias/views.py)
     def inject_proxy_urls(galerias_qs):
@@ -495,10 +481,31 @@ def dashboard(request):
             else:
                 galeria.capa_proxy_url = None
 
+    # 🎯 1. Busca as 3 últimas galerias puramente públicas e publicadas
+    ultimas_galerias_publicas = Galeria.objects.filter(
+        acesso_publico=True,
+        status='PB'
+    ).select_related('capa').order_by('-data_do_evento', '-criado_em')[:3]
     inject_proxy_urls(ultimas_galerias_publicas)
-    inject_proxy_urls(ultimas_galerias_privadas)
+
+    # 🎯 2. Busca as 3 últimas galerias DE CADA GRUPO do usuário
+    user_groups = request.user.groups.all()
+    grupos_com_galerias = []
+
+    for group in user_groups:
+        galerias_do_grupo = Galeria.objects.filter(
+            status='PB',
+            grupos_acesso__auth_group=group
+        ).select_related('capa').order_by('-data_do_evento', '-criado_em')[:3]
+
+        if galerias_do_grupo.exists():
+            inject_proxy_urls(galerias_do_grupo)
+            grupos_com_galerias.append({
+                'nome_grupo': group.name,
+                'galerias': galerias_do_grupo
+            })
 
     context['ultimas_galerias_publicas'] = ultimas_galerias_publicas
-    context['ultimas_galerias_privadas'] = ultimas_galerias_privadas
+    context['grupos_com_galerias'] = grupos_com_galerias
 
     return render(request, 'users/dashboard.html', context)

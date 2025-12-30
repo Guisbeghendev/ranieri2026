@@ -1,4 +1,3 @@
-# galerias/views.py
 from django.views.generic import ListView, DetailView, View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse, HttpResponseForbidden, HttpResponseBadRequest, HttpResponse
@@ -21,6 +20,10 @@ class GaleriaAccessMixin:
     """
 
     def has_access(self, galeria, user):
+        # Se não há galeria, o Mixin de acesso de usuário final nega
+        if galeria is None:
+            return False
+
         if user.is_authenticated and user.is_superuser:
             return galeria.status == 'PB'
 
@@ -41,10 +44,6 @@ class GaleriaAccessMixin:
 # 1. LISTAGEM PÚBLICA (Independente de Login)
 # ----------------------------------------------------------------------
 class GaleriaPublicaListView(ListView):
-    """
-    View para exibir APENAS galerias públicas.
-    Template: galerias/lista_publicas.html
-    """
     model = Galeria
     template_name = 'galerias/lista_publicas.html'
     context_object_name = 'galerias'
@@ -73,42 +72,54 @@ class GaleriaPublicaListView(ListView):
 # 2. LISTAGEM RESTRITA (Apenas para Usuários Logados)
 # ----------------------------------------------------------------------
 class GaleriaListView(LoginRequiredMixin, GaleriaAccessMixin, ListView):
-    """
-    View para exibir galerias exclusivas (restritas aos grupos do usuário).
-    Uma galeria aparece aqui se o usuário pertencer ao grupo vinculado,
-    mesmo que ela também seja marcada como pública.
-    Template: galerias/lista_galerias.html
-    """
     model = Galeria
     template_name = 'galerias/lista_galerias.html'
     context_object_name = 'galerias_exclusivas'
 
     def get_queryset(self):
-        user = self.request.user
-        queryset_base = Galeria.objects.filter(
-            status='PB'
-        ).order_by('-data_do_evento').prefetch_related('capa', 'grupos_acesso__auth_group')
-
-        if user.is_superuser:
-            # Superuser vê tudo o que tem grupo vinculado (cumulativo com público ou não)
-            return queryset_base.filter(grupos_acesso__isnull=False).distinct()
-
-        # Filtra galerias que pertencem aos grupos do usuário
-        return queryset_base.filter(
-            grupos_acesso__auth_group__in=user.groups.all()
-        ).distinct()
+        # Retorna vazio pois a lógica agora utiliza context_data para agrupar por grupos
+        return Galeria.objects.none()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        for galeria in context['galerias_exclusivas']:
-            if galeria.capa and galeria.capa.arquivo_processado:
-                try:
-                    galeria.capa_proxy_url = reverse(
-                        'galerias:private_media_proxy',
-                        kwargs={'path': galeria.capa.arquivo_processado.name}
-                    )
-                except Exception:
-                    galeria.capa_proxy_url = None
+        user = self.request.user
+
+        # Define quais grupos buscar (Todos se superuser, ou apenas os do usuário)
+        if user.is_superuser:
+            from django.contrib.auth.models import Group
+            user_groups = Group.objects.filter(grupoacesso__isnull=False).distinct()
+        else:
+            user_groups = user.groups.all()
+
+        grupos_com_galerias = []
+
+        for group in user_groups:
+            # Busca todas as galerias publicadas vinculadas ao grupo específico
+            galerias_do_grupo = Galeria.objects.filter(
+                status='PB',
+                grupos_acesso__auth_group=group
+            ).prefetch_related('capa').order_by('-data_do_evento')
+
+            if galerias_do_grupo.exists():
+                # Injeção das URLs do Proxy para cada galeria do grupo
+                for galeria in galerias_do_grupo:
+                    if galeria.capa and galeria.capa.arquivo_processado:
+                        try:
+                            galeria.capa_proxy_url = reverse(
+                                'galerias:private_media_proxy',
+                                kwargs={'path': galeria.capa.arquivo_processado.name}
+                            )
+                        except Exception:
+                            galeria.capa_proxy_url = None
+                    else:
+                        galeria.capa_proxy_url = None
+
+                grupos_com_galerias.append({
+                    'nome_grupo': group.name,
+                    'galerias': galerias_do_grupo
+                })
+
+        context['grupos_com_galerias'] = grupos_com_galerias
         return context
 
 
@@ -207,7 +218,7 @@ class CurtirView(LoginRequiredMixin, View):
 
 
 # ----------------------------------------------------------------------
-# 5. PROXY DE MÉDIA PRIVADA S3
+# 5. PROXY DE MÉDIA PRIVADA S3 (CORRIGIDO)
 # ----------------------------------------------------------------------
 class PrivateMediaProxyView(View):
     bucket_name = settings.AWS_STORAGE_BUCKET_NAME
@@ -228,7 +239,15 @@ class PrivateMediaProxyView(View):
         except (Imagem.DoesNotExist, Imagem.MultipleObjectsReturned):
             return HttpResponseBadRequest('Arquivo não encontrado.')
 
-        if not GaleriaAccessMixin().has_access(galeria, user):
+        # --- LÓGICA DE PERMISSÃO CORRIGIDA ---
+        # Se o usuário for Superuser ou o Fotógrafo dono da imagem, ele PODE ver (essencial para o Repositório Admin)
+        if user.is_authenticated and (user.is_superuser or user.is_fotografo_master or imagem.fotografo == user):
+            allowed = True
+        else:
+            # Caso contrário, cai na regra do Mixin (que checa se a galeria está publicada, etc)
+            allowed = GaleriaAccessMixin().has_access(galeria, user)
+
+        if not allowed:
             return HttpResponseForbidden('Acesso negado.')
 
         try:

@@ -16,7 +16,6 @@
     </div>
     {# fim cabeçalho dashboard #}
 
-    {# msg ao usuario #}
     {% if messages %}
         <ul class="messages mb-2">
             {% for message in messages %}
@@ -27,10 +26,8 @@
 
     {% include 'users/includes/approval_section.html' %}
 
-    {# fim msg ao usuario #}
-
-    {# grid dashboard #}
-    <div class="dashboard-grid">
+    {# PRIMEIRA GRID: Informações de Conta e Mensagens (3 Cards) #}
+    <div class="dashboard-grid mb-4">
 
         {# card resumo profile #}
         <div class="card card-primary">
@@ -92,32 +89,35 @@
         </div>
         {# fim CARD central msgs #}
 
+    </div>
+    {# fim PRIMEIRA GRID: Informações de Conta e Mensagens (3 Cards) #}
+
+    {# SEGUNDA GRID: Apenas Galerias (2 Cards) #}
+    <div class="dashboard-grid mb-4">
+
         {# CARD ÚLTIMAS GALERIAS PÚBLICAS #}
         <div class="card card-success">
             <h3 class="card-title"><i class="fas fa-images"></i> Galerias Públicas</h3>
             <div class="card-body">
                 {% if ultimas_galerias_publicas %}
                     <p class="small text-muted mb-2">Últimas atualizações públicas:</p>
-                    <ul class="list-unstyled">
+                    <div class="grid-dashboard-galerias">
                         {% for galeria in ultimas_galerias_publicas %}
-                            <li class="mb-2 border-bottom pb-1">
-                                <a href="{% url 'galerias:detalhe_galeria' pk=galeria.pk %}" class="text-decoration-none d-flex align-items-center">
-                                    {# CORREÇÃO: Usando a URL do Proxy gerada na View para S3 Privado #}
-                                    {% if galeria.capa_proxy_url %}
-                                        <img src="{{ galeria.capa_proxy_url }}" alt="Capa" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;" class="me-2">
-                                    {% else %}
-                                        <div class="bg-light d-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px; border-radius: 4px;">
-                                            <i class="fas fa-image text-muted"></i>
-                                        </div>
-                                    {% endif %}
-                                    <div style="min-width: 0;">
-                                        <span class="d-block text-dark fw-bold text-truncate" style="font-size: 0.9rem;">{{ galeria.nome }}</span>
-                                        <small class="text-muted" style="font-size: 0.75rem;">{{ galeria.data_do_evento|date:"d/m/Y" }}</small>
+                            <a href="{% url 'galerias:detalhe_galeria' pk=galeria.pk %}" class="gallery-card-dash-item">
+                                {% if galeria.capa_proxy_url %}
+                                    <img src="{{ galeria.capa_proxy_url }}" alt="Capa" class="gallery-card-dash-thumb me-2">
+                                {% else %}
+                                    <div class="bg-light d-flex align-items-center justify-content-center gallery-card-dash-thumb me-2">
+                                        <i class="fas fa-image text-muted"></i>
                                     </div>
-                                </a>
-                            </li>
+                                {% endif %}
+                                <div class="text-truncate">
+                                    <span class="d-block text-dark fw-bold text-truncate" style="font-size: 0.9rem;">{{ galeria.nome }}</span>
+                                    <small class="text-muted" style="font-size: 0.75rem;">{{ galeria.data_do_evento|date:"d/m/Y" }}</small>
+                                </div>
+                            </a>
                         {% endfor %}
-                    </ul>
+                    </div>
                 {% else %}
                     <p>Nenhuma galeria pública disponível no momento.</p>
                 {% endif %}
@@ -130,31 +130,35 @@
         </div>
         {# fim CARD ÚLTIMAS GALERIAS PÚBLICAS #}
 
-        {# CARD ÚLTIMAS GALERIAS DOS MEUS GRUPOS - exclisivas #}
+        {# CARD ÚLTIMAS GALERIAS EXCLUSIVAS - GRUPOS #}
         <div class="card card-success">
-            <h3 class="card-title"><i class="fas fa-images"></i> Galerias Exclusivas</h3>
+            <h3 class="card-title"><i class="fas fa-lock"></i> Galerias Exclusivas</h3>
             <div class="card-body">
-                {% if ultimas_galerias_privadas %}
-                    <p class="small text-muted mb-2">Últimas atualizações exclusivas:</p>
-                    <ul class="list-unstyled">
-                        {% for galeria in ultimas_galerias_privadas %}
-                            <li class="mb-2 border-bottom pb-1">
-                                <a href="{% url 'galerias:detalhe_galeria' pk=galeria.pk %}" class="text-decoration-none d-flex align-items-center">
-                                    {% if galeria.capa_proxy_url %}
-                                        <img src="{{ galeria.capa_proxy_url }}" alt="Capa" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;" class="me-2">
-                                    {% else %}
-                                        <div class="bg-light d-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px; border-radius: 4px;">
-                                            <i class="fas fa-lock text-muted"></i>
+                {% if grupos_com_galerias %}
+                    {% for item in grupos_com_galerias %}
+                        <div class="grupo-galeria-section mb-3">
+                            <h4 class="h6 fw-bold text-primary border-bottom pb-1 mb-2">
+                                <i class="fas fa-users-cog"></i> {{ item.nome_grupo }}
+                            </h4>
+                            <div class="grid-dashboard-galerias">
+                                {% for galeria in item.galerias %}
+                                    <a href="{% url 'galerias:detalhe_galeria' pk=galeria.pk %}" class="gallery-card-dash-item">
+                                        {% if galeria.capa_proxy_url %}
+                                            <img src="{{ galeria.capa_proxy_url }}" alt="Capa" class="gallery-card-dash-thumb me-2">
+                                        {% else %}
+                                            <div class="bg-light d-flex align-items-center justify-content-center gallery-card-dash-thumb me-2">
+                                                <i class="fas fa-lock text-muted" style="font-size: 0.8rem;"></i>
+                                            </div>
+                                        {% endif %}
+                                        <div class="text-truncate">
+                                            <span class="d-block text-dark fw-bold text-truncate" style="font-size: 0.9rem;">{{ galeria.nome }}</span>
+                                            <small class="text-muted" style="font-size: 0.75rem;">{{ galeria.data_do_evento|date:"d/m/Y" }}</small>
                                         </div>
-                                    {% endif %}
-                                    <div style="min-width: 0;">
-                                        <span class="d-block text-dark fw-bold text-truncate" style="font-size: 0.9rem;">{{ galeria.nome }}</span>
-                                        <small class="text-muted" style="font-size: 0.75rem;">{{ galeria.data_do_evento|date:"d/m/Y" }}</small>
-                                    </div>
-                                </a>
-                            </li>
-                        {% endfor %}
-                    </ul>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
                 {% else %}
                     <p class="text-muted">Nenhuma galeria restrita encontrada para seus grupos.</p>
                 {% endif %}
@@ -165,9 +169,13 @@
                 </a>
             </div>
         </div>
-        {# fim CARD ÚLTIMAS GALERIAS DOS MEUS GRUPOS - exclisivas #}
+        {# FIM CARD ÚLTIMAS GALERIAS EXCLUSIVAS - GRUPOS #}
 
-        {# card suporte #}
+    </div>
+    {# fim SEGUNDA GRID: Apenas Galerias (2 Cards) #}
+
+    {# SEÇÃO DE SUPORTE #}
+    <div class="dashboard-support-container mt-4">
         <div class="card card-info">
             <h3 class="card-title"><i class="fas fa-headset"></i> Suporte e Ajuda</h3>
             <div class="card-body">
@@ -182,18 +190,8 @@
                 </a>
             </div>
         </div>
-        {# card suporte #}
-
     </div>
-    {# fim grid dashboard #}
-
-    {# alert #}
-    <div class="main-content-area mt-2">
-        <div class="alert-info">
-            Escola Professor José Ranieri!
-        </div>
-    </div>
-    {# fim alert #}
+    {# FIM SEÇÃO DE SUPORTE #}
 
 </div>
 {% endblock content %}

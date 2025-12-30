@@ -60,8 +60,8 @@
             <h2>Comunidade Ranieri</h2>
             <p>Acesse seu painel para mensagens, materiais exclusivos e informações da sua turma, entre outras!</p>
             {% if not user.is_authenticated %}
-                <div class="cta-buttons">
-                    <a href="{% url 'users:login' %}" class="btn-secondary btn-lg mr-2">Fazer Login <i class="fas fa-sign-in-alt"></i></a>
+                <div id="home-auth-unique-container">
+                    <a href="{% url 'users:login' %}" class="btn-secondary btn-lg">Fazer Login <i class="fas fa-sign-in-alt"></i></a>
                     <a href="{% url 'users:register' %}" class="btn-primary btn-lg">Cadastre-se <i class="fas fa-user-plus"></i></a>
                 </div>
             {% else %}

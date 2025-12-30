@@ -9,30 +9,38 @@
     <h1 class="text-center mb-4">Galerias Exclusivas</h1>
     <p class="section-subtitle text-center mb-5">Conteúdo destinado a usuários cadastrados.</p>
 
-    {% if galerias_exclusivas %}
-        <div class="row g-4">
-            {% for galeria in galerias_exclusivas %}
-                <div class="col-md-4 col-sm-6">
-                    <div class="gallery-card card h-100 shadow-sm border-secondary">
-                        <a href="{% url 'galerias:detalhe_galeria' pk=galeria.pk %}">
-                            {% if galeria.capa_proxy_url %}
-                                <img src="{{ galeria.capa_proxy_url }}" alt="{{ galeria.nome }}" class="card-img-top" style="height: 250px; object-fit: cover;">
-                            {% else %}
-                                <img src="{% static 'images/default-gallery-cover.jpg' %}" class="card-img-top" style="height: 250px; object-fit: cover;">
-                            {% endif %}
-                        </a>
-                        <div class="card-body">
-                            <h3 class="h5 card-title">{{ galeria.nome }}</h3>
-                            <div class="gallery-card-meta mb-3 small text-muted">
-                                <span><i class="fas fa-calendar-alt"></i> {{ galeria.data_do_evento|date:"d/m/Y" }}</span><br>
-                                <span class="badge bg-secondary"><i class="fas fa-user-lock"></i> Exclusiva</span>
+    {% if grupos_com_galerias %}
+        {% for item in grupos_com_galerias %}
+            <section class="grupo-galeria-section mb-5">
+                <h2 class="segment-title">
+                    <i class="fas fa-users-cog"></i> {{ item.nome_grupo }}
+                </h2>
+
+                <div class="gallery-grid">
+                    {% for galeria in item.galerias %}
+                        <div class="gallery-card">
+                            <a href="{% url 'galerias:detalhe_galeria' pk=galeria.pk %}">
+                                {% if galeria.capa_proxy_url %}
+                                    <img src="{{ galeria.capa_proxy_url }}" alt="{{ galeria.nome }}" class="gallery-card-image">
+                                {% else %}
+                                    <img src="{% static 'images/default-gallery-cover.jpg' %}" class="gallery-card-image">
+                                {% endif %}
+                            </a>
+                            <div class="gallery-card-content">
+                                <h3 class="gallery-card-title text-truncate">{{ galeria.nome }}</h3>
+                                <div class="gallery-card-meta mb-3 small text-muted">
+                                    <span><i class="fas fa-calendar-alt"></i> {{ galeria.data_do_evento|date:"d/m/Y" }}</span><br>
+                                    <span class="badge bg-secondary mt-2"><i class="fas fa-user-lock"></i> Exclusiva</span>
+                                </div>
+                                <div class="mt-auto">
+                                    <a href="{% url 'galerias:detalhe_galeria' pk=galeria.pk %}" class="btn btn-secondary w-100">Ver Fotos <i class="fas fa-arrow-right"></i></a>
+                                </div>
                             </div>
-                            <a href="{% url 'galerias:detalhe_galeria' pk=galeria.pk %}" class="btn btn-secondary w-100">Ver Fotos <i class="fas fa-arrow-right"></i></a>
                         </div>
-                    </div>
+                    {% endfor %}
                 </div>
-            {% endfor %}
-        </div>
+            </section>
+        {% endfor %}
     {% else %}
         <div class="col-12 text-center py-5">
             <div class="alert alert-warning">

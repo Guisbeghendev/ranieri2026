@@ -87,7 +87,7 @@ class GaleriaListView(LoginRequiredMixin, GaleriaAccessMixin, ListView):
         # Define quais grupos buscar (Todos se superuser, ou apenas os do usuário)
         if user.is_superuser:
             from django.contrib.auth.models import Group
-            user_groups = Group.objects.filter(grupoacesso__isnull=False).distinct()
+            user_groups = Group.objects.filter(grupo_ranieri__isnull=False).distinct()
         else:
             user_groups = user.groups.all()
 

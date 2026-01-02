@@ -21,3 +21,7 @@ media/
 
 #Variáveis de Ambiente
 .env
+
+config/wsgi.py
+.env
+config/settings.py

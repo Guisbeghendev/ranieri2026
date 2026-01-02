@@ -10,7 +10,7 @@ class HistoriaCoralAdmin(admin.ModelAdmin):
 
 @admin.register(RepertorioCoral)
 class RepertorioCoralAdmin(admin.ModelAdmin):
-    list_display = ('titulo', 'tipo_arquivo', 'data_criacao')
+    list_display = ('titulo', 'tipo_arquivo', 'video_id', 'data_criacao')
     list_filter = ('tipo_arquivo',)
     search_fields = ('titulo', 'descricao')
     ordering = ('-data_criacao',)
@@ -21,7 +21,7 @@ class RepertorioCoralAdmin(admin.ModelAdmin):
         }),
         ('Conteúdo Digital (YouTube)', {
             'fields': ('video_id',),
-            'description': 'Insira apenas o ID do vídeo (ex: 9IZYnK4T00Y) se o tipo for "Link do YouTube".'
+            'description': 'Insira apenas o ID do vídeo (ex: 9IZYnK4T00Y).'
         }),
         ('Arquivos de Apoio (PDF, MP3, MP4)', {
             'fields': ('arquivo',),
@@ -31,3 +31,13 @@ class RepertorioCoralAdmin(admin.ModelAdmin):
             'fields': ('descricao',),
         }),
     )
+
+    def save_model(self, request, obj, form, change):
+        if obj.video_id:
+            import re
+            pattern = r'(?:v=|\/)([0-9A-Za-z_-]{11})(?:[%#?&]|$)'
+            match = re.search(pattern, obj.video_id)
+            if match:
+                obj.video_id = match.group(1)
+            obj.video_id = obj.video_id.strip()
+        super().save_model(request, obj, form, change)

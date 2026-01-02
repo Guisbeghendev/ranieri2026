@@ -1,14 +1,12 @@
 from django.contrib import admin
 from .models import HistoriaCoral, RepertorioCoral
 
-
 @admin.register(HistoriaCoral)
 class HistoriaCoralAdmin(admin.ModelAdmin):
     list_display = ('ordem_exibicao', 'titulo', 'data_atualizacao')
     list_editable = ('titulo',)
     search_fields = ('titulo', 'conteudo')
     ordering = ('ordem_exibicao',)
-
 
 @admin.register(RepertorioCoral)
 class RepertorioCoralAdmin(admin.ModelAdmin):
@@ -19,7 +17,7 @@ class RepertorioCoralAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (None, {
-            'fields': ('titulo', 'tipo_arquivo', 'arquivo')
+            'fields': ('titulo', 'tipo_arquivo', 'arquivo', 'video_url')
         }),
         ('Informações Adicionais', {
             'fields': ('descricao',),

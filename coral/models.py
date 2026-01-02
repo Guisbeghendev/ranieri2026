@@ -31,6 +31,7 @@ class RepertorioCoral(models.Model):
         ('pdf', _('Documento PDF')),
         ('audio', _('Áudio (MP3)')),
         ('video', _('Vídeo (MP4)')),
+        ('youtube', _('Link do YouTube')),
     ]
 
     titulo = models.CharField(
@@ -39,12 +40,22 @@ class RepertorioCoral(models.Model):
     )
     arquivo = models.FileField(
         upload_to='coral/repertorio/',
-        verbose_name=_('Arquivo de Mídia')
+        verbose_name=_('Arquivo de Mídia'),
+        blank=True,
+        null=True
+    )
+    video_url = models.URLField(
+        max_length=500,
+        blank=True,
+        null=True,
+        verbose_name=_('URL do Vídeo (YouTube)')
     )
     tipo_arquivo = models.CharField(
         max_length=10,
         choices=TIPO_ARQUIVO_CHOICES,
-        verbose_name=_('Tipo do Arquivo')
+        verbose_name=_('Tipo do Conteúdo'),
+        blank=True,
+        null=True
     )
     descricao = models.TextField(
         blank=True,
@@ -59,4 +70,4 @@ class RepertorioCoral(models.Model):
         ordering = ['-data_criacao']
 
     def __str__(self):
-        return f"[{self.get_tipo_arquivo_display()}] {self.titulo}"
+        return f"[{self.get_tipo_arquivo_display() if self.tipo_arquivo else 'N/A'}] {self.titulo}"

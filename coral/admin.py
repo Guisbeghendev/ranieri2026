@@ -20,8 +20,8 @@ class RepertorioCoralAdmin(admin.ModelAdmin):
             'fields': ('titulo', 'tipo_arquivo')
         }),
         ('Conteúdo Digital (YouTube)', {
-            'fields': ('video_url',),
-            'description': 'Preencha este campo se o tipo for "Link do YouTube".'
+            'fields': ('video_id',),
+            'description': 'Insira apenas o ID do vídeo (ex: 9IZYnK4T00Y) se o tipo for "Link do YouTube".'
         }),
         ('Arquivos de Apoio (PDF, MP3, MP4)', {
             'fields': ('arquivo',),

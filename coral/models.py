@@ -44,11 +44,12 @@ class RepertorioCoral(models.Model):
         blank=True,
         null=True
     )
-    video_url = models.URLField(
-        max_length=500,
+    video_id = models.CharField(
+        max_length=50,
         blank=True,
         null=True,
-        verbose_name=_('URL do Vídeo (YouTube)')
+        verbose_name=_('ID do Vídeo (YouTube)'),
+        help_text=_('Insira apenas o ID, ex: 9IZYnK4T00Y')
     )
     tipo_arquivo = models.CharField(
         max_length=10,

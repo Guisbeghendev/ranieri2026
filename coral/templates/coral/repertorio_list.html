@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Repertório - Coral Ranieri
+{% endblock title %}
+
+{% block content %}
+<div class="section-alt">
+    <div class="container text-center">
+        <h1 class="section-title">Repertório Musical</h1>
+        <p class="section-subtitle">Explore as canções, partituras e arquivos de apoio.</p>
+
+        <div class="row mt-5">
+            {% for musica in musicas %}
+                <div class="col-md-4 mb-4">
+                    <div class="btn-coral-choice">
+                        {% if musica.tipo_arquivo == 'pdf' %}
+                            <i class="fas fa-file-pdf"></i>
+                        {% elif musica.tipo_arquivo == 'audio' %}
+                            <i class="fas fa-file-audio"></i>
+                        {% elif musica.tipo_arquivo == 'video' %}
+                            <i class="fas fa-file-video"></i>
+                        {% endif %}
+
+                        <h3>{{ musica.titulo }}</h3>
+
+                        {% if musica.descricao %}
+                            <p>{{ musica.descricao }}</p>
+                        {% endif %}
+
+                        <div class="mt-3 w-100">
+                            {% if musica.tipo_arquivo == 'audio' %}
+                                <audio controls class="w-100 mb-2">
+                                    <source src="{{ musica.arquivo.url }}" type="audio/mpeg">
+                                </audio>
+                            {% endif %}
+
+                            <a href="{{ musica.arquivo.url }}" class="btn-primary-custom" target="_blank" download>
+                                Baixar {{ musica.get_tipo_arquivo_display }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-12">
+                    <p class="section-subtitle">Nenhuma música cadastrada no momento.</p>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="mt-5">
+            <a href="{% url 'coral:index' %}" class="btn-secondary-custom">
+                <i class="fas fa-arrow-left"></i> Voltar ao Início
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock content %}

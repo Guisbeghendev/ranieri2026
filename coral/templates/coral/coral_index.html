@@ -21,12 +21,11 @@
             <h1 class="section-title">Bem-vindo ao Projeto Coral Ranieri</h1>
             <p class="section-subtitle">Selecione o livro digital que deseja explorar:</p>
 
-            <div class="row mt-5">
+            <div class="row mt-5" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 20px;">
 
                 {# Link para o Livro de História #}
-                <div class="col-md-6 mb-4">
-                    {# CORRIGIDO: Usa a variável 'livro_historia_url' passada pela CoralIndexView #}
-                    <a href="{% url 'coral:livro_digital_coral_base' livro_historia_url %}"
+                <div style="flex: 1; min-width: 300px; max-width: 500px; margin-bottom: 20px;">
+                    <a href="{% url 'coral:historia_digital' %}"
                        class="btn-coral-choice">
                         <i class="fas fa-book-open"></i>
                         <h3>História do Coral</h3>
@@ -35,9 +34,8 @@
                 </div>
 
                 {# Link para o Livro de Repertório #}
-                <div class="col-md-6 mb-4">
-                    {# CORRIGIDO: Usa a variável 'livro_repertorio_url' passada pela CoralIndexView #}
-                    <a href="{% url 'coral:livro_digital_coral_base' livro_repertorio_url %}"
+                <div style="flex: 1; min-width: 300px; max-width: 500px; margin-bottom: 20px;">
+                    <a href="{% url 'coral:repertorio_list' %}"
                        class="btn-coral-choice">
                         <i class="fas fa-music"></i>
                         <h3>Repertório</h3>

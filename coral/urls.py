@@ -1,23 +1,27 @@
 from django.urls import path
-from .views import LivroDigitalCoralView, CoralIndexView
-from .models import CapituloCoral
+from .views import CoralIndexView, HistoriaDigitalView, RepertorioListView
 
-# Define o nome do aplicativo para uso no namespace
 app_name = 'coral'
 
 urlpatterns = [
-    # Rota de índice principal do Coral (Ex: /coral/)
+    # Rota de índice principal do Coral
     path(
         '',
         CoralIndexView.as_view(),
         name='index'
     ),
 
-    # Rota unificada que pega o tipo de livro da URL (Ex: /coral/historia/ ou /coral/repertorio/)
-    # Esta é a rota base para todo o livro digital.
+    # Rota específica para o Livro de História
     path(
-        '<str:tipo_livro_url>/',
-        LivroDigitalCoralView.as_view(),
-        name='livro_digital_coral_base'
+        'historia/',
+        HistoriaDigitalView.as_view(),
+        name='historia_digital'
+    ),
+
+    # Rota específica para a Listagem de Repertório
+    path(
+        'repertorio/',
+        RepertorioListView.as_view(),
+        name='repertorio_list'
     ),
 ]

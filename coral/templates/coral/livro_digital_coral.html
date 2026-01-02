@@ -10,23 +10,19 @@
     <div class="section-alt">
         <div class="container">
             <h1 class="section-title">Projeto Coral Ranieri</h1>
-            {# Usa o título do livro dinamicamente (História ou Repertório) #}
             <p class="section-subtitle">{{ livro_titulo }} Interativo. Capítulo {{ capitulo_ordem }} de {{ total_capitulos }}</p>
 
             <div class="card mb-3">
-
                 <div class="card-header">
-                    {# Exibe o título do capítulo #}
                     <h2>{% if capitulo %}{{ capitulo.titulo }}{% else %}Nenhum Conteúdo Cadastrado{% endif %}</h2>
                 </div>
 
                 <div class="card-body">
                     <div class="chapter-content">
                         {% if capitulo %}
-                            {# Assume que o conteúdo é HTML (safe) #}
                             {{ capitulo.conteudo|safe }}
                         {% else %}
-                            <p class="text-center text-muted">Ainda não há capítulos cadastrados para o livro "{{ livro_titulo }}".</p>
+                            <p class="text-center text-muted">Ainda não há capítulos cadastrados para a História.</p>
                         {% endif %}
                     </div>
                 </div>
@@ -36,14 +32,12 @@
                 <div class="chapter-navigation mt-3 center">
 
                     {% if capitulo_anterior %}
-                        {# Link para o capítulo anterior. Usa 'capitulo_index_base_1' corrigido na view. #}
-                        <a href="{% url 'coral:livro_digital_coral_base' url_rota %}?page={{ capitulo_anterior.capitulo_index_base_1 }}"
+                        <a href="{% url 'coral:historia_digital' %}?page={{ capitulo_anterior.capitulo_index_base_1 }}"
                            class="btn btn-back action-button mr-2"
                            id="btn-anterior">
                             &larr; Capítulo Anterior
                         </a>
                     {% else %}
-                        {# Se for o primeiro capítulo, o botão é desabilitado #}
                         <button class="btn btn-back is-disabled action-button mr-2" disabled>
                             &larr; Capítulo Anterior
                         </button>
@@ -52,14 +46,12 @@
                     <div class="mx-auto"></div>
 
                     {% if proximo_capitulo %}
-                        {# Link para o próximo capítulo. Usa 'capitulo_index_base_1' corrigido na view. #}
-                        <a href="{% url 'coral:livro_digital_coral_base' url_rota %}?page={{ proximo_capitulo.capitulo_index_base_1 }}"
+                        <a href="{% url 'coral:historia_digital' %}?page={{ proximo_capitulo.capitulo_index_base_1 }}"
                            class="btn btn-secondary primary-action action-button ml-2"
                            id="btn-proximo">
                             Próximo Capítulo &rarr;
                         </a>
                     {% else %}
-                        {# Se for o último capítulo, o botão é desabilitado (ou pode ser um botão "Fim") #}
                         <button class="btn btn-secondary is-disabled action-button ml-2" disabled>
                             Fim da Narrativa
                         </button>
@@ -67,32 +59,20 @@
 
                 </div>
 
-                {# NOVO LOCAL: Bloco de alternância entre livros (História/Repertório) #}
                 <div class="text-center mt-3">
-                    {% if tipo_livro_constante == 'historia' %}
-                        {# Usa a rota dinâmica 'livro_digital_coral_base' com o slug 'repertorio' #}
-                        <a href="{% url 'coral:livro_digital_coral_base' 'repertorio' %}" class="btn btn-sm btn-info">
-                            Trocar: Ir para Livro de Repertório
-                        </a>
-                    {% elif tipo_livro_constante == 'repertorio' %}
-                        {# Usa a rota dinâmica 'livro_digital_coral_base' com o slug 'historia' #}
-                        <a href="{% url 'coral:livro_digital_coral_base' 'historia' %}" class="btn btn-sm btn-info">
-                            Trocar: Ir para Livro de História
-                        </a>
-                    {% endif %}
+                    <a href="{% url 'coral:repertorio_list' %}" class="btn-secondary-custom">
+                        <i class="fas fa-music"></i> Ver Repertório
+                    </a>
                 </div>
 
                 <div class="progress-bar-container mt-3">
-                    {# Usa widthratio para calcular (capitulo_ordem / total_capitulos) * 100 #}
                     {% widthratio capitulo_ordem total_capitulos 100 as progresso_percentual %}
-
                     <div class="progress-bar-label text-center mb-1">
                         Progresso: {{ progresso_percentual|floatformat:0 }}%
                     </div>
                     <div class="progress-bar">
                         <div class="progress-bar-fill" style="width: {{ progresso_percentual }}%;"></div>
                     </div>
-
                 </div>
             {% endif %}
 
@@ -102,6 +82,5 @@
 {% endblock content %}
 
 {% block js %}
-    {# Incluiremos aqui o script JS Vanilla para os efeitos de transição (se necessário) #}
     <script src="{% static 'coral/js/livro_digital_coral.js' %}"></script>
 {% endblock js %}

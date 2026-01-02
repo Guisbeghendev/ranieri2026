@@ -1,24 +1,27 @@
 from django.contrib import admin
-from .models import CapituloCoral
+from .models import HistoriaCoral, RepertorioCoral
 
 
-@admin.register(CapituloCoral)
-class CapituloCoralAdmin(admin.ModelAdmin):
-    list_display = ('titulo', 'tipo_livro', 'ordem_exibicao', 'data_atualizacao')
-    list_filter = ('tipo_livro',)
+@admin.register(HistoriaCoral)
+class HistoriaCoralAdmin(admin.ModelAdmin):
+    list_display = ('ordem_exibicao', 'titulo', 'data_atualizacao')
+    list_editable = ('titulo',)
     search_fields = ('titulo', 'conteudo')
-    # Permite editar a ordem diretamente na lista, mas o ideal é no formulário
-    list_editable = ('ordem_exibicao',)
+    ordering = ('ordem_exibicao',)
+
+
+@admin.register(RepertorioCoral)
+class RepertorioCoralAdmin(admin.ModelAdmin):
+    list_display = ('titulo', 'tipo_arquivo', 'data_criacao')
+    list_filter = ('tipo_arquivo',)
+    search_fields = ('titulo', 'descricao')
+    ordering = ('-data_criacao',)
 
     fieldsets = (
         (None, {
-            'fields': ('tipo_livro', 'titulo', 'conteudo'),
+            'fields': ('titulo', 'tipo_arquivo', 'arquivo')
         }),
-        ('Controle de Navegação', {
-            'fields': ('ordem_exibicao',),
-            'description': 'A ordem de exibição deve ser única para cada Tipo de Livro.'
+        ('Informações Adicionais', {
+            'fields': ('descricao',),
         }),
     )
-
-    # Ordena por tipo de livro e ordem de exibição no admin
-    ordering = ('tipo_livro', 'ordem_exibicao')

@@ -2,22 +2,21 @@
 {% load static %}
 
 {% block title %}
-    Repertório - Coral Ranieri
+    {{ livro_titulo }} - Página {{ musica_ordem }} de {{ total_musicas }}
 {% endblock title %}
 
 {% block content %}
 <div class="section-alt">
     <div class="container text-center">
-
-        <h1 class="section-title">{{ livro_titulo }}</h1>
-        <p class="section-subtitle">Página {{ musica_ordem }} de {{ total_musicas }}</p>
+        <h1 class="section-title">Projeto Coral Ranieri</h1>
+        <p class="section-subtitle">{{ livro_titulo }} Interativo. Página {{ musica_ordem }} de {{ total_musicas }}</p>
 
         <div class="row mt-5 justify-content-center">
             {% if musica %}
                 <div class="col-md-8 mb-4">
                     <div class="btn-coral-choice" style="min-height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: default; background-color: #ff8c00; border: 2px solid #4b0082; color: #000000;">
                         <div>
-                            <i class="fas fa-music mb-3" style="color: #4b0082;"></i>
+                            <i class="fas fa-music mb-3" style="color: #4b0082; font-size: 3rem;"></i>
                             <h3 style="color: #000000; border-bottom: 1px solid #4b0082; padding-bottom: 10px;">{{ musica.titulo }}</h3>
 
                             {% if musica.descricao %}
@@ -54,22 +53,40 @@
                     </div>
                 </div>
 
-                <div class="col-12 mt-4">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            {% if musica_anterior %}
-                                <a href="?page={{ musica_ordem|add:'-1' }}" class="btn-secondary-custom">
-                                    <i class="fas fa-chevron-left"></i> Anterior
-                                </a>
-                            {% endif %}
-                        </div>
+                <div class="col-md-8 mt-4">
+                    <div class="chapter-navigation d-flex justify-content-between align-items-center">
+                        {% if musica_anterior %}
+                            <a href="?page={{ musica_anterior.musica_index_base_1 }}" class="btn btn-back action-button" id="btn-anterior">
+                                &larr; Anterior
+                            </a>
+                        {% else %}
+                            <button class="btn btn-back is-disabled action-button" disabled>
+                                &larr; Anterior
+                            </button>
+                        {% endif %}
 
-                        <div>
-                            {% if proxima_musica %}
-                                <a href="?page={{ musica_ordem|add:'1' }}" class="btn-secondary-custom">
-                                    Próxima <i class="fas fa-chevron-right"></i>
-                                </a>
-                            {% endif %}
+                        <div class="mx-auto"></div>
+
+                        {% if proxima_musica %}
+                            <a href="?page={{ proxima_musica.musica_index_base_1 }}" class="btn btn-secondary primary-action action-button" id="btn-proximo">
+                                Próxima &rarr;
+                            </a>
+                        {% else %}
+                            <button class="btn btn-secondary is-disabled action-button" disabled>
+                                Fim do Repertório
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="col-md-8 mx-auto mt-4">
+                    <div class="progress-bar-container">
+                        {% widthratio musica_ordem total_musicas 100 as progresso_percentual %}
+                        <div class="progress-bar-label text-center mb-1">
+                            Progresso: {{ progresso_percentual|floatformat:0 }}%
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" style="width: {{ progresso_percentual }}%;"></div>
                         </div>
                     </div>
                 </div>
@@ -89,3 +106,7 @@
     </div>
 </div>
 {% endblock content %}
+
+{% block js %}
+    <script src="{% static 'coral/js/livro_digital_coral.js' %}"></script>
+{% endblock js %}

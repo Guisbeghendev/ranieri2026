@@ -17,7 +17,6 @@ class HistoriaDigitalView(View):
     template_name = 'coral/livro_digital_coral.html'
 
     def get(self, request):
-        # A lógica de HistoriaCoral funciona porque não tenta filtrar o QuerySet diretamente pela Window Function
         capitulos = HistoriaCoral.objects.all().order_by('ordem_exibicao').annotate(
             capitulo_index_base_1=Window(
                 expression=Rank(),
@@ -56,8 +55,6 @@ class RepertorioListView(View):
     template_name = 'coral/repertorio_list.html'
 
     def get(self, request):
-        # Correção: O Django não permite usar .get() ou .filter() em campos de Window Function
-        # É necessário converter para lista para acessar o índice ou usar Subquery
         musicas_qs = RepertorioCoral.objects.all().order_by('data_criacao').annotate(
             musica_index_base_1=Window(
                 expression=Rank(),

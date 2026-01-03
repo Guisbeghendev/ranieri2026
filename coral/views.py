@@ -27,7 +27,7 @@ class HistoriaDigitalView(View):
 
         try:
             capitulo_index_atual = int(capitulo_ordem)
-        except ValueError:
+        except (ValueError, TypeError):
             capitulo_index_atual = 1
 
         try:
@@ -50,5 +50,33 @@ class RepertorioListView(View):
     template_name = 'coral/repertorio_list.html'
 
     def get(self, request):
-        musicas = RepertorioCoral.objects.all().order_by('-data_criacao')
-        return render(request, self.template_name, {'musicas': musicas})
+        musicas = RepertorioCoral.objects.all().order_by('data_criacao').annotate(
+            musica_index_base_1=Window(
+                expression=Rank(),
+                order_by=F('data_criacao').asc(),
+            )
+        )
+
+        total_musicas = musicas.count()
+        musica_ordem = request.GET.get('page', 1)
+
+        try:
+            musica_index_atual = int(musica_ordem)
+        except (ValueError, TypeError):
+            musica_index_atual = 1
+
+        try:
+            musica = musicas.get(musica_index_base_1=musica_index_atual)
+        except RepertorioCoral.DoesNotExist:
+            musica = musicas.first()
+            musica_index_atual = 1
+
+        context = {
+            'livro_titulo': "Repertório Musical",
+            'musica': musica,
+            'total_musicas': total_musicas,
+            'musica_ordem': musica_index_atual,
+            'musica_anterior': musicas.filter(musica_index_base_1=musica_index_atual - 1).first(),
+            'proxima_musica': musicas.filter(musica_index_base_1=musica_index_atual + 1).first(),
+        }
+        return render(request, self.template_name, context)

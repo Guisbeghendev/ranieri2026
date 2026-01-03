@@ -12,7 +12,7 @@ class HistoriaCoralAdmin(admin.ModelAdmin):
 class RepertorioCoralAdmin(admin.ModelAdmin):
     list_display = ('titulo', 'video_id', 'extensao_arquivo', 'data_criacao')
     search_fields = ('titulo', 'descricao')
-    ordering = ('-data_criacao',)
+    ordering = ('data_criacao',)
     readonly_fields = ('extensao_arquivo',)
 
     fieldsets = (

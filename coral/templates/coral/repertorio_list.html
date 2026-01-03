@@ -15,14 +15,14 @@
         <div class="row mt-5 justify-content-center">
             {% if musica %}
                 <div class="col-md-8 mb-4">
-                    <div class="btn-coral-choice" style="min-height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: default;">
+                    <div class="btn-coral-choice" style="min-height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: default; background-color: #ff8c00; border: 2px solid #4b0082; color: #000000;">
                         <div>
-                            <i class="fas fa-music mb-3"></i>
-                            <h3>{{ musica.titulo }}</h3>
+                            <i class="fas fa-music mb-3" style="color: #4b0082;"></i>
+                            <h3 style="color: #000000; border-bottom: 1px solid #4b0082; padding-bottom: 10px;">{{ musica.titulo }}</h3>
 
                             {% if musica.descricao %}
                                 <div class="mt-4 text-start">
-                                    <p>{{ musica.descricao|linebreaks }}</p>
+                                    <p style="color: #000000;">{{ musica.descricao|linebreaks }}</p>
                                 </div>
                             {% endif %}
                         </div>
@@ -30,8 +30,8 @@
                         <div class="mt-5 w-100">
                             {% if musica.video_id %}
                                 <div class="mb-3">
-                                    <span class="d-block mb-1"><strong>Link do YouTube:</strong></span>
-                                    <a href="https://www.youtube.com/watch?v={{ musica.video_id }}" target="_blank" class="text-break">
+                                    <span class="d-block mb-1"><strong style="color: #4b0082;">Link do YouTube:</strong></span>
+                                    <a href="https://www.youtube.com/watch?v={{ musica.video_id }}" target="_blank" class="text-break" style="color: #0000EE; text-decoration: underline;">
                                         https://www.youtube.com/watch?v={{ musica.video_id }}
                                     </a>
                                 </div>
@@ -39,7 +39,7 @@
 
                             {% if musica.arquivo %}
                                 <div class="mt-4">
-                                    <a href="{{ musica.arquivo.url }}" class="btn-primary-custom" target="_blank" download>
+                                    <a href="{{ musica.arquivo.url }}" class="btn-primary-custom" target="_blank" download style="background-color: #4b0082; color: #ffffff; border: none;">
                                         <i class="fas fa-download"></i> Baixar Arquivo ({{ musica.extensao_arquivo|upper }})
                                     </a>
                                 </div>
@@ -49,7 +49,7 @@
                 </div>
 
                 <div class="col-12 mt-4">
-                    <div class="d-flex justify-content-between align-items: center;">
+                    <div class="d-flex justify-content-between align-items-center">
                         <div>
                             {% if musica_anterior %}
                                 <a href="?page={{ musica_ordem|add:'-1' }}" class="btn-secondary-custom">

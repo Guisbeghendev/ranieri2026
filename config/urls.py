@@ -45,4 +45,5 @@ urlpatterns = [
 if settings.DEBUG:
     # Apenas para garantir que o Django sirva os arquivos estáticos (CORRETO)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-    # REMOVIDO: A linha urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    # RESTAURADO: Linha necessária para servir o avatar localmente
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

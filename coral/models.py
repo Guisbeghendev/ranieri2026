@@ -50,22 +50,35 @@ class RepertorioCoral(models.Model):
         blank=True,
         null=True,
         verbose_name=_('ID do Vídeo (YouTube)'),
-        help_text=_('Insira apenas o ID, ex: 9IZYnK4T00Y')
+        help_text=_('Insira APENAS o ID (ex: 9IZYnK4T00Y). Usado para incorporação (embed).')
+    )
+    link_externo = models.URLField(
+        verbose_name=_('Link de Acesso Externo'),
+        help_text=_('URL completa do vídeo para o botão "Assistir no YouTube".'),
+        unique=True,
+        null=True,
+        blank=True
     )
     descricao = models.TextField(
         blank=True,
         null=True,
         verbose_name=_('Descrição/Letra')
     )
+    ordem_exibicao = models.IntegerField(
+        verbose_name=_('Ordem de Exibição'),
+        help_text=_('Define a sequência do repertório. Deve ser um número inteiro único.'),
+        unique=True,
+        null=True
+    )
     data_criacao = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = _('Música do Repertório')
         verbose_name_plural = _('Músicas do Repertório')
-        ordering = ['-data_criacao']
+        ordering = ['ordem_exibicao']
 
     def __str__(self):
-        return self.titulo
+        return f'{self.ordem_exibicao} - {self.titulo}'
 
     @property
     def extensao_arquivo(self):

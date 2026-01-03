@@ -9,36 +9,49 @@
 <div class="section-alt">
     <div class="container text-center">
         <h1 class="section-title">Projeto Coral Ranieri</h1>
-        <p class="section-subtitle">{{ livro_titulo }} Interativo. Página {{ musica_ordem }} de {{ total_musicas }}</p>
+        <p class="section-subtitle">{{ livro_titulo }} Interativo. Música {{ musica_ordem }} de {{ total_musicas }}</p>
 
         <div class="row mt-5 justify-content-center">
             {% if musica %}
                 <div class="col-md-8 mb-4">
-                    <div class="btn-coral-choice" style="min-height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: default; background-color: #ff8c00; border: 2px solid #4b0082; color: #000000;">
-                        <div>
-                            <i class="fas fa-music mb-3" style="color: #4b0082; font-size: 3rem;"></i>
-                            <h3 style="color: #000000; border-bottom: 1px solid #4b0082; padding-bottom: 10px;">{{ musica.titulo }}</h3>
-
-                            {% if musica.descricao %}
-                                <div class="mt-4 text-start">
-                                    <p style="color: #000000;">{{ musica.descricao|linebreaks }}</p>
-                                </div>
-                            {% endif %}
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 style="color: #000000;">{{ musica.titulo }}</h2>
                         </div>
 
-                        <div class="mt-5 w-100">
+                        <div class="card-body">
+                            {# VÍDEO INCORPORADO E LINK EXTERNO (PADRÃO SIMONINHA) #}
                             {% if musica.video_id %}
-                                <div class="mb-3">
-                                    <span class="d-block mb-1"><strong style="color: #4b0082;">Link do YouTube:</strong></span>
-                                    <a href="https://www.youtube.com/watch?v={{ musica.video_id }}" target="_blank" class="text-break" style="color: #0000EE; text-decoration: underline;">
-                                        https://www.youtube.com/watch?v={{ musica.video_id }}
-                                    </a>
+                                <div class="video-content-wrapper mb-3 text-center">
+                                    <div class="video-iframe-container">
+                                        <iframe
+                                            src="https://www.youtube.com/embed/{{ musica.video_id }}"
+                                            frameborder="0"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowfullscreen
+                                            title="Vídeo: {{ musica.titulo }}">
+                                        </iframe>
+                                    </div>
+
+                                    {% if musica.link_externo %}
+                                        <div class="youtube-fallback-link p-3 border rounded mt-3" style="background-color: #fff3cd; border-color: #ffeeba;">
+                                            <p class="mb-2 text-dark">
+                                                <strong>Problemas com a exibição?</strong> Assista diretamente no YouTube:
+                                            </p>
+                                            <a href="{{ musica.link_externo }}"
+                                               target="_blank"
+                                               class="btn btn-warning btn-sm">
+                                                Abrir o Vídeo no YouTube
+                                            </a>
+                                        </div>
+                                    {% endif %}
                                 </div>
                             {% endif %}
 
+                            {# ARQUIVOS DE APOIO #}
                             {% if musica.arquivo %}
-                                <div class="mt-4">
-                                    <a href="{{ musica.arquivo.url }}" class="btn-primary-custom" target="_blank" download style="background-color: #4b0082; color: #ffffff; border: none;">
+                                <div class="mt-4 mb-4">
+                                    <a href="{{ musica.arquivo.url }}" class="btn-primary-custom" target="_blank" download style="background-color: #4b0082; color: #ffffff; border: none; padding: 10px 20px; display: inline-block; text-decoration: none; border-radius: 5px;">
                                         <i class="fas fa-download"></i>
                                         {% if musica.nome_exibicao_arquivo %}
                                             {{ musica.nome_exibicao_arquivo }}
@@ -49,19 +62,28 @@
                                     </a>
                                 </div>
                             {% endif %}
+
+                            <div class="chapter-content text-start mt-4">
+                                {% if musica.descricao %}
+                                    {{ musica.descricao|linebreaks|safe }}
+                                {% else %}
+                                    <p class="text-center text-muted">Não há descrição detalhada para esta música.</p>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
 
+                {# NAVEGAÇÃO SEQUENCIAL #}
                 <div class="col-md-8 mt-4">
                     <div class="chapter-navigation d-flex justify-content-between align-items-center">
                         {% if musica_anterior %}
                             <a href="?page={{ musica_anterior.musica_index_base_1 }}" class="btn btn-back action-button" id="btn-anterior">
-                                &larr; Anterior
+                                &larr; Música Anterior
                             </a>
                         {% else %}
                             <button class="btn btn-back is-disabled action-button" disabled>
-                                &larr; Anterior
+                                &larr; Música Anterior
                             </button>
                         {% endif %}
 
@@ -69,7 +91,7 @@
 
                         {% if proxima_musica %}
                             <a href="?page={{ proxima_musica.musica_index_base_1 }}" class="btn btn-secondary primary-action action-button" id="btn-proximo">
-                                Próxima &rarr;
+                                Próxima Música &rarr;
                             </a>
                         {% else %}
                             <button class="btn btn-secondary is-disabled action-button" disabled>
@@ -79,6 +101,7 @@
                     </div>
                 </div>
 
+                {# BARRA DE PROGRESSO #}
                 <div class="col-md-8 mx-auto mt-4">
                     <div class="progress-bar-container">
                         {% widthratio musica_ordem total_musicas 100 as progresso_percentual %}
@@ -108,5 +131,6 @@
 {% endblock content %}
 
 {% block js %}
-    <script src="{% static 'coral/js/livro_digital_coral.js' %}"></script>
+    {# Utilizando o JS do sim_cozinha para garantir o padrão de transição #}
+        <script src="{% static 'coral/js/repertorio.js' %}"></script>
 {% endblock js %}

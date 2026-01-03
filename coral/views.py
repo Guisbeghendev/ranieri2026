@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.views import View
 from .models import HistoriaCoral, RepertorioCoral
 from django.db.models import F
@@ -54,36 +54,50 @@ class HistoriaDigitalView(View):
 class RepertorioListView(View):
     template_name = 'coral/repertorio_list.html'
 
-    def get(self, request):
-        musicas_qs = RepertorioCoral.objects.all().order_by('data_criacao').annotate(
+    def get(self, request, *args, **kwargs):
+        page_num = request.GET.get('page', 1)
+
+        try:
+            page_index_base_1 = int(page_num)
+        except ValueError:
+            page_index_base_1 = 1
+
+        musicas_anotadas = RepertorioCoral.objects.all().annotate(
             musica_index_base_1=Window(
                 expression=Rank(),
-                order_by=F('data_criacao').asc(),
+                order_by=F('ordem_exibicao').asc(),
             )
-        )
+        ).order_by('ordem_exibicao')
 
-        total_musicas = musicas_qs.count()
-        musica_ordem = request.GET.get('page', 1)
+        total_musicas = musicas_anotadas.count()
 
-        try:
-            musica_index_atual = int(musica_ordem)
-        except (ValueError, TypeError):
-            musica_index_atual = 1
+        if total_musicas == 0:
+            context = {
+                'total_musicas': 0,
+                'livro_titulo': 'Repertório Musical',
+            }
+            return render(request, self.template_name, context)
 
-        musicas_lista = list(musicas_qs)
+        page_index_base_1 = max(1, min(page_index_base_1, total_musicas))
 
-        try:
-            musica = musicas_lista[musica_index_atual - 1]
-        except (IndexError, ValueError):
-            musica = musicas_lista[0] if musicas_lista else None
-            musica_index_atual = 1
+        musicas_lista = list(musicas_anotadas)
+        musica_atual = musicas_lista[page_index_base_1 - 1]
+
+        musica_anterior = None
+        if page_index_base_1 > 1:
+            musica_anterior = musicas_lista[page_index_base_1 - 2]
+
+        proxima_musica = None
+        if page_index_base_1 < total_musicas:
+            proxima_musica = musicas_lista[page_index_base_1]
 
         context = {
             'livro_titulo': "Repertório Musical",
-            'musica': musica,
+            'musica': musica_atual,
+            'musica_ordem': page_index_base_1,
             'total_musicas': total_musicas,
-            'musica_ordem': musica_index_atual,
-            'musica_anterior': musicas_lista[musica_index_atual - 2] if musica_index_atual > 1 else None,
-            'proxima_musica': musicas_lista[musica_index_atual] if musica_index_atual < total_musicas else None,
+            'musica_anterior': musica_anterior,
+            'proxima_musica': proxima_musica,
         }
+
         return render(request, self.template_name, context)

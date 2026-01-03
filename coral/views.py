@@ -47,7 +47,8 @@ class HistoriaDigitalView(View):
         return render(request, self.template_name, context)
 
 class RepertorioListView(View):
-    template_name = 'coral/repertorio_list.html'
+    # Ajustado para o nome de arquivo que você enviou anteriormente
+    template_name = 'coral/repertorio.html'
 
     def get(self, request):
         musicas = RepertorioCoral.objects.all().order_by('-data_criacao')

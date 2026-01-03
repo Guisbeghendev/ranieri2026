@@ -16,13 +16,14 @@
                 <div class="col-md-4 mb-4">
                     <div class="btn-coral-choice" style="height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: space-between;">
                         <div>
-                            {% if musica.tipo_arquivo == 'youtube' or musica.video_id %}
+                            {# Lógica de Ícones Automática baseada em conteúdo real #}
+                            {% if musica.video_id %}
                                 <i class="fab fa-youtube"></i>
-                            {% elif musica.tipo_arquivo == 'pdf' %}
+                            {% elif '.pdf' in musica.extensao_arquivo %}
                                 <i class="fas fa-file-pdf"></i>
-                            {% elif musica.tipo_arquivo == 'audio' %}
+                            {% elif '.mp3' in musica.extensao_arquivo or '.wav' in musica.extensao_arquivo %}
                                 <i class="fas fa-file-audio"></i>
-                            {% elif musica.tipo_arquivo == 'video' %}
+                            {% elif '.mp4' in musica.extensao_arquivo %}
                                 <i class="fas fa-file-video"></i>
                             {% else %}
                                 <i class="fas fa-music"></i>
@@ -36,11 +37,11 @@
                         </div>
 
                         <div class="mt-3 w-100">
+                            {# Exibição de Vídeo YouTube #}
                             {% if musica.video_id %}
-                                <div class="video-container mb-3" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; background: #000;">
+                                <div class="video-iframe-container mb-3">
                                     <iframe
-                                        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
-                                        src="https://www.youtube.com/embed/{{ musica.video_id|slice:':11' }}?origin=https://www.escolajoseranieri.com.br"
+                                        src="https://www.youtube.com/embed/{{ musica.video_id }}"
                                         frameborder="0"
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                         referrerpolicy="no-referrer-when-downgrade"
@@ -49,15 +50,17 @@
                                 </div>
                             {% endif %}
 
-                            {% if musica.tipo_arquivo == 'audio' and musica.arquivo %}
+                            {# Player de Áudio Automático para extensões de áudio #}
+                            {% if '.mp3' in musica.extensao_arquivo or '.wav' in musica.extensao_arquivo %}
                                 <audio controls class="w-100 mb-2">
                                     <source src="{{ musica.arquivo.url }}" type="audio/mpeg">
                                 </audio>
                             {% endif %}
 
+                            {# Botão de Download para qualquer arquivo enviado #}
                             {% if musica.arquivo %}
                                 <a href="{{ musica.arquivo.url }}" class="btn-primary-custom" target="_blank" download>
-                                    Baixar {{ musica.get_tipo_arquivo_display|default:"Arquivo" }}
+                                    Baixar Arquivo
                                 </a>
                             {% endif %}
                         </div>

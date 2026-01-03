@@ -10,14 +10,13 @@ class HistoriaCoralAdmin(admin.ModelAdmin):
 
 @admin.register(RepertorioCoral)
 class RepertorioCoralAdmin(admin.ModelAdmin):
-    list_display = ('titulo', 'tipo_arquivo', 'video_id', 'data_criacao')
-    list_filter = ('tipo_arquivo',)
+    list_display = ('titulo', 'video_id', 'data_criacao')
     search_fields = ('titulo', 'descricao')
     ordering = ('-data_criacao',)
 
     fieldsets = (
         (None, {
-            'fields': ('titulo', 'tipo_arquivo')
+            'fields': ('titulo',)
         }),
         ('Conteúdo Digital (YouTube)', {
             'fields': ('video_id',),

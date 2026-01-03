@@ -40,7 +40,13 @@
                             {% if musica.arquivo %}
                                 <div class="mt-4">
                                     <a href="{{ musica.arquivo.url }}" class="btn-primary-custom" target="_blank" download style="background-color: #4b0082; color: #ffffff; border: none;">
-                                        <i class="fas fa-download"></i> Baixar Arquivo ({{ musica.extensao_arquivo|upper }})
+                                        <i class="fas fa-download"></i>
+                                        {% if musica.nome_exibicao_arquivo %}
+                                            {{ musica.nome_exibicao_arquivo }}
+                                        {% else %}
+                                            Baixar {{ musica.titulo }}
+                                        {% endif %}
+                                        ({{ musica.extensao_arquivo|upper }})
                                     </a>
                                 </div>
                             {% endif %}

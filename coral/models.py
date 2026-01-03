@@ -38,6 +38,13 @@ class RepertorioCoral(models.Model):
         blank=True,
         null=True
     )
+    nome_exibicao_arquivo = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name=_('Nome de Exibição do Download'),
+        help_text=_('Ex: Partitura Soprano. Se vazio, exibe o título da música.')
+    )
     video_id = models.CharField(
         max_length=50,
         blank=True,

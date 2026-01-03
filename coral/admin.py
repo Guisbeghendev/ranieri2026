@@ -24,8 +24,8 @@ class RepertorioCoralAdmin(admin.ModelAdmin):
             'description': 'Insira apenas o ID do vídeo (ex: 9IZYnK4T00Y).'
         }),
         ('Arquivos de Apoio (PDF, MP3, MP4)', {
-            'fields': ('arquivo', 'extensao_arquivo'),
-            'description': 'Faça o upload aqui para documentos, áudios ou vídeos locais.'
+            'fields': ('arquivo', 'nome_exibicao_arquivo', 'extensao_arquivo'),
+            'description': 'Faça o upload e defina o nome que aparecerá no botão de download.'
         }),
         ('Informações Adicionais', {
             'fields': ('descricao',),

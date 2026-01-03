@@ -10,9 +10,10 @@ class HistoriaCoralAdmin(admin.ModelAdmin):
 
 @admin.register(RepertorioCoral)
 class RepertorioCoralAdmin(admin.ModelAdmin):
-    list_display = ('titulo', 'video_id', 'data_criacao')
+    list_display = ('titulo', 'video_id', 'extensao_arquivo', 'data_criacao')
     search_fields = ('titulo', 'descricao')
     ordering = ('-data_criacao',)
+    readonly_fields = ('extensao_arquivo',)
 
     fieldsets = (
         (None, {
@@ -23,7 +24,7 @@ class RepertorioCoralAdmin(admin.ModelAdmin):
             'description': 'Insira apenas o ID do vídeo (ex: 9IZYnK4T00Y).'
         }),
         ('Arquivos de Apoio (PDF, MP3, MP4)', {
-            'fields': ('arquivo',),
+            'fields': ('arquivo', 'extensao_arquivo'),
             'description': 'Faça o upload aqui para documentos, áudios ou vídeos locais.'
         }),
         ('Informações Adicionais', {

@@ -182,6 +182,18 @@
         });
     }
 
+    /**
+     * Verifica se existem imagens em processamento e recarrega a página se necessário.
+     */
+    function checkProcessingStatus() {
+        const processingCards = document.querySelectorAll('.image-card:not(.status-processada):not(.status-erro)');
+        if (processingCards.length > 0) {
+            setTimeout(() => {
+                location.reload();
+            }, 5000);
+        }
+    }
+
 
     // ----------------------------------------------------------------------
     // Inicialização de Listeners
@@ -196,5 +208,8 @@
     setCoverButtons.forEach(button => {
         button.addEventListener('click', setGalleryCover);
     });
+
+    // 3. Inicia verificação de status
+    checkProcessingStatus();
 
 })();

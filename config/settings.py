@@ -276,8 +276,6 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # 13. CONFIGURAÇÕES DA APLICAÇÃO (Específicas do Projeto)
 # ==============================================================================
 
-# Variável usada no app 'repositorio' para limitar o número de uploads por usuário
-MAX_UPLOADS_PER_USER = 1000
 # Variável usada no app 'coral' para definir o número de itens na homepage
 HOMEPAGE_ITEMS_LIMIT = 9
 

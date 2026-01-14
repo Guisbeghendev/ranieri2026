@@ -336,9 +336,6 @@ class GerenciarImagensGaleriaView(FotografoRequiredMixin, View):
     def get(self, request, pk):
         user = request.user
 
-        # CORREÇÃO: Removido 'arquivo_processado' do select_related dentro do Prefetch.
-        # 'arquivo_processado' não é um campo relacional (FK/OneToOne).
-        # Apenas 'fotografo' e 'galeria' podem ser usados aqui.
         galeria_qs = Galeria.objects.select_related('capa').prefetch_related(
             Prefetch(
                 'imagens',
@@ -363,9 +360,9 @@ class GerenciarImagensGaleriaView(FotografoRequiredMixin, View):
         if not user.is_superuser and not user.is_fotografo_master:
             proprietario_filter = models.Q(fotografo=user)
 
-        # Filtro para Imagens Disponíveis para Anexo: PROCESSADA e livre (galeria__isnull=True)
+        # CORREÇÃO: Inclui status UPLOADED, PROCESSANDO e ERRO para visibilidade imediata
         q_disponiveis = models.Q(
-            status_processamento='PROCESSADA',
+            status_processamento__in=['PROCESSADA', 'UPLOADED', 'PROCESSANDO', 'ERRO'],
             galeria__isnull=True
         ) & proprietario_filter
 
@@ -399,15 +396,18 @@ class GerenciarImagensGaleriaView(FotografoRequiredMixin, View):
         imagens_selecionadas_pks = request.POST.getlist('imagens')
         imagens_selecionadas_pks = [int(p) for p in imagens_selecionadas_pks if p.isdigit()]
 
+        # CORREÇÃO: Permite associar imagens que ainda estão processando
+        status_permitidos = ['PROCESSADA', 'UPLOADED', 'PROCESSANDO', 'ERRO']
+
         if user.is_superuser or user.is_fotografo_master:
             imagens_permitidas = Imagem.objects.filter(
                 pk__in=imagens_selecionadas_pks,
-                status_processamento='PROCESSADA'
+                status_processamento__in=status_permitidos
             )
         else:
             imagens_permitidas = Imagem.objects.filter(
                 pk__in=imagens_selecionadas_pks,
-                status_processamento='PROCESSADA',
+                status_processamento__in=status_permitidos,
                 fotografo=user
             )
 
@@ -489,7 +489,6 @@ class DefinirCapaGaleriaView(FotografoRequiredMixin, View):
                     }, status=400)
 
             # GARANTE que a imagem está anexada à galeria correta.
-            # Este check garante que a operação de anexo (se necessária) foi bem-sucedida antes de definir a capa.
             if imagem.galeria != galeria:
                 return JsonResponse({
                     'sucesso': False,

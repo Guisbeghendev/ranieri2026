@@ -26,7 +26,7 @@
     <div class="card-header mb-3">
         <h2 class="section-title">Anexar e Remover Imagens</h2>
         <p class="section-description">
-            Clique nas imagens para selecioná-las ou desmarcá-las da galeria. Apenas as imagens marcadas serão salvas.
+            Clique nas imagens para selecioná-las ou desmarcá-las da galeria. Imagens com ícone de carregamento ainda estão sendo processadas.
         </p>
 
         {# NOVO: Indicador de Capa Atual #}
@@ -65,11 +65,26 @@
                     {# APLICADO: Adiciona data-image-url e data-original-name para o JS #}
                     <div class="image-card
                                 {% if imagem.pk in imagens_vinculadas_pks %}is-selected{% endif %}
-                                {% if galeria.capa.pk == imagem.pk %}is-cover{% endif %}"
+                                {% if galeria.capa.pk == imagem.pk %}is-cover{% endif %}
+                                status-{{ imagem.status_processamento|lower }}"
                          data-image-id="{{ imagem.pk }}"
+                         data-status="{{ imagem.status_processamento }}"
                          {# 3. CORREÇÃO DE URL: private_media_proxy para o data-image-url (Usado pelo JS) #}
                          data-image-url="{% if imagem.arquivo_processado %}{% url 'private_media_proxy' path=imagem.arquivo_processado.name %}{% endif %}"
                          data-original-name="{{ imagem.nome_arquivo_original|truncatechars:20 }}">
+
+                        {# OVERLAY DE PROCESSAMENTO #}
+                        {% if imagem.status_processamento != 'PROCESSADA' %}
+                            <div class="processing-overlay">
+                                {% if imagem.status_processamento == 'ERRO' %}
+                                    <i class="fas fa-exclamation-circle text-danger"></i>
+                                    <span class="status-label">Erro</span>
+                                {% else %}
+                                    <i class="fas fa-spinner fa-spin text-primary"></i>
+                                    <span class="status-label">Processando...</span>
+                                {% endif %}
+                            </div>
+                        {% endif %}
 
                         {% if imagem.arquivo_processado %}
                             {# 4. CORREÇÃO DE URL: private_media_proxy para o SRC da imagem na grid #}
@@ -78,8 +93,8 @@
                                  class="image-card-thumb">
                         {% else %}
                             <div class="image-card-thumb placeholder-no-file">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                <p>Erro de Arquivo!</p>
+                                <i class="fas fa-image"></i>
+                                <p>Aguardando...</p>
                             </div>
                         {% endif %}
 
@@ -102,13 +117,15 @@
 
                         {# NOVO: Botão/Área para Definir como Capa #}
                         <div class="image-card-actions">
-                            <button type="button"
-                                    class="btn btn-sm btn-set-cover js-set-cover-btn"
-                                    data-image-pk="{{ imagem.pk }}"
-                                    data-galeria-pk="{{ galeria.pk }}"
-                                    title="Definir como Capa">
-                                <i class="fas fa-image mr-1"></i> Capa
-                            </button>
+                            {% if imagem.status_processamento == 'PROCESSADA' %}
+                                <button type="button"
+                                        class="btn btn-sm btn-set-cover js-set-cover-btn"
+                                        data-image-pk="{{ imagem.pk }}"
+                                        data-galeria-pk="{{ galeria.pk }}"
+                                        title="Definir como Capa">
+                                    <i class="fas fa-image mr-1"></i> Capa
+                                </button>
+                            {% endif %}
                         </div>
 
                         <div class="image-card-info">
@@ -119,7 +136,7 @@
             </div>
         {% else %}
             <div class="alert alert-warning">
-                Nenhuma imagem processada e disponível para anexar. Faça o upload ou aguarde o processamento.
+                Nenhuma imagem disponível.
             </div>
         {% endif %}
 

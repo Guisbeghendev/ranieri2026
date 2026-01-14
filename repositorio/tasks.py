@@ -52,9 +52,9 @@ def processar_imagem_task(self, imagem_id, total_arquivos=1, indice_atual=1):
             with config.arquivo_marca_dagua.open('rb') as f_wm:
                 wm_img = Image.open(io.BytesIO(f_wm.read())).convert("RGBA")
 
-            # Cálculo de escala (10% da largura)
+            # Cálculo de escala (15% da largura)
             base_w = img_proc.size[0]
-            wm_w = int(base_w * 0.15)  # Aumentado para 15% para melhor visibilidade
+            wm_w = int(base_w * 0.15)
             w_ratio = wm_w / float(wm_img.size[0])
             wm_h = int(float(wm_img.size[1]) * float(w_ratio))
             wm_img = wm_img.resize((wm_w, wm_h), Image.Resampling.LANCZOS)
@@ -67,7 +67,7 @@ def processar_imagem_task(self, imagem_id, total_arquivos=1, indice_atual=1):
             # Posição (Ex: Bottom Right com margem)
             pos = (img_proc.size[0] - wm_w - 20, img_proc.size[1] - wm_h - 20)
 
-            # Overlay (Garante suporte a transparência no paste)
+            # Overlay
             temp_img = img_proc.convert("RGBA")
             temp_img.paste(wm_img, pos, wm_img)
             img_proc = temp_img.convert("RGB")
@@ -82,25 +82,23 @@ def processar_imagem_task(self, imagem_id, total_arquivos=1, indice_atual=1):
         imagem.status_processamento = 'PROCESSADA'
         imagem.save(update_fields=['status_processamento', 'arquivo_processado'])
 
-        # 7. NOTIFICAÇÃO REAL-TIME (Aproveitando o progresso sequencial)
+        # 7. NOTIFICAÇÃO REAL-TIME
         percentual = int((indice_atual / total_arquivos) * 100)
-
         channel_layer = get_channel_layer()
 
-        if galeria:
-            group_name = f"galeria_{galeria.pk}"
-            async_to_sync(channel_layer.group_send)(
-                group_name,
-                {
-                    "type": "notificar_progresso",
-                    "imagem_id": imagem.id,
-                    "progresso": percentual,
-                    "concluidas": indice_atual,
-                    "total": total_arquivos,
-                    "status": "CONCLUIDO" if indice_atual == total_arquivos else "PROCESSANDO",
-                    "url_thumb": imagem.arquivo_processado.url if imagem.arquivo_processado else ""
-                }
-            )
+        group_name = f"galeria_{galeria.pk}" if galeria else f"user_{imagem.fotografo.id}"
+        async_to_sync(channel_layer.group_send)(
+            group_name,
+            {
+                "type": "notificar_progresso",
+                "imagem_id": imagem.id,
+                "progresso": percentual,
+                "concluidas": indice_atual,
+                "total": total_arquivos,
+                "status": "CONCLUIDO" if indice_atual == total_arquivos else "PROCESSANDO",
+                "url_thumb": imagem.arquivo_processado.url if imagem.arquivo_processado else ""
+            }
+        )
 
     except Exception as e:
         logger.error(f"Erro na task de imagem {imagem_id}: {str(e)}")

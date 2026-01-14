@@ -182,13 +182,15 @@ class ConfirmarUploadView(FotografoRequiredMixin, View):
                 imagem.status_processamento = 'UPLOADED'
                 imagem.save(update_fields=['status_processamento'])
 
-                # A "FÓRMULA MÁGICA" DO GUISBEGHEN:
                 # O Celery só é chamado quando o banco de dados confirmar o COMMIT.
-                transaction.on_commit(lambda: processar_imagem_task.delay(
-                    imagem_id=imagem.id,
-                    total_arquivos=total_arquivos,
-                    indice_atual=indice_atual
-                ))
+                def disparar_task(img_pk, total, index):
+                    processar_imagem_task.delay(
+                        imagem_id=img_pk,
+                        total_arquivos=total,
+                        indice_atual=index
+                    )
+
+                transaction.on_commit(lambda: disparar_task(imagem.id, total_arquivos, indice_atual))
 
             return JsonResponse({
                 'sucesso': True,
@@ -364,17 +366,14 @@ class GerenciarImagensGaleriaView(FotografoRequiredMixin, View):
         # CORREÇÃO: Permite associar imagens que ainda estão processando
         status_permitidos = ['PROCESSADA', 'UPLOADED', 'PROCESSANDO', 'ERRO']
 
-        if user.is_superuser or user.is_fotografo_master:
-            imagens_permitidas = Imagem.objects.filter(
-                pk__in=imagens_selecionadas_pks,
-                status_processamento__in=status_permitidos
-            )
-        else:
-            imagens_permitidas = Imagem.objects.filter(
-                pk__in=imagens_selecionadas_pks,
-                status_processamento__in=status_permitidos,
-                fotografo=user
-            )
+        proprietario_filter = models.Q()
+        if not user.is_superuser and not user.is_fotografo_master:
+            proprietario_filter = models.Q(fotografo=user)
+
+        imagens_permitidas = Imagem.objects.filter(
+            pk__in=imagens_selecionadas_pks,
+            status_processamento__in=status_permitidos
+        ).filter(proprietario_filter)
 
         imagens_selecionadas_pks_finais = list(imagens_permitidas.values_list('pk', flat=True))
 
@@ -389,12 +388,14 @@ class GerenciarImagensGaleriaView(FotografoRequiredMixin, View):
             imagens_a_desvincular_qs.update(galeria=None)
 
             # 2. Vincular e re-processar para aplicar marca d'água
-            novas_imagens = Imagem.objects.filter(pk__in=imagens_selecionadas_pks_finais)
-            novas_imagens.update(galeria=galeria)
+            imagens_permitidas.update(galeria=galeria)
 
             # CORREÇÃO: Dispara o processamento APÓS o commit para evitar race conditions
-            for img_id in novas_imagens.values_list('id', flat=True):
-                transaction.on_commit(lambda id_img=img_id: processar_imagem_task.delay(id_img))
+            def disparar_tasks(ids):
+                for img_id in ids:
+                    processar_imagem_task.delay(img_id)
+
+            transaction.on_commit(lambda: disparar_tasks(imagens_selecionadas_pks_finais))
 
         messages.success(request, f'Imagens da galeria "{galeria.nome}" atualizadas com sucesso.')
         return redirect('repositorio:gerenciar_imagens_galeria', pk=galeria.pk)
@@ -425,7 +426,7 @@ class DefinirCapaGaleriaView(FotografoRequiredMixin, View):
             else:
                 galeria = get_object_or_404(Galeria, pk=galeria_pk, fotografo=user)
 
-            # 2. Recupera a Imagem (garante que ela é permitida, processada E pertence ao usuário/Master)
+            # 2. Recupera a Imagem
             imagem = get_object_or_404(
                 Imagem,
                 **imagem_filter
@@ -441,25 +442,10 @@ class DefinirCapaGaleriaView(FotografoRequiredMixin, View):
                     }, status=400)
 
                 # Anexa à galeria se estiver livre e for permitida.
-                if imagem.status_processamento == 'PROCESSADA' and (
-                        user.is_superuser or user.is_fotografo_master or imagem.fotografo == user):
-
-                    with transaction.atomic():
-                        imagem.galeria = galeria
-                        imagem.save(update_fields=['galeria'])
-                        transaction.on_commit(lambda: processar_imagem_task.delay(imagem.id))
-                else:
-                    return JsonResponse({
-                        'sucesso': False,
-                        'erro': 'A imagem selecionada não está disponível para ser anexada e definida como capa.'
-                    }, status=400)
-
-            # GARANTE que a imagem está anexada à galeria correta.
-            if imagem.galeria != galeria:
-                return JsonResponse({
-                    'sucesso': False,
-                    'erro': 'Falha ao anexar a imagem à galeria. Operação abortada.'
-                }, status=500)
+                with transaction.atomic():
+                    imagem.galeria = galeria
+                    imagem.save(update_fields=['galeria'])
+                    transaction.on_commit(lambda: processar_imagem_task.delay(imagem.id))
 
             # 4. Define a capa e salva a galeria
             galeria.capa = imagem
@@ -471,7 +457,7 @@ class DefinirCapaGaleriaView(FotografoRequiredMixin, View):
             return JsonResponse({
                 'sucesso': True,
                 'message': f'Imagem {imagem.pk} definida como capa da galeria "{galeria.nome}".',
-                'capa_url': capa_url_proxy  # RETORNA A URL DO PROXY
+                'capa_url': capa_url_proxy
             })
 
         except Imagem.DoesNotExist:

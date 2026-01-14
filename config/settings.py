@@ -234,29 +234,42 @@ CHANNEL_LAYERS = {
 }
 
 # ==============================================================================
-# 11. CONFIGURAÇÕES CELERY (Processamento Assíncrono)
+# 11. CONFIGURAÇÕES CELERY (Processamento Assíncrono - Otimizado)
 # ==============================================================================
 
-# BROKER e BACKEND (Usando as variáveis definidas no environ.Env)
 CELERY_BROKER_URL = env('CELERY_BROKER_URL')
 CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND')
-
-# Fuso horário para Celery
 CELERY_TIMEZONE = TIME_ZONE
 
-# Configurações de conteúdo para evitar problemas de serialização
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 
-# Tarefas agendadas (Celery Beat)
-CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
-# Desabilita o agendamento de tarefas padrão (usa o django_celery_beat)
-CELERY_BEAT_FOR_RAVEN = False
+# --- PILARES DE ESTABILIDADE (Inspirado no Guisbeghen) ---
 
-# Configurações de tempo limite para tarefas do Celery (adicionado para robustez)
+# Impede que o worker reserve muitas tarefas e trave a RAM
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+
+# Garante que a tarefa só saia da fila após a confirmação de sucesso
+CELERY_TASK_ACKS_LATE = True
+
+# Evita reentrega precoce de tarefas pesadas de imagem (1 hora)
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    'visibility_timeout': 3600,
+}
+
+# Limite de concorrência por Worker (Evita estouro de CPU no processamento de fotos)
+CELERY_WORKER_CONCURRENCY = 4
+
+# Roteamento de Tarefas: Separa o fluxo pesado (Imagens) do leve (Status)
+CELERY_TASK_ROUTES = {
+    'repositorio.tasks.processar_imagem_task': {'queue': 'heavy_tasks'},
+    'repositorio.tasks.notificar_status_task': {'queue': 'default'},
+}
+
 CELERY_TASK_SOFT_TIME_LIMIT = 600
 CELERY_TASK_TIME_LIMIT = 900
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
 
 # ==============================================================================

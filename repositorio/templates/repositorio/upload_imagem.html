@@ -4,67 +4,59 @@
 {% block title %}Upload de Imagens - Repositório{% endblock %}
 
 {% block content %}
-
 <div class="dashboard-main-container">
-    <div class="dashboard-header mb-3">
-        <h1 class="header-title">Área do Fotógrafo</h1>
-        <p class="header-subtitle">Gestão de Mídias e Galerias</p>
+    <div class="dashboard-header mb-3 border-b border-silver/10 pb-4">
+        <h1 class="text-2xl font-bold text-primary-purple uppercase tracking-tighter">Área do Fotógrafo</h1>
+        <p class="text-silver text-xs">Upload Direto para S3 & Processamento Assíncrono</p>
     </div>
 
-    {# Exibição das mensagens do Django #}
-    {% if messages %}
-        <ul class="messages p-0">
-            {% for message in messages %}
-                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
+    <div class="card-surface bg-surface p-6 rounded-lg border border-silver/10">
+        <h2 class="text-white font-bold uppercase text-sm mb-4">Upload de Novas Imagens</h2>
 
-    <div class="card p-3">
-        <h2 class="card-header">Upload de Novas Imagens</h2>
         <div class="card-body">
-            <p class="section-description">
-                Selecione uma ou mais imagens em alta resolução. O sistema fará o upload e processará as miniaturas em segundo plano.
+            <p class="text-silver text-xs mb-6 uppercase tracking-widest">
+                As imagens serão enviadas diretamente ao storage e marcadas d'água automaticamente.
             </p>
 
-            <form id="upload-form">
+            <form id="upload-form" class="space-y-6">
                 {% csrf_token %}
 
-                <div class="form-group mb-4" id="id_arquivos_group">
-                    <label class="form-label" for="id_arquivos">{{ form.arquivos.label }}</label>
-
-                    {# Área visual de Drag and Drop #}
-                    <div class="file-upload-wrapper" id="file-upload-area">
-                        <i class="fas fa-cloud-upload-alt upload-icon"></i>
-                        <p class="upload-label-text">
-                            Clique para selecionar ou arraste e solte arquivos aqui
+                <div class="form-group" id="id_arquivos_group">
+                    {# Área de Drop Otimizada (Guisbeghen Style) #}
+                    <div class="file-upload-wrapper border-2 border-dashed border-silver/20 rounded-lg p-10 text-center cursor-pointer hover:border-primary-purple transition-all" id="file-upload-area">
+                        <i class="fas fa-images text-4xl text-silver/30 mb-4"></i>
+                        <p class="text-white font-bold uppercase text-xs tracking-widest" id="file-count-text">
+                            Clique ou arraste as fotos aqui
                         </p>
-                        <p class="upload-info-text" id="file-count-text">
-                            Nenhum arquivo selecionado.
-                        </p>
+                        <p class="text-silver text-[10px] mt-2 uppercase">PNG, JPG ou JPEG</p>
                     </div>
 
-                    {# Input de arquivo real (oculto) #}
-                    {{ form.arquivos }}
-
-                    <small class="form-help">Tipos permitidos: JPG, PNG. O sistema suporta upload múltiplo.</small>
-
-                    {# Exibição de erros do campo (se houver) #}
-                    {% for error in form.arquivos.errors %}
-                        <p class="form-error">{{ error }}</p>
-                    {% endfor %}
+                    {# Input Oculto #}
+                    <div class="hidden">
+                        {{ form.arquivos }}
+                    </div>
                 </div>
 
-                <div class="text-center mt-3">
-                    <button type="button" class="btn btn-primary btn-lg" id="submit-button" disabled>
-                        <i class="fas fa-upload mr-1"></i> Iniciar Upload
+                {# Container de Progresso (Invisível até o início do upload) #}
+                <div id="progress-container" class="hidden space-y-2">
+                    <div class="flex justify-between text-[10px] uppercase font-bold">
+                        <span id="progress-label" class="text-silver">Preparando...</span>
+                        <span id="progress-percent" class="text-primary-purple">0%</span>
+                    </div>
+                    <div class="w-full bg-black h-1 rounded-full overflow-hidden">
+                        <div id="progress-bar" class="bg-primary-purple h-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="flex justify-center mt-6">
+                    <button type="button" class="px-8 py-3 bg-primary-purple hover:bg-purple-hover text-white font-bold uppercase text-xs tracking-widest disabled:opacity-50 transition-all" id="submit-button" disabled>
+                        Iniciar Sincronização
                     </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block extra_js %}

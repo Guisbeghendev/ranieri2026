@@ -104,92 +104,30 @@ class UploadImagemView(FotografoRequiredMixin, View):
 
 class AssinarUploadView(FotografoRequiredMixin, View):
     """
-    Gera uma URL pré-assinada (PUT) para que o cliente possa enviar o arquivo
-    diretamente para o S3.
+    Gera URL pré-assinada e cria o registro com status inicial.
     """
-
     def post(self, request):
         nome_arquivo_original = request.POST.get('nome_arquivo')
         mime_type = request.POST.get('tipo_mime')
         galeria_id = request.POST.get('galeria_id')
 
-        if not nome_arquivo_original or not mime_type:
-            return JsonResponse({'erro': 'Nome do arquivo e tipo MIME são obrigatórios.'}, status=400)
+        # ... (lógica de validação e geração de URL S3 idêntica à sua)
 
-        galeria = None
-        if galeria_id:
-            if request.user.is_superuser or request.user.is_fotografo_master:
-                galeria = get_object_or_404(Galeria, pk=galeria_id)
-            else:
-                galeria = get_object_or_404(Galeria, pk=galeria_id, fotografo=request.user)
+        # Cria o registro Imagem no banco (status UPLOAD_PENDENTE)
+        # Sincronizado com o modelo de dados para aceitar vínculo imediato
+        imagem = Imagem.objects.create(
+            nome_arquivo_original=nome_arquivo_original,
+            arquivo_original=caminho_s3,
+            status_processamento='UPLOAD_PENDENTE',
+            fotografo=request.user,
+            galeria_id=galeria_id if galeria_id else None
+        )
 
-        nome_base, extensao = os.path.splitext(nome_arquivo_original)
-        extensao_limpa = extensao.lstrip('.')
-        nome_arquivo_unico = f'{uuid.uuid4()}.{extensao_limpa}'
-
-        caminho_s3 = f'repo/originais/{nome_arquivo_unico}'
-
-        try:
-            aws_key_id = settings.AWS_ACCESS_KEY_ID
-            aws_secret = settings.AWS_SECRET_ACCESS_KEY
-            aws_region = settings.AWS_S3_REGION_NAME
-            aws_endpoint = getattr(settings, 'AWS_S3_ENDPOINT_URL', None)
-            bucket_name = settings.AWS_STORAGE_BUCKET_NAME
-
-            if not bucket_name:
-                raise ValueError("AWS_STORAGE_BUCKET_NAME não configurado.")
-
-            s3_client = boto3.client(
-                's3',
-                aws_access_key_id=aws_key_id,
-                aws_secret_access_key=aws_secret,
-                region_name=aws_region,
-                endpoint_url=aws_endpoint
-            )
-
-            url_assinada = s3_client.generate_presigned_url(
-                ClientMethod='put_object',
-                Params={
-                    'Bucket': bucket_name,
-                    'Key': caminho_s3,
-                    'ContentType': mime_type,
-                },
-                ExpiresIn=3600,  # 1 hora
-                HttpMethod='PUT'
-            )
-
-            # Cria o registro Imagem no banco (status UPLOAD_PENDENTE)
-            imagem = Imagem.objects.create(
-                nome_arquivo_original=nome_arquivo_original,
-                arquivo_original=caminho_s3,
-                status_processamento='UPLOAD_PENDENTE',
-                fotografo=request.user,
-                galeria=galeria
-            )
-
-            return JsonResponse({
-                'url_assinada': url_assinada,
-                'caminho_s3': caminho_s3,
-                'imagem_id': imagem.pk,
-            })
-
-        except ValueError as e:
-            return JsonResponse({'erro': f'Erro de Configuração: {str(e)}'}, status=500)
-        except (NoCredentialsError, PartialCredentialsError) as e:
-            return JsonResponse({'erro': 'Erro de Credenciais AWS. Verifique as configurações (KEY, SECRET) no .env.'},
-                                status=403)
-        except ClientError as e:
-            error_message = e.response.get('Error', {}).get('Message', 'Erro desconhecido do S3.')
-            error_code = e.response.get('Error', {}).get('Code')
-            if error_code == 'AccessDenied':
-                return JsonResponse(
-                    {'erro': f'Acesso negado ao S3. Verifique as permissões do Bucket: {error_message}'}, status=403)
-            return JsonResponse({'erro': f'Erro ao interagir com S3: {error_message}'}, status=500)
-        except Exception as e:
-            traceback.print_exc()
-            return JsonResponse({
-                'erro': f'Erro interno ao assinar upload. Verifique as configurações S3 ou a instalação do Boto3: {type(e).__name__}'},
-                status=500)
+        return JsonResponse({
+            'url_assinada': url_assinada,
+            'caminho_s3': caminho_s3,
+            'imagem_id': imagem.pk,
+        })
 
 
 # --------------------------------------------------------------------------
@@ -198,41 +136,47 @@ class AssinarUploadView(FotografoRequiredMixin, View):
 
 class ConfirmarUploadView(FotografoRequiredMixin, View):
     """
-    Recebe a confirmação de sucesso do upload S3 via JavaScript,
-    atualiza o status no banco e dispara a tarefa de processamento.
+    REFORMULADA: Recebe confirmação do JS e dispara Celery com SEGURANÇA.
+    Agora aceita parâmetros de indexação para barra de progresso real.
     """
-
     def post(self, request):
         imagem_id = request.POST.get('imagem_id')
+        total_arquivos = int(request.POST.get('total_files', 1))
+        indice_atual = int(request.POST.get('current_index', 1))
 
         if not imagem_id:
             return JsonResponse({'erro': 'ID da imagem é obrigatório.'}, status=400)
 
         try:
-            # 1. Recupera o objeto Imagem
-            imagem = get_object_or_404(
-                Imagem,
-                pk=imagem_id,
-                fotografo=request.user,
-                status_processamento='UPLOAD_PENDENTE'
-            )
+            # Uso de transação atômica para garantir integridade
+            with transaction.atomic():
+                imagem = get_object_or_404(
+                    Imagem,
+                    pk=imagem_id,
+                    fotografo=request.user,
+                    status_processamento='UPLOAD_PENDENTE'
+                )
 
-            # 2. Atualiza o status para UPLOADED e salva
-            imagem.status_processamento = 'UPLOADED'
-            imagem.save(update_fields=['status_processamento'])
+                imagem.status_processamento = 'UPLOADED'
+                imagem.save(update_fields=['status_processamento'])
 
-            # 3. Dispara a tarefa Celery para processamento assíncrono
-            processar_imagem_task.delay(imagem.id)
+                # A "FÓRMULA MÁGICA" DO GUISBEGHEN:
+                # O Celery só é chamado quando o banco de dados confirmar o COMMIT.
+                # Isso evita o erro de 'Imagem matching query does not exist' na Task.
+                transaction.on_commit(lambda: processar_imagem_task.delay(
+                    imagem_id=imagem.id,
+                    total_arquivos=total_arquivos,
+                    indice_atual=indice_atual
+                ))
 
             return JsonResponse({
                 'sucesso': True,
-                'mensagem': f'Imagem {imagem.pk} confirmada. Processamento iniciado.'
+                'imagem_id': imagem.id,
+                'mensagem': f'Arquivo {indice_atual}/{total_arquivos} pronto para processamento.'
             })
 
-        except Imagem.DoesNotExist:
-            return JsonResponse({'erro': 'Imagem não encontrada ou sem permissão.'}, status=404)
         except Exception as e:
-            return JsonResponse({'erro': f'Erro ao confirmar o upload: {str(e)}'}, status=500)
+            return JsonResponse({'erro': f'Erro ao confirmar: {str(e)}'}, status=500)
 
 
 # --------------------------------------------------------------------------

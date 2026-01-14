@@ -1,40 +1,50 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 
+
 class GaleriaConsumer(AsyncWebsocketConsumer):
     """
-    Consumer para gerenciar atualizações em tempo real na listagem de galerias.
+    Consumer reativo para progresso de upload e status de galeria.
     """
-    async def connect(self):
-        # Nome do grupo para notificações globais de status de galeria
-        self.group_name = "galerias_status_updates"
 
-        # Adiciona o canal ao grupo
-        await self.channel_layer.group_add(
-            self.group_name,
-            self.channel_name
-        )
+    async def connect(self):
+        # 1. Grupo Global (Lista de Galerias)
+        self.global_group = "galerias_status_updates"
+
+        # 2. Grupo Específico (Progresso interno da galeria se houver ID na URL)
+        # Ex: ws/galeria/5/
+        self.galeria_id = self.scope['url_route']['kwargs'].get('pk')
+        self.specific_group = f"galeria_{self.galeria_id}" if self.galeria_id else None
+
+        # Adiciona aos grupos
+        await self.channel_layer.group_add(self.global_group, self.channel_name)
+        if self.specific_group:
+            await self.channel_layer.group_add(self.specific_group, self.channel_name)
 
         await self.accept()
 
     async def disconnect(self, close_code):
-        # Remove o canal do grupo ao desconectar
-        await self.channel_layer.group_discard(
-            self.group_name,
-            self.channel_name
-        )
+        await self.channel_layer.group_discard(self.global_group, self.channel_name)
+        if self.specific_group:
+            await self.channel_layer.group_discard(self.specific_group, self.channel_name)
 
     async def status_update(self, event):
-        """
-        Recebe a mensagem do grupo e envia para o WebSocket no navegador.
-        """
-        galeria_id = event['galeria_id']
-        novo_status = event['status_display']
-        status_code = event['status_code']
-
-        # Envia os dados para o front-end
+        """Atualiza a cor/texto do badge na lista de galerias."""
         await self.send(text_data=json.dumps({
-            'galeria_id': galeria_id,
-            'status_display': novo_status,
-            'status_code': status_code
+            'type': 'status_galeria',
+            'galeria_id': event['galeria_id'],
+            'status_display': event['status_display'],
+            'status_code': event['status_code']
+        }))
+
+    async def notificar_progresso(self, event):
+        """Envia progresso individual da imagem e a URL da thumb pronta."""
+        await self.send(text_data=json.dumps({
+            'type': 'progresso_imagem',
+            'imagem_id': event['imagem_id'],
+            'progresso': event['progresso'],
+            'concluidas': event['concluidas'],
+            'total': event['total'],
+            'status': event['status'],
+            'url_thumb': event['url_thumb']
         }))

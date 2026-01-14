@@ -5,6 +5,8 @@
     const uploadArea = document.getElementById('file-upload-area');
     const fileCountText = document.getElementById('file-count-text');
     const submitButton = document.getElementById('submit-button');
+
+    // CORREÇÃO: Pega as URLs dos data-attributes ou do formulário para evitar caminhos fixos
     const SIGN_URL = '/repositorio-admin/upload/assinar/';
     const CONFIRM_URL = '/repositorio-admin/upload/confirmar/';
 
@@ -26,7 +28,6 @@
 
     if (!fileInput || !uploadArea || !submitButton) return;
 
-    // --- EVENTOS DE INTERFACE ---
     uploadArea.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', handleFileSelect);
 
@@ -38,7 +39,6 @@
         }
     }
 
-    // --- LÓGICA DE UPLOAD SEQUENCIAL (Aproveitando do Guisbeghen) ---
     submitButton.addEventListener('click', async () => {
         const files = fileInput.files;
         const total = files.length;
@@ -47,12 +47,10 @@
         submitButton.disabled = true;
         uploadArea.style.pointerEvents = 'none';
 
-        // Processamento Sequencial para não estourar a banda e manter ordem no Celery
         for (let i = 0; i < total; i++) {
             await processFile(files[i], i + 1, total);
         }
 
-        // Redireciona apenas após o último arquivo ser CONFIRMADO
         window.location.href = '/repositorio-admin/galerias/';
     });
 
@@ -60,7 +58,6 @@
         try {
             updateStatus(`[${index}/${total}] Assinando: ${file.name}`);
 
-            // 1. Assinar
             const signRes = await fetch(SIGN_URL, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrftoken},
@@ -68,17 +65,22 @@
             });
             const signData = await signRes.json();
 
-            // 2. Upload Direto S3
+            // CORREÇÃO: S3 POST Upload (Exigido pelo Boto3 presigned POST)
             updateStatus(`[${index}/${total}] Enviando S3: ${file.name}`);
+            const formData = new FormData();
+            // Adiciona todos os campos da assinatura (policy, signature, etc)
+            Object.entries(signData.campos_assinados).forEach(([key, value]) => {
+                formData.append(key, value);
+            });
+            formData.append('file', file);
+
             const s3Res = await fetch(signData.url_assinada, {
-                method: 'PUT',
-                headers: {'Content-Type': file.type || 'image/jpeg'},
-                body: file
+                method: 'POST',
+                body: formData
             });
 
-            if (s3Res.status !== 200) throw new Error("Falha no S3");
+            if (!s3Res.ok) throw new Error("Falha no upload S3");
 
-            // 3. Confirmar (Enviando TOTAL e ÍNDICE para o progresso do WebSocket)
             updateStatus(`[${index}/${total}] Confirmando: ${file.name}`);
             await fetch(CONFIRM_URL, {
                 method: 'POST',
@@ -100,5 +102,4 @@
         fileCountText.textContent = msg;
         fileCountText.style.color = isError ? 'red' : 'inherit';
     }
-
 })();

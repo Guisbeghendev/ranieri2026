@@ -47,7 +47,7 @@ def processar_imagem_task(self, imagem_id, total_arquivos=1, indice_atual=1):
         img_proc.thumbnail(THUMBNAIL_SIZE, Image.Resampling.LANCZOS)
 
         # 5. Aplicação de Marca D'água (Lógica de Alpha do Guisbeghen)
-        if galeria.watermark_config and galeria.watermark_config.arquivo_marca_dagua:
+        if galeria and hasattr(galeria, 'watermark_config') and galeria.watermark_config and galeria.watermark_config.arquivo_marca_dagua:
             config = galeria.watermark_config
             with config.arquivo_marca_dagua.open('rb') as f_wm:
                 wm_img = Image.open(io.BytesIO(f_wm.read())).convert("RGBA")
@@ -86,22 +86,23 @@ def processar_imagem_task(self, imagem_id, total_arquivos=1, indice_atual=1):
         percentual = int((indice_atual / total_arquivos) * 100)
 
         channel_layer = get_channel_layer()
-        group_name = f"galeria_{galeria.pk}"
 
-        async_to_sync(channel_layer.group_send)(
-            group_name,
-            {
-                "type": "notificar_progresso",
-                "imagem_id": imagem.id,
-                "progresso": percentual,
-                "concluidas": indice_atual,
-                "total": total_arquivos,
-                "status": "CONCLUIDO" if indice_atual == total_arquivos else "PROCESSANDO",
-                "url_thumb": imagem.arquivo_processado.url if imagem.arquivo_processado else ""
-            }
-        )
+        if galeria:
+            group_name = f"galeria_{galeria.pk}"
+            async_to_sync(channel_layer.group_send)(
+                group_name,
+                {
+                    "type": "notificar_progresso",
+                    "imagem_id": imagem.id,
+                    "progresso": percentual,
+                    "concluidas": indice_atual,
+                    "total": total_arquivos,
+                    "status": "CONCLUIDO" if indice_atual == total_arquivos else "PROCESSANDO",
+                    "url_thumb": imagem.arquivo_processado.url if imagem.arquivo_processado else ""
+                }
+            )
 
     except Exception as e:
         logger.error(f"Erro na task de imagem {imagem_id}: {str(e)}")
         Imagem.objects.filter(pk=imagem_id).update(status_processamento='ERRO')
-        raise self.retry(exc=e, countdown=60)  # Tenta novamente em 1 minuto se falhar (ex: erro de rede S3)
+        raise self.retry(exc=e, countdown=60)

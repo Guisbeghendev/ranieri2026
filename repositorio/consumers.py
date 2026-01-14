@@ -1,7 +1,6 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 
-
 class GaleriaConsumer(AsyncWebsocketConsumer):
     """
     Consumer reativo para progresso de upload e status de galeria.
@@ -11,9 +10,9 @@ class GaleriaConsumer(AsyncWebsocketConsumer):
         # 1. Grupo Global (Lista de Galerias)
         self.global_group = "galerias_status_updates"
 
-        # 2. Grupo Específico (Progresso interno da galeria se houver ID na URL)
-        # Ex: ws/galeria/5/
-        self.galeria_id = self.scope['url_route']['kwargs'].get('pk')
+        # 2. Grupo Específico
+        # Garante a captura segura do PK da URL configurada no routing.py
+        self.galeria_id = self.scope.get('url_route', {}).get('kwargs', {}).get('pk')
         self.specific_group = f"galeria_{self.galeria_id}" if self.galeria_id else None
 
         # Adiciona aos grupos
@@ -24,8 +23,9 @@ class GaleriaConsumer(AsyncWebsocketConsumer):
         await self.accept()
 
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(self.global_group, self.channel_name)
-        if self.specific_group:
+        if hasattr(self, 'global_group'):
+            await self.channel_layer.group_discard(self.global_group, self.channel_name)
+        if hasattr(self, 'specific_group') and self.specific_group:
             await self.channel_layer.group_discard(self.specific_group, self.channel_name)
 
     async def status_update(self, event):

@@ -23,7 +23,8 @@ SECRET_KEY = env('SECRET_KEY')
 
 DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
+# CORREÇÃO: Adicionado ponto antes do domínio para aceitar subdomínios (www) corretamente
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['.escolajoseranieri.com.br', '147.93.88.204'])
 
 # ==============================================================================
 # 2. DEFINIÇÃO DE APLICATIVOS

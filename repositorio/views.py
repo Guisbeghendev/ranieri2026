@@ -106,28 +106,49 @@ class AssinarUploadView(FotografoRequiredMixin, View):
     """
     Gera URL pré-assinada e cria o registro com status inicial.
     """
+
     def post(self, request):
-        nome_arquivo_original = request.POST.get('nome_arquivo')
-        mime_type = request.POST.get('tipo_mime')
-        galeria_id = request.POST.get('galeria_id')
+        try:
+            nome_arquivo_original = request.POST.get('nome_arquivo')
+            mime_type = request.POST.get('tipo_mime')
+            galeria_id = request.POST.get('galeria_id')
 
-        # ... (lógica de validação e geração de URL S3 idêntica à sua)
+            ext = os.path.splitext(nome_arquivo_original)[1]
+            nome_unico = f"{uuid.uuid4()}{ext}"
+            caminho_s3 = f"uploads/originais/{nome_unico}"
 
-        # Cria o registro Imagem no banco (status UPLOAD_PENDENTE)
-        # Sincronizado com o modelo de dados para aceitar vínculo imediato
-        imagem = Imagem.objects.create(
-            nome_arquivo_original=nome_arquivo_original,
-            arquivo_original=caminho_s3,
-            status_processamento='UPLOAD_PENDENTE',
-            fotografo=request.user,
-            galeria_id=galeria_id if galeria_id else None
-        )
+            s3_client = boto3.client(
+                's3',
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                region_name=settings.AWS_S3_REGION_NAME,
+                config=boto3.session.Config(signature_version='s3v4')
+            )
 
-        return JsonResponse({
-            'url_assinada': url_assinada,
-            'caminho_s3': caminho_s3,
-            'imagem_id': imagem.pk,
-        })
+            # CORREÇÃO: Estrutura correta para o FormData do JS
+            post_data = s3_client.generate_presigned_post(
+                Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+                Key=caminho_s3,
+                Fields={"Content-Type": mime_type},
+                Conditions=[{"Content-Type": mime_type}],
+                ExpiresIn=3600
+            )
+
+            imagem = Imagem.objects.create(
+                nome_arquivo_original=nome_arquivo_original,
+                arquivo_original=caminho_s3,
+                status_processamento='UPLOAD_PENDENTE',
+                fotografo=request.user,
+                galeria_id=galeria_id if galeria_id else None
+            )
+
+            return JsonResponse({
+                'url_assinada': post_data['url'],
+                'campos_assinados': post_data['fields'],
+                'imagem_id': imagem.pk,
+            })
+        except Exception as e:
+            return JsonResponse({'erro': str(e)}, status=500)
 
 
 # --------------------------------------------------------------------------
@@ -139,6 +160,7 @@ class ConfirmarUploadView(FotografoRequiredMixin, View):
     REFORMULADA: Recebe confirmação do JS e dispara Celery com SEGURANÇA.
     Agora aceita parâmetros de indexação para barra de progresso real.
     """
+
     def post(self, request):
         imagem_id = request.POST.get('imagem_id')
         total_arquivos = int(request.POST.get('total_files', 1))
@@ -162,7 +184,6 @@ class ConfirmarUploadView(FotografoRequiredMixin, View):
 
                 # A "FÓRMULA MÁGICA" DO GUISBEGHEN:
                 # O Celery só é chamado quando o banco de dados confirmar o COMMIT.
-                # Isso evita o erro de 'Imagem matching query does not exist' na Task.
                 transaction.on_commit(lambda: processar_imagem_task.delay(
                     imagem_id=imagem.id,
                     total_arquivos=total_arquivos,
@@ -371,9 +392,9 @@ class GerenciarImagensGaleriaView(FotografoRequiredMixin, View):
             novas_imagens = Imagem.objects.filter(pk__in=imagens_selecionadas_pks_finais)
             novas_imagens.update(galeria=galeria)
 
-            # DISPARA O PROCESSAMENTO PARA TODAS AS SELECIONADAS PARA GARANTIR MARCA D'ÁGUA
-            for img in novas_imagens:
-                processar_imagem_task.delay(img.id)
+            # CORREÇÃO: Dispara o processamento APÓS o commit para evitar race conditions
+            for img_id in novas_imagens.values_list('id', flat=True):
+                transaction.on_commit(lambda id_img=img_id: processar_imagem_task.delay(id_img))
 
         messages.success(request, f'Imagens da galeria "{galeria.nome}" atualizadas com sucesso.')
         return redirect('repositorio:gerenciar_imagens_galeria', pk=galeria.pk)
@@ -410,8 +431,7 @@ class DefinirCapaGaleriaView(FotografoRequiredMixin, View):
                 **imagem_filter
             )
 
-            # 3. VERIFICAÇÃO ADICIONAL: A imagem deve estar vinculada à galeria ou ser uma imagem
-            # que o usuário tem permissão para anexar e está no repositório.
+            # 3. VERIFICAÇÃO ADICIONAL: A imagem deve estar vinculada à galeria
             if imagem.galeria != galeria:
                 # Se a imagem estiver em outra galeria, não permite a capa.
                 if imagem.galeria is not None:
@@ -423,9 +443,11 @@ class DefinirCapaGaleriaView(FotografoRequiredMixin, View):
                 # Anexa à galeria se estiver livre e for permitida.
                 if imagem.status_processamento == 'PROCESSADA' and (
                         user.is_superuser or user.is_fotografo_master or imagem.fotografo == user):
-                    imagem.galeria = galeria
-                    imagem.save(update_fields=['galeria'])
-                    processar_imagem_task.delay(imagem.id)
+
+                    with transaction.atomic():
+                        imagem.galeria = galeria
+                        imagem.save(update_fields=['galeria'])
+                        transaction.on_commit(lambda: processar_imagem_task.delay(imagem.id))
                 else:
                     return JsonResponse({
                         'sucesso': False,

@@ -262,11 +262,6 @@ CELERY_BROKER_TRANSPORT_OPTIONS = {
 # Limite de concorrência por Worker (Evita estouro de CPU no processamento de fotos)
 CELERY_WORKER_CONCURRENCY = 4
 
-# Roteamento de Tarefas: Separa o fluxo pesado (Imagens) do leve (Status)
-CELERY_TASK_ROUTES = {
-    'repositorio.tasks.processar_imagem_task': {'queue': 'heavy_tasks'},
-    'repositorio.tasks.notificar_status_task': {'queue': 'default'},
-}
 
 CELERY_TASK_SOFT_TIME_LIMIT = 600
 CELERY_TASK_TIME_LIMIT = 900

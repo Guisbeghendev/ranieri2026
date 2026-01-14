@@ -280,3 +280,9 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 MAX_UPLOADS_PER_USER = 1000
 # Variável usada no app 'coral' para definir o número de itens na homepage
 HOMEPAGE_ITEMS_LIMIT = 9
+
+# Aumenta o limite de memória para 50MB (ajuste conforme necessário)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800
+
+# Aumenta o limite de campos para 2000
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 2000

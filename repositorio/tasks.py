@@ -17,10 +17,11 @@ THUMBNAIL_QUALITY = 85
 GRID_THUMB_SIZE = (300, 300)
 
 
-def enviar_progresso_websocket(imagem_id, progresso, status, galeria=None, fotografo_id=None, url_thumb=None):
+def enviar_progresso_websocket(imagem_id, progresso, status, galeria=None, fotografo_id=None, url_thumb=None,
+                               arquivo_processado=None):
     """
     Função auxiliar para centralizar o envio de notificações via Channels.
-    Inclui url_thumb para atualização imediata no front-end.
+    Inclui url_thumb e arquivo_processado para atualização imediata no front-end.
     """
     channel_layer = get_channel_layer()
 
@@ -32,17 +33,26 @@ def enviar_progresso_websocket(imagem_id, progresso, status, galeria=None, fotog
         group_id = f"user_{fotografo_id}"
 
     group_name = f"galeria_{group_id}"
+    global_group = "galerias_status_updates"
+    lista_geral_group = "galeria_lista_geral"
 
-    async_to_sync(channel_layer.group_send)(
-        group_name,
-        {
-            "type": "notificar_progresso",
-            "imagem_id": imagem_id,
-            "progress": progresso,
-            "status": status,
-            "url_thumb": url_thumb,
-        }
-    )
+    data = {
+        "type": "notificar_progresso",
+        "imagem_id": imagem_id,
+        "progress": progresso,
+        "status": status,
+        "url_thumb": url_thumb,
+        "arquivo_processado": arquivo_processado,
+    }
+
+    # Envia para o grupo específico da galeria
+    async_to_sync(channel_layer.group_send)(group_name, data)
+
+    # Envia para o grupo global de status
+    async_to_sync(channel_layer.group_send)(global_group, data)
+
+    # Envia para o grupo de lista geral (para resolver erro de rota na listagem)
+    async_to_sync(channel_layer.group_send)(lista_geral_group, data)
 
 
 @shared_task(bind=True, max_retries=3)
@@ -113,8 +123,13 @@ def processar_imagem_task(self, imagem_id, total_arquivos=1, indice_atual=1):
         imagem.save(update_fields=['status_processamento', 'arquivo_processado', 'thumbnail'])
 
         # Gera a URL atualizada para o front-end
-        nova_url = reverse('private_media_proxy', kwargs={'path': imagem.arquivo_processado.name})
-        enviar_progresso_websocket(imagem_id, 100, 'PROCESSADA', galeria, imagem.fotografo.id, url_thumb=nova_url)
+        nova_url = reverse('private_media_proxy', kwargs={'path': imagem.thumbnail.name})
+        url_proc = reverse('private_media_proxy', kwargs={'path': imagem.arquivo_processado.name})
+
+        enviar_progresso_websocket(
+            imagem_id, 100, 'PROCESSADA', galeria, imagem.fotografo.id,
+            url_thumb=nova_url, arquivo_processado=url_proc
+        )
 
     except Exception as e:
         logger.error(f"Erro na task {imagem_id}: {str(e)}")

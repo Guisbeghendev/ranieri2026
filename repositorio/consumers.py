@@ -18,8 +18,8 @@ class GaleriaConsumer(AsyncWebsocketConsumer):
         if self.galeria_slug:
             self.specific_group = f"galeria_{self.galeria_slug}"
         else:
-            user_id = self.scope.get('user').id if self.scope.get('user') else 'anon'
-            self.specific_group = f"galeria_user_{user_id}"
+            # Caso não tenha slug, define como lista_geral para bater com a rota ws/repositorio/galerias/
+            self.specific_group = "galeria_lista_geral"
 
         await self.channel_layer.group_add(self.global_group, self.channel_name)
         if self.specific_group:
@@ -51,5 +51,12 @@ class GaleriaConsumer(AsyncWebsocketConsumer):
             'imagem_id': event.get('imagem_id'),
             'progresso': event.get('progress'),
             'status': event.get('status'),
-            'url_thumb': event.get('url_thumb')
+            'url_thumb': event.get('url_thumb'),
+            'arquivo_processado': event.get('arquivo_processado')
         }))
+
+    async def notify_status(self, event):
+        """
+        Handler para mensagens do tipo 'notify_status' enviadas pelas tasks.
+        """
+        await self.send(text_data=json.dumps(event['data']))

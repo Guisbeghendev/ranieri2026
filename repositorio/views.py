@@ -183,14 +183,14 @@ class ConfirmarUploadView(FotografoRequiredMixin, View):
                 imagem.save(update_fields=['status_processamento'])
 
                 # O Celery só é chamado quando o banco de dados confirmar o COMMIT.
-                def disparar_task(img_pk, total, index):
+                transaction.on_commit(
+                    lambda i_id=imagem.id, t=total_arquivos, idx=indice_atual:
                     processar_imagem_task.delay(
-                        imagem_id=img_pk,
-                        total_arquivos=total,
-                        indice_atual=index
+                        imagem_id=i_id,
+                        total_arquivos=t,
+                        indice_atual=idx
                     )
-
-                transaction.on_commit(lambda: disparar_task(imagem.id, total_arquivos, indice_atual))
+                )
 
             return JsonResponse({
                 'sucesso': True,

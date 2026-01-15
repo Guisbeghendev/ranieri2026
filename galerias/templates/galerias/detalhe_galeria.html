@@ -76,6 +76,7 @@
 
                         {% if request.user.is_authenticated %}
                             <button
+                                type="button"
                                 class="btn btn-sm {% if curtidas_pelo_usuario|get_item:imagem.pk %}btn-danger is-liked{% else %}btn-outline-danger{% endif %} like-button"
                                 data-image-pk="{{ imagem.pk }}"
                                 data-url="{% url 'galerias:curtir_imagem' imagem_pk=imagem.pk %}"
@@ -153,7 +154,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (likeButtons.length > 0) {
         likeButtons.forEach(button => {
-            button.addEventListener('click', function() {
+            button.addEventListener('click', function(e) {
+                // Impede que o clique no botão dispare outros eventos (como abrir a imagem)
+                e.preventDefault();
+                e.stopPropagation();
+
                 const imagePk = this.dataset.imagePk;
                 const url = this.dataset.url;
                 const likesCountElement = document.getElementById(`likes-count-${imagePk}`);
@@ -164,7 +169,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': CSRF_TOKEN
+                        'X-CSRFToken': CSRF_TOKEN,
+                        'X-Requested-With': 'XMLHttpRequest'
                     },
                     body: JSON.stringify({})
                 })

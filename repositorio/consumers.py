@@ -59,4 +59,12 @@ class GaleriaConsumer(AsyncWebsocketConsumer):
         """
         Handler para mensagens do tipo 'notify_status' enviadas pelas tasks.
         """
-        await self.send(text_data=json.dumps(event['data']))
+        payload = event.get('data', event)
+        await self.send(text_data=json.dumps({
+            'type': 'progresso_imagem',
+            'imagem_id': payload.get('imagem_id'),
+            'progresso': payload.get('progress') or payload.get('progresso'),
+            'status': payload.get('status'),
+            'url_thumb': payload.get('url_thumb'),
+            'arquivo_processado': payload.get('arquivo_processado')
+        }))

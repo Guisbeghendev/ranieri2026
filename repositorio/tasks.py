@@ -100,8 +100,7 @@ def processar_imagem_task(self, imagem_id, total_arquivos=1, indice_atual=1):
         img_proc.thumbnail(THUMBNAIL_SIZE, Image.Resampling.LANCZOS)
 
         # WATERMARK
-        if galeria and hasattr(galeria,
-                               'watermark_config') and galeria.watermark_config and galeria.watermark_config.arquivo_marca_dagua:
+        if galeria and hasattr(galeria, 'watermark_config') and galeria.watermark_config and galeria.watermark_config.arquivo_marca_dagua:
             config = galeria.watermark_config
             with config.arquivo_marca_dagua.open('rb') as f_wm:
                 wm_img = Image.open(io.BytesIO(f_wm.read())).convert("RGBA")
@@ -129,7 +128,7 @@ def processar_imagem_task(self, imagem_id, total_arquivos=1, indice_atual=1):
         if imagem.arquivo_processado:
             imagem.arquivo_processado.delete(save=False)
 
-        file_name = f"proc_{imagem.pk}_{os.path.basename(imagem.nome_arquivo_original)}"
+        file_name = f"proc_{imagem.pk}.jpg"
         imagem.arquivo_processado.save(file_name, ContentFile(output.getvalue()), save=False)
 
         imagem.status_processamento = 'PROCESSADA'

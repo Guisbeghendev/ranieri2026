@@ -325,7 +325,7 @@ class Curtida(models.Model):
         verbose_name = 'Curtida'
         # CORREÇÃO: verbose_plural -> verbose_name_plural
         verbose_name_plural = 'Curtidas'
-        ordering = ['-creado_em']
+        ordering = ['-criado_em']
 
     def __str__(self):
         return f"Curtida por {self.usuario.username} na Imagem {self.imagem.id}"

@@ -178,6 +178,7 @@ class CurtirView(LoginRequiredMixin, View):
         user = request.user
         imagem = get_object_or_404(Imagem, pk=imagem_pk)
 
+        # Correção da verificação de acesso para aceitar superusuário e grupos corretamente
         if not GaleriaAccessMixin().has_access(imagem.galeria, user):
             return JsonResponse({'success': False, 'message': 'Acesso negado.'}, status=403)
 

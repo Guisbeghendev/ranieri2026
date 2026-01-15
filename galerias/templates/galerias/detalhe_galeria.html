@@ -80,14 +80,15 @@
                                 class="btn btn-sm {% if curtidas_pelo_usuario|get_item:imagem.pk %}btn-danger is-liked{% else %}btn-outline-danger{% endif %} like-button"
                                 data-image-pk="{{ imagem.pk }}"
                                 data-url="{% url 'galerias:curtir_imagem' imagem_pk=imagem.pk %}"
-                                aria-label="Curtir ou Descurtir esta imagem">
+                                aria-label="Curtir ou Descurtir esta imagem"
+                                style="position: relative; z-index: 10;">
 
-                                <i class="fas fa-heart"></i>
+                                <i class="{% if curtidas_pelo_usuario|get_item:imagem.pk %}fas{% else %}far{% endif %} fa-heart"></i>
                                 <span>{% if curtidas_pelo_usuario|get_item:imagem.pk %}Descurtir{% else %}Curtir{% endif %}</span>
                             </button>
                         {% else %}
                             <a href="{% url 'users:login' %}" class="btn btn-sm btn-outline-secondary" title="Faça login para curtir">
-                                <i class="fas fa-heart"></i> Curtir
+                                <i class="far fa-heart"></i> Curtir
                             </a>
                         {% endif %}
                     </div>
@@ -154,7 +155,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (likeButtons.length > 0) {
         likeButtons.forEach(button => {
-            button.addEventListener('click', function(e) {
+            // Alterado para onclick direto para garantir prioridade de execução e interrupção de propagação
+            button.onclick = function(e) {
                 // Impede que o clique no botão dispare outros eventos (como abrir a imagem)
                 e.preventDefault();
                 e.stopPropagation();
@@ -162,6 +164,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const imagePk = this.dataset.imagePk;
                 const url = this.dataset.url;
                 const likesCountElement = document.getElementById(`likes-count-${imagePk}`);
+                const icon = this.querySelector('i');
+                const textSpan = this.querySelector('span');
 
                 let currentTotalLikes = parseTotalLikes();
 
@@ -186,16 +190,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
                 .then(data => {
                     if (data.success) {
-                        const buttonTextSpan = button.querySelector('span');
                         if (data.curtiu) {
                             button.classList.add('is-liked', 'btn-danger');
                             button.classList.remove('btn-outline-danger');
-                            buttonTextSpan.textContent = 'Descurtir';
+                            icon.className = 'fas fa-heart';
+                            textSpan.textContent = 'Descurtir';
                             currentTotalLikes += 1;
                         } else {
                             button.classList.remove('is-liked', 'btn-danger');
                             button.classList.add('btn-outline-danger');
-                            buttonTextSpan.textContent = 'Curtir';
+                            icon.className = 'far fa-heart';
+                            textSpan.textContent = 'Curtir';
                             currentTotalLikes -= 1;
                         }
 
@@ -214,7 +219,9 @@ document.addEventListener('DOMContentLoaded', function() {
                          console.error('Falha na interação:', error);
                     }
                 });
-            });
+
+                return false;
+            };
         });
     }
 });

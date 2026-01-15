@@ -37,14 +37,26 @@
                     </div>
                 </div>
 
-                {# Container de Progresso (Invisível até o início do upload) #}
-                <div id="progress-container" class="hidden space-y-2">
-                    <div class="flex justify-between text-[10px] uppercase font-bold">
-                        <span id="progress-label" class="text-silver">Preparando...</span>
-                        <span id="progress-percent" class="text-primary-purple">0%</span>
+                {# Container de Progresso Duplo #}
+                <div id="progress-container" class="hidden space-y-4 mt-6 bg-black/20 p-4 rounded border border-silver/5">
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-[10px] uppercase font-bold">
+                            <span class="text-silver">Progresso Total</span>
+                            <span id="total-percent" class="text-primary-purple">0%</span>
+                        </div>
+                        <div class="w-full bg-black h-1 rounded-full overflow-hidden">
+                            <div id="total-bar" class="bg-primary-purple h-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
                     </div>
-                    <div class="w-full bg-black h-1 rounded-full overflow-hidden">
-                        <div id="progress-bar" class="bg-primary-purple h-full transition-all duration-300" style="width: 0%"></div>
+
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-[10px] uppercase font-bold">
+                            <span id="current-file-name" class="text-silver truncate max-w-[200px]">Aguardando...</span>
+                            <span id="current-percent" class="text-white">0%</span>
+                        </div>
+                        <div class="w-full bg-black/50 h-1 rounded-full overflow-hidden">
+                            <div id="current-bar" class="bg-white h-full transition-all duration-100" style="width: 0%"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -64,10 +76,18 @@
 (function() {
     'use strict';
 
-    const fileInput = document.getElementById('id_arquivos');
+    const fileInput = document.querySelector('input[type="file"]');
     const uploadArea = document.getElementById('file-upload-area');
     const fileCountText = document.getElementById('file-count-text');
     const submitButton = document.getElementById('submit-button');
+
+    // Elementos de Progresso
+    const progressContainer = document.getElementById('progress-container');
+    const totalBar = document.getElementById('total-bar');
+    const totalPercent = document.getElementById('total-percent');
+    const currentBar = document.getElementById('current-bar');
+    const currentPercent = document.getElementById('current-percent');
+    const currentFileName = document.getElementById('current-file-name');
 
     const SIGN_URL = "{% url 'repositorio:assinar_upload' %}";
     const CONFIRM_URL = "{% url 'repositorio:confirmar_upload' %}";
@@ -109,18 +129,51 @@
 
         submitButton.disabled = true;
         uploadArea.style.pointerEvents = 'none';
+        progressContainer.classList.remove('hidden');
 
         for (let i = 0; i < total; i++) {
+            // Atualiza barra geral antes de começar o arquivo
+            const overallProgress = (i / total) * 100;
+            totalBar.style.width = `${overallProgress}%`;
+            totalPercent.textContent = `${Math.round(overallProgress)}%`;
+
             await processFile(files[i], i + 1, total);
         }
 
-        window.location.href = REDIRECT_URL;
+        totalBar.style.width = '100%';
+        totalPercent.textContent = '100%';
+
+        // Pequeno delay para o usuário ver o 100% antes de redirecionar
+        setTimeout(() => {
+            window.location.href = REDIRECT_URL;
+        }, 500);
     });
+
+    function uploadToS3(url, formData, onProgress) {
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', url);
+
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    const percent = (e.loaded / e.total) * 100;
+                    onProgress(percent);
+                }
+            };
+
+            xhr.onload = () => (xhr.status >= 200 && xhr.status < 300) ? resolve() : reject(xhr.statusText);
+            xhr.onerror = () => reject("Erro de conexão");
+            xhr.send(formData);
+        });
+    }
 
     async function processFile(file, index, total) {
         try {
-            updateStatus(`[${index}/${total}] Assinando: ${file.name}`);
+            currentFileName.textContent = `Enviando: ${file.name}`;
+            currentBar.style.width = '0%';
+            currentPercent.textContent = '0%';
 
+            // 1. Solicita Assinatura S3
             const signRes = await fetch(SIGN_URL, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrftoken},
@@ -128,21 +181,19 @@
             });
             const signData = await signRes.json();
 
-            updateStatus(`[${index}/${total}] Enviando S3: ${file.name}`);
+            // 2. Upload para S3 com monitoramento de progresso
             const formData = new FormData();
             Object.entries(signData.campos_assinados).forEach(([key, value]) => {
                 formData.append(key, value);
             });
             formData.append('file', file);
 
-            const s3Res = await fetch(signData.url_assinada, {
-                method: 'POST',
-                body: formData
+            await uploadToS3(signData.url_assinada, formData, (percent) => {
+                currentBar.style.width = `${percent}%`;
+                currentPercent.textContent = `${Math.round(percent)}%`;
             });
 
-            if (!s3Res.ok) throw new Error("Falha no upload S3");
-
-            updateStatus(`[${index}/${total}] Confirmando: ${file.name}`);
+            // 3. Confirmar e disparar Celery
             await fetch(CONFIRM_URL, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrftoken},
@@ -155,13 +206,9 @@
 
         } catch (error) {
             console.error(error);
-            updateStatus(`Erro em: ${file.name}`, true);
+            currentFileName.textContent = `Erro: ${file.name}`;
+            currentFileName.style.color = '#ff4444';
         }
-    }
-
-    function updateStatus(msg, isError = false) {
-        fileCountText.textContent = msg;
-        fileCountText.style.color = isError ? 'red' : 'inherit';
     }
 })();
 </script>

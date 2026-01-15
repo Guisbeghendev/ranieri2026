@@ -6,21 +6,17 @@ from repositorio.models import Galeria, Curtida, Imagem
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.conf import settings
-import os
 import mimetypes
 import boto3
 from botocore.exceptions import ClientError
-import traceback
 
 
 class GaleriaAccessMixin:
     """
     Método que verifica se o usuário tem permissão para acessar a galeria.
-    Retorna True se tiver acesso, False caso contrário.
     """
 
     def has_access(self, galeria, user):
-        # Se não há galeria, o Mixin de acesso de usuário final nega
         if galeria is None:
             return False
 
@@ -41,7 +37,7 @@ class GaleriaAccessMixin:
 
 
 # ----------------------------------------------------------------------
-# 1. LISTAGEM PÚBLICA (Independente de Login)
+# 1. LISTAGEM PÚBLICA
 # ----------------------------------------------------------------------
 class GaleriaPublicaListView(ListView):
     model = Galeria
@@ -69,7 +65,7 @@ class GaleriaPublicaListView(ListView):
 
 
 # ----------------------------------------------------------------------
-# 2. LISTAGEM RESTRITA (Apenas para Usuários Logados)
+# 2. LISTAGEM RESTRITA
 # ----------------------------------------------------------------------
 class GaleriaListView(LoginRequiredMixin, GaleriaAccessMixin, ListView):
     model = Galeria
@@ -77,14 +73,12 @@ class GaleriaListView(LoginRequiredMixin, GaleriaAccessMixin, ListView):
     context_object_name = 'galerias_exclusivas'
 
     def get_queryset(self):
-        # Retorna vazio pois a lógica agora utiliza context_data para agrupar por grupos
         return Galeria.objects.none()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
 
-        # Define quais grupos buscar (Todos se superuser, ou apenas os do usuário)
         if user.is_superuser:
             from django.contrib.auth.models import Group
             user_groups = Group.objects.filter(grupo_ranieri__isnull=False).distinct()
@@ -94,14 +88,12 @@ class GaleriaListView(LoginRequiredMixin, GaleriaAccessMixin, ListView):
         grupos_com_galerias = []
 
         for group in user_groups:
-            # Busca todas as galerias publicadas vinculadas ao grupo específico
             galerias_do_grupo = Galeria.objects.filter(
                 status='PB',
                 grupos_acesso__auth_group=group
             ).prefetch_related('capa').order_by('-data_do_evento')
 
             if galerias_do_grupo.exists():
-                # Injeção das URLs do Proxy para cada galeria do grupo
                 for galeria in galerias_do_grupo:
                     if galeria.capa and galeria.capa.arquivo_processado:
                         try:
@@ -153,19 +145,14 @@ class GaleriaDetailView(GaleriaAccessMixin, DetailView):
         context = super().get_context_data(**kwargs)
         galeria = context['galeria']
         user = self.request.user
-
         curtidas_pelo_usuario = {}
         curtidas_totais_galeria = 0
 
         for imagem in galeria.imagens.all():
             curtidas_count = imagem.curtidas.count()
             curtidas_totais_galeria += curtidas_count
-
-            if user.is_authenticated:
-                curtida_existe = imagem.curtidas.filter(usuario=user).exists()
-                curtidas_pelo_usuario[imagem.pk] = curtida_existe
-            else:
-                curtidas_pelo_usuario[imagem.pk] = False
+            curtidas_pelo_usuario[imagem.pk] = imagem.curtidas.filter(
+                usuario=user).exists() if user.is_authenticated else False
 
             if imagem.arquivo_processado:
                 try:
@@ -180,8 +167,6 @@ class GaleriaDetailView(GaleriaAccessMixin, DetailView):
 
         context['curtidas_totais_galeria'] = curtidas_totais_galeria
         context['curtidas_pelo_usuario'] = curtidas_pelo_usuario
-        context['proxy_url_name'] = 'private_media_proxy'
-
         return context
 
 
@@ -192,43 +177,30 @@ class CurtirView(LoginRequiredMixin, View):
     def post(self, request, imagem_pk, *args, **kwargs):
         user = request.user
         imagem = get_object_or_404(Imagem, pk=imagem_pk)
-        galeria = imagem.galeria
 
-        if not GaleriaAccessMixin().has_access(galeria, user):
+        if not GaleriaAccessMixin().has_access(imagem.galeria, user):
             return JsonResponse({'success': False, 'message': 'Acesso negado.'}, status=403)
 
         curtida_qs = Curtida.objects.filter(usuario=user, imagem=imagem)
         if curtida_qs.exists():
             curtida_qs.delete()
-            curtiu = False
-            message = 'Curtida removida.'
+            curtiu, message = False, 'Curtida removida.'
         else:
             Curtida.objects.create(usuario=user, imagem=imagem)
-            curtiu = True
-            message = 'Imagem curtida!'
-
-        new_count = Curtida.objects.filter(imagem=imagem).count()
+            curtiu, message = True, 'Imagem curtida!'
 
         return JsonResponse({
             'success': True,
             'curtiu': curtiu,
-            'new_count': new_count,
+            'new_count': Curtida.objects.filter(imagem=imagem).count(),
             'message': message
         })
 
 
 # ----------------------------------------------------------------------
-# 5. PROXY DE MÉDIA PRIVADA S3 (CORRIGIDO)
+# 5. PROXY DE MÉDIA PRIVADA S3
 # ----------------------------------------------------------------------
 class PrivateMediaProxyView(View):
-    bucket_name = settings.AWS_STORAGE_BUCKET_NAME
-    s3_client = boto3.client(
-        's3',
-        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-        region_name=settings.AWS_S3_REGION_NAME
-    )
-
     def get(self, request, *args, **kwargs):
         file_path = kwargs.get('path')
         user = request.user
@@ -239,30 +211,29 @@ class PrivateMediaProxyView(View):
         except (Imagem.DoesNotExist, Imagem.MultipleObjectsReturned):
             return HttpResponseBadRequest('Arquivo não encontrado.')
 
-        # --- LÓGICA DE PERMISSÃO CORRIGIDA ---
-        # Se o usuário for Superuser ou o Fotógrafo dono da imagem, ele PODE ver (essencial para o Repositório Admin)
-        if user.is_authenticated and (user.is_superuser or user.is_fotografo_master or imagem.fotografo == user):
+        if user.is_authenticated and (
+                user.is_superuser or getattr(user, 'is_fotografo_master', False) or imagem.fotografo == user):
             allowed = True
         else:
-            # Caso contrário, cai na regra do Mixin (que checa se a galeria está publicada, etc)
             allowed = GaleriaAccessMixin().has_access(galeria, user)
 
         if not allowed:
             return HttpResponseForbidden('Acesso negado.')
 
         try:
-            s3_object_key = imagem.arquivo_processado.name
-            s3_response = self.s3_client.get_object(Bucket=self.bucket_name, Key=s3_object_key)
-
-            content_type = s3_response.get('ContentType',
-                                           mimetypes.guess_type(file_path)[0] or 'application/octet-stream')
-            content_length = s3_response.get('ContentLength')
-
-            response = HttpResponse(s3_response['Body'].read(), content_type=content_type)
-            response['Content-Length'] = content_length
+            s3_client = boto3.client(
+                's3',
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                region_name=settings.AWS_S3_REGION_NAME
+            )
+            s3_response = s3_client.get_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+                                               Key=imagem.arquivo_processado.name)
+            response = HttpResponse(s3_response['Body'].read(), content_type=s3_response.get('ContentType',
+                                                                                             mimetypes.guess_type(
+                                                                                                 file_path)[
+                                                                                                 0] or 'application/octet-stream'))
+            response['Content-Length'] = s3_response.get('ContentLength')
             return response
-
-        except ClientError as e:
+        except Exception:
             return HttpResponseBadRequest('Erro ao acessar o armazenamento.')
-        except Exception as e:
-            return HttpResponseBadRequest(f'Erro interno.')

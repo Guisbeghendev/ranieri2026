@@ -13,13 +13,15 @@ logger = logging.getLogger(__name__)
 # Configurações otimizadas (Baseadas na robustez do Guisbeghen)
 THUMBNAIL_SIZE = (800, 600)
 THUMBNAIL_QUALITY = 85
+# Novo: Tamanho para a miniatura de grade (preview rápido)
+GRID_THUMB_SIZE = (300, 300)
 
 
 @shared_task(bind=True, max_retries=3)
 def processar_imagem_task(self, imagem_id, total_arquivos=1, indice_atual=1):
     """
     Tarefa reformulada para aceitar contagem de progresso e garantir
-    estabilidade de memória/cor.
+    estabilidade de memória/cor, gerando imagem processada e thumbnail.
     """
     try:
         # Busca otimizada
@@ -42,12 +44,21 @@ def processar_imagem_task(self, imagem_id, total_arquivos=1, indice_atual=1):
         if img_original.mode != 'RGB':
             img_original = img_original.convert('RGB')
 
-        # 4. Geração de Miniatura
+        # --- GERAÇÃO DA MINIATURA DE GRADE (THUMBNAIL) ---
+        img_grid = img_original.copy()
+        img_grid.thumbnail(GRID_THUMB_SIZE, Image.Resampling.LANCZOS)
+        out_grid = io.BytesIO()
+        img_grid.save(out_grid, format='JPEG', quality=70, optimize=True)
+        thumb_name = f"thumb_{imagem.pk}.jpg"
+        imagem.thumbnail.save(thumb_name, ContentFile(out_grid.getvalue()), save=False)
+
+        # 4. Geração da Imagem de Visualização (Processada)
         img_proc = img_original.copy()
         img_proc.thumbnail(THUMBNAIL_SIZE, Image.Resampling.LANCZOS)
 
         # 5. Aplicação de Marca D'água (Lógica de Alpha do Guisbeghen)
-        if galeria and hasattr(galeria, 'watermark_config') and galeria.watermark_config and galeria.watermark_config.arquivo_marca_dagua:
+        if galeria and hasattr(galeria,
+                               'watermark_config') and galeria.watermark_config and galeria.watermark_config.arquivo_marca_dagua:
             config = galeria.watermark_config
             with config.arquivo_marca_dagua.open('rb') as f_wm:
                 wm_img = Image.open(io.BytesIO(f_wm.read())).convert("RGBA")
@@ -72,7 +83,7 @@ def processar_imagem_task(self, imagem_id, total_arquivos=1, indice_atual=1):
             temp_img.paste(wm_img, pos, wm_img)
             img_proc = temp_img.convert("RGB")
 
-        # 6. Salvamento e Upload
+        # 6. Salvamento e Upload da Processada
         output = io.BytesIO()
         img_proc.save(output, format='JPEG', quality=THUMBNAIL_QUALITY, optimize=True)
 
@@ -80,13 +91,17 @@ def processar_imagem_task(self, imagem_id, total_arquivos=1, indice_atual=1):
         imagem.arquivo_processado.save(file_name, ContentFile(output.getvalue()), save=False)
 
         imagem.status_processamento = 'PROCESSADA'
-        imagem.save(update_fields=['status_processamento', 'arquivo_processado'])
+        imagem.save(update_fields=['status_processamento', 'arquivo_processado', 'thumbnail'])
 
-        # 7. NOTIFICAÇÃO REAL-TIME
+        # 7. NOTIFICAÇÃO REAL-TIME (Usando SLUG para o grupo)
         percentual = int((indice_atual / total_arquivos) * 100)
         channel_layer = get_channel_layer()
 
-        group_name = f"galeria_{galeria.pk}" if galeria else f"user_{imagem.fotografo.id}"
+        # Roteamento via Slug se disponível, senão ID
+        group_id = galeria.slug if galeria and galeria.slug else (
+            galeria.pk if galeria else f"user_{imagem.fotografo.id}")
+        group_name = f"galeria_{group_id}"
+
         async_to_sync(channel_layer.group_send)(
             group_name,
             {
@@ -96,7 +111,8 @@ def processar_imagem_task(self, imagem_id, total_arquivos=1, indice_atual=1):
                 "concluidas": indice_atual,
                 "total": total_arquivos,
                 "status": "CONCLUIDO" if indice_atual == total_arquivos else "PROCESSANDO",
-                "url_thumb": imagem.arquivo_processado.url if imagem.arquivo_processado else ""
+                "url_thumb": imagem.thumbnail.url if imagem.thumbnail else (
+                    imagem.arquivo_processado.url if imagem.arquivo_processado else "")
             }
         )
 

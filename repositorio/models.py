@@ -1,11 +1,16 @@
 from django.db import models
 from django.conf import settings
+from django.core.files.storage import storages
 from config.storages_conf import PublicMediaStorage, PrivateMediaStorage
 from users.models import Grupo
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django.utils import timezone
+from django.utils.text import slugify
 from datetime import date # Importação necessária para DateField
+
+# Define o storage do S3 conforme configurado no settings.py
+repositorio_storage = storages['repositorio_s3']
 
 # ==============================================================================
 # 1. Configuração da Marca D'água (WatermarkConfig)
@@ -31,8 +36,8 @@ class WatermarkConfig(models.Model):
     arquivo_marca_dagua = models.ImageField(
         upload_to='watermarks/',
         verbose_name='Arquivo (PNG com Transparência)',
-        # CORREÇÃO: Alterado para PrivateMediaStorage() para garantir que a marca d'água também seja privada.
-        storage=PrivateMediaStorage()
+        # CORREÇÃO: Alterado para usar o storage configurado no settings.py
+        storage=repositorio_storage
     )
     posicao = models.CharField(
         max_length=2,
@@ -100,7 +105,7 @@ class Imagem(models.Model):
         upload_to='repo/originais/',
         max_length=500,
         verbose_name='Arquivo Original',
-        storage=PrivateMediaStorage()
+        storage=repositorio_storage
     )
 
     arquivo_processado = models.ImageField(
@@ -112,7 +117,17 @@ class Imagem(models.Model):
         # CORREÇÃO CRÍTICA: Mudar para PrivateMediaStorage para garantir que
         # o acesso seja SEMPRE via o proxy com checagem de permissão,
         # cumprindo a regra de que NINGUÉM acessa imagens fora do site.
-        storage=PrivateMediaStorage()
+        storage=repositorio_storage
+    )
+
+    # NOVO: Necessário para visualização rápida no WebSocket e Galeria
+    thumbnail = models.ImageField(
+        upload_to='repo/thumbs/',
+        max_length=500,
+        null=True,
+        blank=True,
+        verbose_name='Miniatura',
+        storage=repositorio_storage
     )
 
     # Ligação com a Galeria (ALTERADO: on_delete=models.CASCADE para deletar imagem e arquivos)
@@ -156,7 +171,7 @@ class Imagem(models.Model):
 @receiver(pre_delete, sender=Imagem)
 def delete_imagem_files(sender, instance, **kwargs):
     """
-    Deleta os arquivos (original e processado) do S3/Storage antes que o objeto Imagem
+    Deleta os arquivos (original, processado e thumbnail) do S3/Storage antes que o objeto Imagem
     seja removido do banco de dados (o que acontece em CASCADE quando a Galeria é deletada).
     """
     # Deleta o arquivo original (private)
@@ -166,6 +181,10 @@ def delete_imagem_files(sender, instance, **kwargs):
     # Deleta o arquivo processado (private)
     if instance.arquivo_processado:
         instance.arquivo_processado.delete(save=False)
+
+    # Deleta a miniatura
+    if instance.thumbnail:
+        instance.thumbnail.delete(save=False)
 
 
 # ==============================================================================
@@ -184,6 +203,10 @@ class Galeria(models.Model):
     ]
 
     nome = models.CharField(max_length=255, verbose_name='Título da Galeria')
+
+    # NOVO: Slug para rotas de WebSockets e URLs
+    slug = models.SlugField(max_length=255, unique=True, blank=True, verbose_name='Slug')
+
     descricao = models.TextField(blank=True, verbose_name='Descrição')
 
     # NOVO CAMPO: Data do Evento
@@ -254,6 +277,8 @@ class Galeria(models.Model):
         return f"{self.nome} ({self.status})"
 
     def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.nome)
         super().save(*args, **kwargs)
 
     def publicar(self):
@@ -300,7 +325,7 @@ class Curtida(models.Model):
         verbose_name = 'Curtida'
         # CORREÇÃO: verbose_plural -> verbose_name_plural
         verbose_name_plural = 'Curtidas'
-        ordering = ['-criado_em']
+        ordering = ['-creado_em']
 
     def __str__(self):
         return f"Curtida por {self.usuario.username} na Imagem {self.imagem.id}"

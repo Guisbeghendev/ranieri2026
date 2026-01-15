@@ -137,10 +137,149 @@
     </div>
 </main>
 
+<script>
+// --- Lógica de Curtidas (DOM Content Loaded) ---
+document.addEventListener('DOMContentLoaded', function() {
+    const likeButtons = document.querySelectorAll('.like-button');
+    const totalLikesDisplay = document.getElementById('total-likes');
+
+    // Tenta obter o token do input hidden gerado pelo Django
+    const csrfElement = document.querySelector('input[name="csrfmiddlewaretoken"]');
+    const CSRF_TOKEN = csrfElement ? csrfElement.value : '';
+
+    function parseTotalLikes() {
+        return parseInt(totalLikesDisplay.textContent) || 0;
+    }
+
+    if (likeButtons.length > 0) {
+        likeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const imagePk = this.dataset.imagePk;
+                const url = this.dataset.url;
+                const likesCountElement = document.getElementById(`likes-count-${imagePk}`);
+
+                let currentTotalLikes = parseTotalLikes();
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': CSRF_TOKEN
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(response => {
+                    if (response.status === 403) {
+                        alert("Acesso Negado: Você não tem permissão para curtir esta galeria.");
+                        return Promise.reject('Forbidden');
+                    }
+                    if (!response.ok) {
+                        throw new Error('Erro na requisição.');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        const buttonTextSpan = button.querySelector('span');
+                        if (data.curtiu) {
+                            button.classList.add('is-liked', 'btn-danger');
+                            button.classList.remove('btn-outline-danger');
+                            buttonTextSpan.textContent = 'Descurtir';
+                            currentTotalLikes += 1;
+                        } else {
+                            button.classList.remove('is-liked', 'btn-danger');
+                            button.classList.add('btn-outline-danger');
+                            buttonTextSpan.textContent = 'Curtir';
+                            currentTotalLikes -= 1;
+                        }
+
+                        if (likesCountElement) {
+                            likesCountElement.textContent = data.new_count;
+                        }
+
+                        totalLikesDisplay.textContent = currentTotalLikes;
+
+                    } else {
+                        alert(data.message || 'Erro ao processar a curtida.');
+                    }
+                })
+                .catch(error => {
+                    if (error !== 'Forbidden') {
+                         console.error('Falha na interação:', error);
+                    }
+                });
+            });
+        });
+    }
+});
+
+// --- Lógica Alpine.js (Lightbox) ---
+document.addEventListener('alpine:init', () => {
+    Alpine.data('galleryLightbox', () => ({
+        isOpen: false,
+        currentIndex: 0,
+        gallery: [],
+
+        initTriggers() {
+            const triggers = document.querySelectorAll('.lightbox-trigger');
+
+            this.gallery = Array.from(triggers).map(trigger => ({
+                url: trigger.getAttribute('href'),
+                title: trigger.getAttribute('data-title'),
+            }));
+
+            triggers.forEach(trigger => {
+                trigger.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const index = parseInt(trigger.getAttribute('data-index'));
+                    this.openLightbox(index);
+                });
+            });
+
+            window.addEventListener('keydown', (e) => {
+                if (!this.isOpen) return;
+
+                if (e.key === 'ArrowRight' || e.key === ' ') {
+                    e.preventDefault();
+                    this.nextImage();
+                } else if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    this.prevImage();
+                }
+            });
+        },
+
+        get currentImage() {
+            return this.gallery[this.currentIndex] || { url: '', title: '' };
+        },
+
+        openLightbox(index) {
+            this.currentIndex = index;
+            this.isOpen = true;
+            document.body.classList.add('modal-open');
+        },
+
+        closeLightbox() {
+            this.isOpen = false;
+            document.body.classList.remove('modal-open');
+        },
+
+        nextImage() {
+            if (this.currentIndex < this.gallery.length - 1) {
+                this.currentIndex++;
+            }
+        },
+
+        prevImage() {
+            if (this.currentIndex > 0) {
+                this.currentIndex--;
+            }
+        }
+    }));
+});
+</script>
+
 {% if request.user.is_authenticated %}
     <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-    <script src="{% static 'galerias/js/curtir_imagem.js' %}"></script>
 {% endif %}
-
-<script src="{% static 'galerias/js/alpine_lightbox.js' %}"></script>
 {% endblock %}

@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse_lazy, reverse  # IMPORTADO REVERSE
+from django.urls import reverse_lazy, reverse
 from django.views.generic import View, ListView, CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
@@ -115,7 +115,7 @@ class AssinarUploadView(FotografoRequiredMixin, View):
 
             ext = os.path.splitext(nome_arquivo_original)[1]
             nome_unico = f"{uuid.uuid4()}{ext}"
-            caminho_s3 = f"uploads/originais/{nome_unico}"
+            caminho_s3 = f"repo/originais/{nome_unico}"
 
             s3_client = boto3.client(
                 's3',
@@ -539,7 +539,7 @@ class PublicarGaleriaView(FotografoRequiredMixin, View):
         else:
             messages.info(request, message)
 
-        return HttpResponseRedirect(reverse_lazy('repositorio:gerenciar_galerias'))
+        return HttpResponseRedirect(reverse('repositorio:gerenciar_galerias'))
 
 
 # --------------------------------------------------------------------------
@@ -591,4 +591,4 @@ class ArquivarGaleriaView(FotografoRequiredMixin, View):
         else:
             messages.info(request, message)
 
-        return HttpResponseRedirect(reverse_lazy('repositorio:gerenciar_galerias'))
+        return HttpResponseRedirect(reverse('repositorio:gerenciar_galerias'))

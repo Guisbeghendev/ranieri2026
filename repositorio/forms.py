@@ -1,10 +1,8 @@
 from django import forms
 from django.db import models
 from .models import Imagem, Galeria, WatermarkConfig
-# Assumindo a importação necessária, baseada no seu models.py
 from users.models import Grupo
-from datetime import date  # Importado para DateInput
-
+from datetime import date
 
 # --------------------------------------------------------------------------
 # 1. Formulário Customizado para Upload Múltiplo
@@ -25,7 +23,6 @@ class MultipleFileField(forms.FileField):
     def clean(self, data, initial=None):
         single_file_clean = super().clean
         if isinstance(data, (list, tuple)):
-            # Chama clean para cada item da lista (cada arquivo)
             result = [single_file_clean(d, initial) for d in data]
         else:
             result = single_file_clean(data, initial)
@@ -49,11 +46,10 @@ class GaleriaForm(forms.ModelForm):
 
     class Meta:
         model = Galeria
-        # CORRIGIDO: Adicionado 'acesso_publico' aos campos
+        # Campos definidos conforme seu models.py
         fields = ['nome', 'data_do_evento', 'descricao', 'status', 'acesso_publico', 'grupos_acesso', 'watermark_config']
 
         widgets = {
-            # Novo widget para o campo DateField para melhor experiência do usuário
             'data_do_evento': forms.DateInput(attrs={'type': 'date'}),
         }
 
@@ -65,11 +61,3 @@ class GaleriaForm(forms.ModelForm):
 
         # Garante que o queryset do campo M2M esteja explicitamente definido
         self.fields['grupos_acesso'].queryset = Grupo.objects.all()
-
-        # Opcional: Adiciona classes CSS customizadas a todos os campos (exceto Checkbox/SelectMultiple)
-        # for name, field in self.fields.items():
-        #     if not isinstance(field.widget, (forms.CheckboxSelectMultiple, forms.SelectMultiple)):
-        #         if 'class' in field.widget.attrs:
-        #             field.widget.attrs['class'] += ' form-control'
-        #         else:
-        #             field.widget.attrs['class'] = 'form-control'

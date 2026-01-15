@@ -4,155 +4,106 @@
 {% block title %}Gerenciar Imagens da Galeria: {{ galeria.nome }}{% endblock %}
 
 {% block content %}
-
-{# 1. CORREÇÃO DA PASSAGEM DE VARIÁVEL: A URL dinâmica é passada via data-attribute #}
 <div class="dashboard-main-container"
      data-definir-capa-url-raw="{% url 'repositorio:definir_capa_galeria' galeria_pk=galeria.pk imagem_pk=0 %}">
-<div class="dashboard-header mb-3">
-<h1 class="header-title">Gerenciar Conteúdo</h1>
-<p class="header-subtitle">Galeria: <span class="text-primary font-bold">{{ galeria.nome }}</span></p>
-</div>
 
-{# Exibição das mensagens do Django #}
-{% if messages %}
-    <ul class="messages p-0">
-        {% for message in messages %}
-            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-        {% endfor %}
-    </ul>
-{% endif %}
-
-<div class="card p-3">
-    <div class="card-header mb-3">
-        <h2 class="section-title">Anexar e Remover Imagens</h2>
-        <p class="section-description">
-            Clique nas imagens para selecioná-las ou desmarcá-las da galeria. Imagens com ícone de carregamento ainda estão sendo processadas.
-        </p>
-
-        {# NOVO: Indicador de Capa Atual #}
-        <div id="capa-atual-info" class="mt-2 p-2 border rounded bg-light-gray d-flex align-items-center">
-            <h4 class="m-0 mr-2 font-weight-bold" style="font-size: 1rem;">Capa Atual:</h4>
-            {% if galeria.capa and galeria.capa.arquivo_processado %}
-                {# 2. CORREÇÃO DE URL: private_media_proxy para a Capa no cabeçalho #}
-                <img id="capa-thumb"
-                     src="{% url 'private_media_proxy' path=galeria.capa.arquivo_processado.name %}"
-                     alt="Capa da Galeria"
-                     class="thumb-capa-indicator mr-2"
-                     style="width: 30px; height: 30px; object-fit: cover; border-radius: 3px;">
-                <span id="capa-text" class="text-success font-weight-bold">
-                    ID: {{ galeria.capa.pk }} ({{ galeria.capa.nome_arquivo_original|truncatechars:20 }})
-                </span>
-            {% else %}
-                {# Placeholder para a miniatura (invisível quando não há capa) #}
-                <img id="capa-thumb"
-                     src="https://placehold.co/30x30/ccc/fff?text=?"
-                     alt="Nenhuma Capa"
-                     class="thumb-capa-indicator mr-2"
-                     style="width: 30px; height: 30px; object-fit: cover; border-radius: 3px; display: none;">
-                <span id="capa-text" class="text-secondary">Nenhuma capa definida.</span>
-            {% endif %}
-            {# Placeholder para o ID da capa atual, útil para o JS #}
-            <span id="current-cover-id" data-cover-id="{{ galeria.capa.pk|default:'' }}" style="display: none;"></span>
-        </div>
+    <div class="dashboard-header mb-3">
+        <h1 class="header-title">Gerenciar Conteúdo</h1>
+        <p class="header-subtitle">Galeria: <span class="text-primary font-bold">{{ galeria.nome }}</span></p>
     </div>
 
-    <form method="post" id="image-selection-form">
-        {% csrf_token %}
+    {% if messages %}
+        <ul class="messages p-0">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
 
-        {% if todas_imagens_repositorio %}
-            <div class="image-picker-grid">
-                {% for imagem in todas_imagens_repositorio %}
-                    {# APLICADO: Adiciona data-image-url e data-original-name para o JS #}
-                    <div class="image-card
-                                {% if imagem.pk in imagens_vinculadas_pks %}is-selected{% endif %}
-                                {% if galeria.capa.pk == imagem.pk %}is-cover{% endif %}
-                                status-{{ imagem.status_processamento|lower }}"
-                         data-image-id="{{ imagem.pk }}"
-                         data-status="{{ imagem.status_processamento }}"
-                         {# 3. CORREÇÃO DE URL: private_media_proxy para o data-image-url (Usado pelo JS) #}
-                         data-image-url="{% if imagem.arquivo_processado %}{% url 'private_media_proxy' path=imagem.arquivo_processado.name %}{% endif %}"
-                         data-original-name="{{ imagem.nome_arquivo_original|truncatechars:20 }}">
+    <div class="card p-3">
+        <div class="card-header mb-3">
+            <h2 class="section-title">Anexar e Remover Imagens</h2>
+            <p class="section-description">
+                Clique nas imagens para selecioná-las. Imagens com ícone de carregamento ainda estão sendo processadas.
+            </p>
 
-                        {# OVERLAY DE PROCESSAMENTO #}
-                        {% if imagem.status_processamento != 'PROCESSADA' %}
-                            <div class="processing-overlay">
-                                {% if imagem.status_processamento == 'ERRO' %}
-                                    <i class="fas fa-exclamation-circle text-danger"></i>
-                                    <span class="status-label">Erro</span>
-                                {% else %}
-                                    <i class="fas fa-spinner fa-spin text-primary"></i>
-                                    <span class="status-label">Processando...</span>
+            <div id="capa-atual-info" class="mt-2 p-2 border rounded bg-light-gray d-flex align-items-center">
+                <h4 class="m-0 mr-2 font-weight-bold" style="font-size: 1rem;">Capa Atual:</h4>
+                {% if galeria.capa and galeria.capa.arquivo_processado %}
+                    <img id="capa-thumb"
+                         src="{% url 'private_media_proxy' path=galeria.capa.arquivo_processado.name %}"
+                         alt="Capa"
+                         class="thumb-capa-indicator mr-2"
+                         style="width: 30px; height: 30px; object-fit: cover; border-radius: 3px;">
+                    <span id="capa-text" class="text-success font-weight-bold">
+                        ID: {{ galeria.capa.pk }} ({{ galeria.capa.nome_arquivo_original|truncatechars:20 }})
+                    </span>
+                {% else %}
+                    <img id="capa-thumb" src="https://placehold.co/30x30/ccc/fff?text=?" class="thumb-capa-indicator mr-2" style="width: 30px; height: 30px; object-fit: cover; border-radius: 3px; display: none;">
+                    <span id="capa-text" class="text-secondary">Nenhuma capa definida.</span>
+                {% endif %}
+                <span id="current-cover-id" data-cover-id="{{ galeria.capa.pk|default:'' }}" style="display: none;"></span>
+            </div>
+        </div>
+
+        <form method="post" id="image-selection-form">
+            {% csrf_token %}
+
+            {% if todas_imagens_repositorio %}
+                <div class="image-picker-grid">
+                    {% for imagem in todas_imagens_repositorio %}
+                        <div class="image-card
+                                    {% if imagem.pk in imagens_vinculadas_pks %}is-selected{% endif %}
+                                    {% if galeria.capa.pk == imagem.pk %}is-cover{% endif %}
+                                    status-{{ imagem.status_processamento|lower }}"
+                             data-image-id="{{ imagem.pk }}"
+                             data-status="{{ imagem.status_processamento }}"
+                             data-image-url="{% if imagem.arquivo_processado %}{% url 'private_media_proxy' path=imagem.arquivo_processado.name %}{% endif %}"
+                             data-original-name="{{ imagem.nome_arquivo_original|truncatechars:20 }}">
+
+                            {% if imagem.status_processamento != 'PROCESSADA' %}
+                                <div class="processing-overlay">
+                                    {% if imagem.status_processamento == 'ERRO' %}
+                                        <i class="fas fa-exclamation-circle text-danger"></i>
+                                    {% else %}
+                                        <i class="fas fa-spinner fa-spin text-primary"></i>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+
+                            {% if imagem.arquivo_processado %}
+                                <img src="{% url 'private_media_proxy' path=imagem.arquivo_processado.name %}" class="image-card-thumb">
+                            {% else %}
+                                <div class="image-card-thumb placeholder-no-file"><i class="fas fa-image"></i></div>
+                            {% endif %}
+
+                            <input type="checkbox" name="imagens" value="{{ imagem.pk }}" id="checkbox_{{ imagem.pk }}" class="hidden" {% if imagem.pk in imagens_vinculadas_pks %}checked{% endif %}>
+
+                            <span class="selection-indicator"><i class="fas fa-check"></i></span>
+                            <span class="cover-indicator"><i class="fas fa-star"></i></span>
+
+                            <div class="image-card-actions">
+                                {% if imagem.status_processamento == 'PROCESSADA' %}
+                                    <button type="button" class="btn btn-sm btn-set-cover js-set-cover-btn" data-image-pk="{{ imagem.pk }}">
+                                        <i class="fas fa-image"></i> Capa
+                                    </button>
                                 {% endif %}
                             </div>
-                        {% endif %}
-
-                        {% if imagem.arquivo_processado %}
-                            {# 4. CORREÇÃO DE URL: private_media_proxy para o SRC da imagem na grid #}
-                            <img src="{% url 'private_media_proxy' path=imagem.arquivo_processado.name %}"
-                                 alt="{{ imagem.nome_arquivo_original }}"
-                                 class="image-card-thumb">
-                        {% else %}
-                            <div class="image-card-thumb placeholder-no-file">
-                                <i class="fas fa-image"></i>
-                                <p>Aguardando...</p>
-                            </div>
-                        {% endif %}
-
-                        {# Checkbox oculto #}
-                        <input type="checkbox"
-                               name="imagens"
-                               value="{{ imagem.pk }}"
-                               id="checkbox_{{ imagem.pk }}"
-                               {% if imagem.pk in imagens_vinculadas_pks %}checked{% endif %}>
-
-                        {# Indicador visual de seleção #}
-                        <span class="selection-indicator">
-                            <i class="fas fa-check"></i>
-                        </span>
-
-                        {# NOVO: Indicador de Capa #}
-                        <span class="cover-indicator" title="Capa da Galeria">
-                            <i class="fas fa-star"></i>
-                        </span>
-
-                        {# NOVO: Botão/Área para Definir como Capa #}
-                        <div class="image-card-actions">
-                            {% if imagem.status_processamento == 'PROCESSADA' %}
-                                <button type="button"
-                                        class="btn btn-sm btn-set-cover js-set-cover-btn"
-                                        data-image-pk="{{ imagem.pk }}"
-                                        data-galeria-pk="{{ galeria.pk }}"
-                                        title="Definir como Capa">
-                                    <i class="fas fa-image mr-1"></i> Capa
-                                </button>
-                            {% endif %}
                         </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-warning">Nenhuma imagem disponível.</div>
+            {% endif %}
 
-                        <div class="image-card-info">
-                            {{ imagem.nome_arquivo_original|truncatechars:30 }}
-                        </div>
-                    </div>
-                {% endfor %}
+            <div class="text-right card-footer mt-4">
+                <a href="{% url 'repositorio:gerenciar_galerias' %}" class="btn btn-back mr-2">Voltar</a>
+                <button type="submit" class="btn btn-primary">Salvar Alterações</button>
             </div>
-        {% else %}
-            <div class="alert alert-warning">
-                Nenhuma imagem disponível.
-            </div>
-        {% endif %}
-
-        <div class="text-right card-footer mt-4">
-            <a href="{% url 'repositorio:gerenciar_galerias' %}" class="btn btn-back mr-2">
-                <i class="fas fa-arrow-left mr-1"></i> Voltar para Galerias
-            </a>
-
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-save mr-1"></i> Salvar Imagens Anexadas
-            </button>
-        </div>
-    </form>
+        </form>
+    </div>
 </div>
 
-{# NOVO: Estrutura do Modal Customizado para feedback (Substitui alert()) #}
 <div id="custom-modal" class="custom-modal-overlay hidden">
     <div class="custom-modal-content">
         <h3 id="modal-title"></h3>
@@ -161,10 +112,70 @@
     </div>
 </div>
 
-</div>
+<script>
+(function() {
+    'use strict';
 
-{% endblock %}
+    function showCustomModal(title, message, type = 'info') {
+        const modal = document.getElementById('custom-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        modalTitle.textContent = title;
+        modalTitle.className = type === 'error' ? 'text-danger' : 'text-success';
+        modalMessage.textContent = message;
+        modal.classList.remove('hidden');
+        document.getElementById('modal-close-btn').onclick = () => modal.classList.add('hidden');
+    }
 
-{% block extra_js %}
-<script src="{% static 'repositorio/js/gerenciar_imagens_galeria.js' %}"></script>
+    const container = document.querySelector('.dashboard-main-container');
+    const URL_RAW = container.getAttribute('data-definir-capa-url-raw');
+    const DEFINIR_CAPA_URL_TEMPLATE = URL_RAW.replace('/0/', '/IMAGEM_PK/');
+
+    document.querySelectorAll('.image-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('.js-set-cover-btn')) return;
+            const checkbox = card.querySelector('input[name="imagens"]');
+            checkbox.checked = !checkbox.checked;
+            card.classList.toggle('is-selected', checkbox.checked);
+        });
+    });
+
+    document.querySelectorAll('.js-set-cover-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const imagemPk = btn.getAttribute('data-image-pk');
+            const url = DEFINIR_CAPA_URL_TEMPLATE.replace('IMAGEM_PK', imagemPk);
+            const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            btn.disabled = true;
+            try {
+                const res = await fetch(url, { method: 'POST', headers: {'X-CSRFToken': csrf, 'X-Requested-With': 'XMLHttpRequest'}});
+                const data = await res.json();
+                if (data.sucesso) {
+                    showCustomModal('Sucesso', data.message, 'success');
+                    document.querySelectorAll('.image-card').forEach(c => c.classList.remove('is-cover'));
+                    btn.closest('.image-card').classList.add('is-cover');
+
+                    const card = btn.closest('.image-card');
+                    const checkbox = card.querySelector('input[name="imagens"]');
+                    checkbox.checked = true;
+                    card.classList.add('is-selected');
+
+                    document.getElementById('capa-thumb').src = data.capa_url;
+                    document.getElementById('capa-thumb').style.display = 'block';
+                    document.getElementById('capa-text').textContent = `ID: ${imagemPk}`;
+                }
+            } catch (err) {
+                showCustomModal('Erro', 'Falha ao definir capa', 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        });
+    });
+
+    if (document.querySelectorAll('.image-card:not(.status-processada):not(.status-erro)').length > 0) {
+        setTimeout(() => location.reload(), 5000);
+    }
+})();
+</script>
 {% endblock %}

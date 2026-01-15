@@ -23,7 +23,7 @@ from channels.layers import get_channel_layer
 # --------------------------------
 
 from .models import Imagem, Galeria, WatermarkConfig
-from .tasks import processar_imagem_task
+from .tasks import processar_imagem_task, girar_imagem_task  # Importação da nova task
 from .forms import GaleriaForm
 
 User = get_user_model()
@@ -263,7 +263,8 @@ class GerenciarGaleriasView(FotografoRequiredMixin, ListView):
             q_filter &= models.Q(fotografo=self.request.user)
 
         context['imagens_disponiveis_count'] = Imagem.objects.filter(q_filter).count()
-        context['is_fotografo_master_or_superuser'] = self.request.user.is_superuser or self.request.user.is_fotografo_master
+        context[
+            'is_fotografo_master_or_superuser'] = self.request.user.is_superuser or self.request.user.is_fotografo_master
 
         for galeria in context['object_list']:
             if galeria.capa and galeria.capa.arquivo_processado:
@@ -416,7 +417,37 @@ class DefinirCapaGaleriaView(FotografoRequiredMixin, View):
 
 
 # --------------------------------------------------------------------------
-# 9. View para Exclusão de Galeria
+# 9. View para Rotação de Imagem (AJAX)
+# --------------------------------------------------------------------------
+
+class GirarImagemView(FotografoRequiredMixin, View):
+    """
+    View para solicitar a rotação de uma imagem no S3 via Celery + Pillow.
+    """
+
+    def post(self, request, pk):
+        user = request.user
+        proprietario_filter = {'pk': pk}
+        if not user.is_superuser and not user.is_fotografo_master:
+            proprietario_filter['fotografo'] = user
+
+        imagem = get_object_or_404(Imagem, **proprietario_filter)
+
+        # Altera o status para mostrar as barras de progresso no frontend
+        imagem.status_processamento = 'PROCESSANDO'
+        imagem.save(update_fields=['status_processamento'])
+
+        # Dispara a task de rotação (90 graus sentido horário)
+        girar_imagem_task.delay(imagem_id=imagem.id, graus=-90)
+
+        return JsonResponse({
+            'sucesso': True,
+            'mensagem': 'A rotação da imagem foi iniciada.'
+        })
+
+
+# --------------------------------------------------------------------------
+# 10. View para Exclusão de Galeria
 # --------------------------------------------------------------------------
 
 class ExcluirGaleriaView(FotografoRequiredMixin, DeleteView):
@@ -437,7 +468,7 @@ class ExcluirGaleriaView(FotografoRequiredMixin, DeleteView):
 
 
 # --------------------------------------------------------------------------
-# 10. View para Publicação de Galeria
+# 11. View para Publicação de Galeria
 # --------------------------------------------------------------------------
 
 class PublicarGaleriaView(FotografoRequiredMixin, View):
@@ -475,7 +506,7 @@ class PublicarGaleriaView(FotografoRequiredMixin, View):
 
 
 # --------------------------------------------------------------------------
-# 11. View para Arquivamento de Galeria
+# 12. View para Arquivamento de Galeria
 # --------------------------------------------------------------------------
 
 class ArquivarGaleriaView(FotografoRequiredMixin, View):

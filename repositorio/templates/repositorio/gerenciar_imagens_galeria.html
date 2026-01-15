@@ -5,6 +5,8 @@
 
 {% block content %}
 <div class="dashboard-main-container"
+     data-galeria-id="{{ galeria.pk }}"
+     data-galeria-slug="{{ galeria.slug }}"
      data-definir-capa-url-raw="{% url 'repositorio:definir_capa_galeria' galeria_pk=galeria.pk imagem_pk=0 %}">
 
     <div class="dashboard-header mb-3">
@@ -24,7 +26,7 @@
         <div class="card-header mb-3">
             <h2 class="section-title">Anexar e Remover Imagens</h2>
             <p class="section-description">
-                Clique nas imagens para selecioná-las. Imagens com ícone de carregamento ainda estão sendo processadas.
+                Clique nas imagens para selecioná-las. Imagens com progresso ainda estão sendo processadas no servidor.
             </p>
 
             <div id="capa-atual-info" class="mt-2 p-2 border rounded bg-light-gray d-flex align-items-center">
@@ -56,23 +58,30 @@
                                     {% if imagem.pk in imagens_vinculadas_pks %}is-selected{% endif %}
                                     {% if galeria.capa.pk == imagem.pk %}is-cover{% endif %}
                                     status-{{ imagem.status_processamento|lower }}"
+                             id="image-card-{{ imagem.pk }}"
                              data-image-id="{{ imagem.pk }}"
-                             data-status="{{ imagem.status_processamento }}"
-                             data-image-url="{% if imagem.arquivo_processado %}{% url 'private_media_proxy' path=imagem.arquivo_processado.name %}{% endif %}"
-                             data-original-name="{{ imagem.nome_arquivo_original|truncatechars:20 }}">
+                             data-status="{{ imagem.status_processamento }}">
 
-                            {% if imagem.status_processamento != 'PROCESSADA' %}
-                                <div class="processing-overlay">
+                            <div class="processing-overlay {% if imagem.status_processamento == 'PROCESSADA' %}hidden{% endif %}" id="overlay-{{ imagem.pk }}">
+                                <div class="w-full px-2">
                                     {% if imagem.status_processamento == 'ERRO' %}
-                                        <i class="fas fa-exclamation-circle text-danger"></i>
+                                        <div class="text-center text-danger text-xs font-bold">
+                                            <i class="fas fa-exclamation-circle mb-1"></i><br>ERRO
+                                        </div>
                                     {% else %}
-                                        <i class="fas fa-spinner fa-spin text-primary"></i>
+                                        <div class="flex justify-between text-[8px] uppercase font-bold text-white mb-1">
+                                            <span id="label-{{ imagem.pk }}">Processando</span>
+                                            <span id="percent-{{ imagem.pk }}">0%</span>
+                                        </div>
+                                        <div class="w-full bg-black/50 h-1 rounded-full overflow-hidden">
+                                            <div id="bar-{{ imagem.pk }}" class="bg-primary-purple h-full transition-all duration-500" style="width: 0%"></div>
+                                        </div>
                                     {% endif %}
                                 </div>
-                            {% endif %}
+                            </div>
 
                             {% if imagem.arquivo_processado %}
-                                <img src="{% url 'private_media_proxy' path=imagem.arquivo_processado.name %}" class="image-card-thumb">
+                                <img src="{% url 'private_media_proxy' path=imagem.arquivo_processado.name %}" class="image-card-thumb" id="img-{{ imagem.pk }}">
                             {% else %}
                                 <div class="image-card-thumb placeholder-no-file"><i class="fas fa-image"></i></div>
                             {% endif %}
@@ -83,9 +92,12 @@
                             <span class="cover-indicator"><i class="fas fa-star"></i></span>
 
                             <div class="image-card-actions">
+                                <button type="button" class="btn-action js-rotate-btn" data-image-pk="{{ imagem.pk }}" title="Girar 90°">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
                                 {% if imagem.status_processamento == 'PROCESSADA' %}
-                                    <button type="button" class="btn btn-sm btn-set-cover js-set-cover-btn" data-image-pk="{{ imagem.pk }}">
-                                        <i class="fas fa-image"></i> Capa
+                                    <button type="button" class="btn-action js-set-cover-btn" data-image-pk="{{ imagem.pk }}" title="Definir Capa">
+                                        <i class="fas fa-image"></i>
                                     </button>
                                 {% endif %}
                             </div>
@@ -112,9 +124,56 @@
     </div>
 </div>
 
+<style>
+    .image-card { position: relative; cursor: pointer; border: 2px solid transparent; border-radius: 8px; overflow: hidden; }
+    .image-card.is-selected { border-color: #6d28d9; }
+    .processing-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 5; }
+    .image-card-actions { position: absolute; bottom: 5px; right: 5px; display: flex; gap: 4px; z-index: 10; opacity: 0; transition: 0.3s; }
+    .image-card:hover .image-card-actions { opacity: 1; }
+    .btn-action { background: #6d28d9; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; }
+    .btn-action:hover { background: #5b21b6; }
+    .hidden { display: none; }
+    .bg-primary-purple { background-color: #6d28d9; }
+</style>
+
 <script>
 (function() {
     'use strict';
+
+    const container = document.querySelector('.dashboard-main-container');
+    const galeriaSlug = container.getAttribute('data-galeria-slug');
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    // WebSocket: Sincronizado com routing.py
+    const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const socketUrl = `${protocol}${window.location.host}/ws/repositorio/galerias/${galeriaSlug}/`;
+    const socket = new WebSocket(socketUrl);
+
+    socket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        if (data.type === 'progresso_imagem') {
+            const imgId = data.imagem_id;
+            const progress = data.progresso;
+            const status = data.status;
+
+            const bar = document.getElementById(`bar-${imgId}`);
+            const percent = document.getElementById(`percent-${imgId}`);
+            const overlay = document.getElementById(`overlay-${imgId}`);
+
+            if (bar) bar.style.width = progress + '%';
+            if (percent) percent.textContent = Math.round(progress) + '%';
+
+            if (status === 'PROCESSADA') {
+                setTimeout(() => {
+                    if (overlay) overlay.classList.add('hidden');
+                    const img = document.getElementById(`img-${imgId}`);
+                    if (img) img.src = img.src.split('?')[0] + '?' + new Date().getTime();
+                }, 1000);
+            } else if (status === 'PROCESSANDO') {
+                if (overlay) overlay.classList.remove('hidden');
+            }
+        }
+    };
 
     function showCustomModal(title, message, type = 'info') {
         const modal = document.getElementById('custom-modal');
@@ -127,29 +186,32 @@
         document.getElementById('modal-close-btn').onclick = () => modal.classList.add('hidden');
     }
 
-    const container = document.querySelector('.dashboard-main-container');
     const URL_RAW = container.getAttribute('data-definir-capa-url-raw');
     const DEFINIR_CAPA_URL_TEMPLATE = URL_RAW.replace('/0/', '/IMAGEM_PK/');
 
+    // Seleção de Imagem
     document.querySelectorAll('.image-card').forEach(card => {
         card.addEventListener('click', (e) => {
-            if (e.target.closest('.js-set-cover-btn')) return;
+            if (e.target.closest('.image-card-actions')) return;
             const checkbox = card.querySelector('input[name="imagens"]');
             checkbox.checked = !checkbox.checked;
             card.classList.toggle('is-selected', checkbox.checked);
         });
     });
 
+    // Definir Capa
     document.querySelectorAll('.js-set-cover-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             e.preventDefault();
             const imagemPk = btn.getAttribute('data-image-pk');
             const url = DEFINIR_CAPA_URL_TEMPLATE.replace('IMAGEM_PK', imagemPk);
-            const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
             btn.disabled = true;
             try {
-                const res = await fetch(url, { method: 'POST', headers: {'X-CSRFToken': csrf, 'X-Requested-With': 'XMLHttpRequest'}});
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest'}
+                });
                 const data = await res.json();
                 if (data.sucesso) {
                     showCustomModal('Sucesso', data.message, 'success');
@@ -157,8 +219,7 @@
                     btn.closest('.image-card').classList.add('is-cover');
 
                     const card = btn.closest('.image-card');
-                    const checkbox = card.querySelector('input[name="imagens"]');
-                    checkbox.checked = true;
+                    card.querySelector('input[name="imagens"]').checked = true;
                     card.classList.add('is-selected');
 
                     document.getElementById('capa-thumb').src = data.capa_url;
@@ -173,9 +234,31 @@
         });
     });
 
-    if (document.querySelectorAll('.image-card:not(.status-processada):not(.status-erro)').length > 0) {
-        setTimeout(() => location.reload(), 5000);
-    }
+    // Botão Girar: Chama a View GirarImagemView
+    document.querySelectorAll('.js-rotate-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const id = btn.dataset.imagePk;
+            const url = `/repositorio/imagem/${id}/girar/`; // Certifique-se que esta rota existe no urls.py
+
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest'}
+                });
+                const data = await res.json();
+                if (data.sucesso) {
+                    // O WebSocket cuidará de mostrar o overlay e o progresso
+                    console.log("Rotação iniciada para:", id);
+                } else {
+                    showCustomModal('Erro', data.erro || 'Falha ao girar', 'error');
+                }
+            } catch (err) {
+                showCustomModal('Erro', 'Conexão falhou', 'error');
+            }
+        });
+    });
+
 })();
 </script>
 {% endblock %}

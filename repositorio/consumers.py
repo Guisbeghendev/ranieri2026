@@ -13,17 +13,14 @@ class GaleriaConsumer(AsyncWebsocketConsumer):
         self.global_group = "galerias_status_updates"
 
         # 2. Grupo Específico
-        # Alterado para capturar o 'slug' da URL, mantendo consistência com tasks.py
         self.galeria_slug = self.scope.get('url_route', {}).get('kwargs', {}).get('slug')
 
-        # Caso não haja slug (ex: upload via dashboard geral), usa o ID do usuário como fallback
         if self.galeria_slug:
             self.specific_group = f"galeria_{self.galeria_slug}"
         else:
             user_id = self.scope.get('user').id if self.scope.get('user') else 'anon'
             self.specific_group = f"galeria_user_{user_id}"
 
-        # Adiciona aos grupos
         await self.channel_layer.group_add(self.global_group, self.channel_name)
         if self.specific_group:
             await self.channel_layer.group_add(self.specific_group, self.channel_name)
@@ -46,13 +43,14 @@ class GaleriaConsumer(AsyncWebsocketConsumer):
         }))
 
     async def notificar_progresso(self, event):
-        """Envia progresso individual da imagem e a URL da thumb pronta."""
+        """
+        Envia progresso individual da imagem.
+        As chaves foram normalizadas com o tasks.py (progress).
+        """
         await self.send(text_data=json.dumps({
             'type': 'progresso_imagem',
             'imagem_id': event.get('imagem_id'),
-            'progresso': event.get('progresso'),
-            'concluidas': event.get('concluidas'),
-            'total': event.get('total'),
+            'progresso': event.get('progress'),  # Sincronizado com task
             'status': event.get('status'),
             'url_thumb': event.get('url_thumb')
         }))

@@ -9,7 +9,8 @@ from .views import (
     ConfirmarUploadView,
     PublicarGaleriaView,
     ArquivarGaleriaView,
-    DefinirCapaGaleriaView,  # ADICIONADO: Importa a nova view de configuração de capa
+    DefinirCapaGaleriaView,
+    GirarImagemView,  # ADICIONADO: Importa a view de rotação
 )
 
 app_name = 'repositorio'
@@ -38,9 +39,13 @@ urlpatterns = [
     path('galerias/', GerenciarGaleriasView.as_view(), name='gerenciar_galerias'),
     path('galeria/imagens/<int:pk>/', GerenciarImagensGaleriaView.as_view(), name='gerenciar_imagens_galeria'),
 
-    # NOVO: Rota para Definir a Capa da Galeria (Endpoint AJAX)
-    # Recebe o PK da Galeria e o PK da Imagem a ser definida como capa
+    # Rota para Definir a Capa da Galeria (Endpoint AJAX)
     path('galeria/<int:galeria_pk>/capa/<int:imagem_pk>/definir/',
          DefinirCapaGaleriaView.as_view(),
          name='definir_capa_galeria'),
+
+    # NOVO: Rota para Girar Imagem (Endpoint AJAX)
+    path('imagem/<int:pk>/girar/',
+         GirarImagemView.as_view(),
+         name='girar_imagem'),
 ]

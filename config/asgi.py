@@ -15,9 +15,8 @@ django_asgi_app = get_asgi_application()
 from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
 
-# Importação das rotas dos apps (Incluindo suporte conforme settings)
+# Importação das rotas dos apps
 import mensagens.routing
-import suporte.routing
 import repositorio.routing
 
 application = ProtocolTypeRouter({
@@ -27,9 +26,8 @@ application = ProtocolTypeRouter({
     # 2. Requisições WebSocket
     "websocket": AuthMiddlewareStack(
         URLRouter(
-            # Combina as rotas de todos os apps que usam tempo real
+            # Combina as rotas dos apps ativos
             mensagens.routing.websocket_urlpatterns +
-            suporte.routing.websocket_urlpatterns +
             repositorio.routing.websocket_urlpatterns
         )
     ),

@@ -80,7 +80,9 @@
                                 </div>
                             </div>
 
-                            {% if imagem.arquivo_processado %}
+                            {% if imagem.thumbnail %}
+                                <img src="{% url 'private_media_proxy' path=imagem.thumbnail.name %}" class="image-card-thumb" id="img-{{ imagem.pk }}">
+                            {% elif imagem.arquivo_processado %}
                                 <img src="{% url 'private_media_proxy' path=imagem.arquivo_processado.name %}" class="image-card-thumb" id="img-{{ imagem.pk }}">
                             {% else %}
                                 <div class="image-card-thumb placeholder-no-file"><i class="fas fa-image"></i></div>
@@ -168,12 +170,11 @@
                     if (overlay) overlay.classList.add('hidden');
                     const img = document.getElementById(`img-${imgId}`);
                     if (img) {
-                        // Prioriza a URL enviada pelo backend, senão força atualização via timestamp
-                        const newSrc = data.url_thumb ? data.url_thumb : img.src.split('?')[0];
-                        img.src = newSrc + (newSrc.includes('?') ? '&' : '?') + new Date().getTime();
+                        const newSrc = data.url_thumb ? data.url_thumb : img.src;
+                        img.src = newSrc;
                     }
-                }, 1000);
-            } else if (status === 'PROCESSANDO') {
+                }, 500);
+            } else if (status === 'PROCESSANDO' || status === 'PENDENTE') {
                 if (overlay) overlay.classList.remove('hidden');
             }
         }
@@ -238,7 +239,7 @@
         });
     });
 
-    // Botão Girar: Ajustado para o prefixo repositorio-admin
+    // Botão Girar
     document.querySelectorAll('.js-rotate-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             e.stopPropagation();
@@ -252,7 +253,8 @@
                 });
                 const data = await res.json();
                 if (data.sucesso) {
-                    console.log("Rotação iniciada para:", id);
+                    const overlay = document.getElementById(`overlay-${id}`);
+                    if (overlay) overlay.classList.remove('hidden');
                 } else {
                     showCustomModal('Erro', data.erro || 'Falha ao girar', 'error');
                 }

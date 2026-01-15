@@ -39,19 +39,16 @@ def enviar_progresso_websocket(imagem_id, progresso, status, galeria=None, fotog
 
     # Timestamp para forçar refresh de cache no front-end em caso de rotação
     ts = int(time.time())
-
-    def force_cache(url):
-        if not url: return None
-        sep = "&" if "?" in url else "?"
-        return f"{url}{sep}t={ts}"
+    url_thumb_forced = f"{url_thumb}?t={ts}" if url_thumb else None
+    url_proc_forced = f"{arquivo_processado}?t={ts}" if arquivo_processado else None
 
     data = {
         "type": "notificar_progresso",
         "imagem_id": imagem_id,
         "progress": progresso,
         "status": status,
-        "url_thumb": force_cache(url_thumb),
-        "arquivo_processado": force_cache(arquivo_processado),
+        "url_thumb": url_thumb_forced,
+        "arquivo_processado": url_proc_forced,
     }
 
     # Envia para o grupo específico da galeria
@@ -69,7 +66,6 @@ def processar_imagem_task(self, imagem_id, total_arquivos=1, indice_atual=1):
     try:
         imagem = Imagem.objects.select_related('galeria__watermark_config').get(pk=imagem_id)
         galeria = imagem.galeria
-        ts_suffix = int(time.time())
 
         enviar_progresso_websocket(imagem_id, 10, 'PROCESSANDO', galeria, imagem.fotografo.id)
 
@@ -96,7 +92,7 @@ def processar_imagem_task(self, imagem_id, total_arquivos=1, indice_atual=1):
         if imagem.thumbnail:
             imagem.thumbnail.delete(save=False)
 
-        thumb_name = f"thumb_{imagem.pk}_{ts_suffix}.jpg"
+        thumb_name = f"thumb_{imagem.pk}.jpg"
         imagem.thumbnail.save(thumb_name, ContentFile(out_grid.getvalue()), save=False)
 
         # IMAGE PROCESSADA
@@ -104,8 +100,7 @@ def processar_imagem_task(self, imagem_id, total_arquivos=1, indice_atual=1):
         img_proc.thumbnail(THUMBNAIL_SIZE, Image.Resampling.LANCZOS)
 
         # WATERMARK
-        if galeria and hasattr(galeria,
-                               'watermark_config') and galeria.watermark_config and galeria.watermark_config.arquivo_marca_dagua:
+        if galeria and hasattr(galeria, 'watermark_config') and galeria.watermark_config and galeria.watermark_config.arquivo_marca_dagua:
             config = galeria.watermark_config
             with config.arquivo_marca_dagua.open('rb') as f_wm:
                 wm_img = Image.open(io.BytesIO(f_wm.read())).convert("RGBA")
@@ -133,7 +128,7 @@ def processar_imagem_task(self, imagem_id, total_arquivos=1, indice_atual=1):
         if imagem.arquivo_processado:
             imagem.arquivo_processado.delete(save=False)
 
-        file_name = f"proc_{imagem.pk}_{ts_suffix}.jpg"
+        file_name = f"proc_{imagem.pk}.jpg"
         imagem.arquivo_processado.save(file_name, ContentFile(output.getvalue()), save=False)
 
         imagem.status_processamento = 'PROCESSADA'

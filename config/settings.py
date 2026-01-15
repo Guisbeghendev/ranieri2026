@@ -187,22 +187,34 @@ CHANNEL_LAYERS = {
 }
 
 # ==============================================================================
-# 11. CONFIGURAÇÕES CELERY
+# 11. CONFIGURAÇÕES CELERY (REVISADO)
 # ==============================================================================
 
-CELERY_BROKER_URL = env('CELERY_BROKER_URL')
-CELERY_RESULT_BACKEND = 'django-db' # Alterado para usar django-db conforme instalado
+# Otimização: Centralizando no Redis para evitar gargalo de escrita no Postgres
+CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='redis://localhost:6379/0')
+
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 
-CELERY_WORKER_PREFETCH_MULTIPLIER = 1
-CELERY_TASK_ACKS_LATE = True
-CELERY_BROKER_TRANSPORT_OPTIONS = {'visibility_timeout': 3600}
+# IMPORTANTE: Aumentar visibilidade para evitar que tarefas sumam em filas longas
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    'visibility_timeout': 7200, # 2 horas
+    'socket_timeout': 30,
+    'socket_connect_timeout': 30,
+}
+
+# Controle de Concorrência
 CELERY_WORKER_CONCURRENCY = 4
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_TASK_ACKS_LATE = False # Mudado para False para garantir enfileiramento imediato
+
+# Limites de Tempo
 CELERY_TASK_SOFT_TIME_LIMIT = 600
 CELERY_TASK_TIME_LIMIT = 900
+
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
 # ==============================================================================

@@ -158,7 +158,6 @@ class AssinarUploadView(FotografoRequiredMixin, View):
 class ConfirmarUploadView(FotografoRequiredMixin, View):
     """
     REFORMULADA: Recebe confirmação do JS e dispara Celery com SEGURANÇA.
-    Agora aceita parâmetros de indexação para barra de progresso real.
     """
 
     def post(self, request):
@@ -170,7 +169,6 @@ class ConfirmarUploadView(FotografoRequiredMixin, View):
             return JsonResponse({'erro': 'ID da imagem é obrigatório.'}, status=400)
 
         try:
-            # Uso de transação atômica para garantir integridade
             with transaction.atomic():
                 imagem = get_object_or_404(
                     Imagem,
@@ -182,7 +180,7 @@ class ConfirmarUploadView(FotografoRequiredMixin, View):
                 imagem.status_processamento = 'UPLOADED'
                 imagem.save(update_fields=['status_processamento'])
 
-                # O Celery só é chamado quando o banco de dados confirmar o COMMIT.
+                # CORREÇÃO: Passagem explícita de argumentos na lambda para evitar closure issues
                 transaction.on_commit(
                     lambda i_id=imagem.id, t=total_arquivos, idx=indice_atual:
                     processar_imagem_task.delay(
@@ -245,17 +243,13 @@ class GerenciarGaleriasView(FotografoRequiredMixin, ListView):
     def get_queryset(self):
         user = self.request.user
 
-        # Superuser e Fotógrafo Master podem ver TODAS as galerias
         if user.is_superuser or user.is_fotografo_master:
             queryset = Galeria.objects.all()
-        # Fotógrafo normal vê apenas as suas
         else:
             queryset = Galeria.objects.filter(fotografo=user)
 
-        # ADIÇÃO: Otimização para carregar o objeto de capa
         queryset = queryset.select_related('capa')
 
-        # Anota a contagem de imagens em todas as galerias
         return queryset.annotate(
             imagens_count=models.Count('imagens')
         ).order_by('-criado_em')
@@ -265,27 +259,20 @@ class GerenciarGaleriasView(FotografoRequiredMixin, ListView):
 
         q_filter = models.Q(status_processamento='PROCESSADA') & models.Q(galeria__isnull=True)
 
-        if self.request.user.is_superuser or self.request.user.is_fotografo_master:
-            pass
-        else:
+        if not (self.request.user.is_superuser or self.request.user.is_fotografo_master):
             q_filter &= models.Q(fotografo=self.request.user)
 
         context['imagens_disponiveis_count'] = Imagem.objects.filter(q_filter).count()
+        context['is_fotografo_master_or_superuser'] = self.request.user.is_superuser or self.request.user.is_fotografo_master
 
-        context[
-            'is_fotografo_master_or_superuser'] = self.request.user.is_superuser or self.request.user.is_fotografo_master
-
-        # CORREÇÃO CRÍTICA: Itera sobre as galerias e anexa a URL do proxy da capa
         for galeria in context['object_list']:
             if galeria.capa and galeria.capa.arquivo_processado:
                 try:
-                    # Gera a URL segura para servir a imagem de capa (proxy)
                     galeria.capa_proxy_url = reverse(
                         'private_media_proxy',
                         kwargs={'path': galeria.capa.arquivo_processado.name}
                     )
                 except Exception:
-                    # Em caso de erro na geração (e.g., URL reversa não existe), define como None
                     galeria.capa_proxy_url = None
             else:
                 galeria.capa_proxy_url = None
@@ -312,37 +299,23 @@ class GerenciarImagensGaleriaView(FotografoRequiredMixin, View):
         )
 
         if user.is_superuser or user.is_fotografo_master:
-            galeria = get_object_or_404(
-                galeria_qs,
-                pk=pk
-            )
+            galeria = get_object_or_404(galeria_qs, pk=pk)
         else:
-            galeria = get_object_or_404(
-                galeria_qs,
-                pk=pk,
-                fotografo=user
-            )
+            galeria = get_object_or_404(galeria_qs, pk=pk, fotografo=user)
 
         proprietario_filter = models.Q()
         if not user.is_superuser and not user.is_fotografo_master:
             proprietario_filter = models.Q(fotografo=user)
 
-        # CORREÇÃO: Inclui status UPLOADED, PROCESSANDO e ERRO para visibilidade imediata
         q_disponiveis = models.Q(
             status_processamento__in=['PROCESSADA', 'UPLOADED', 'PROCESSANDO', 'ERRO'],
             galeria__isnull=True
         ) & proprietario_filter
 
-        # Filtro para Imagens JÁ Anexadas a ESTA Galeria:
         q_anexadas = models.Q(galeria=galeria) & proprietario_filter
-
-        # Combinação: Imagens Disponíveis OU Imagens JÁ Anexadas a ESTA Galeria
         q_final = q_disponiveis | q_anexadas
 
-        # Busca todas as imagens que podem ser exibidas/selecionadas nesta tela
         todas_imagens_repositorio = Imagem.objects.filter(q_final).order_by('-criado_em')
-
-        # Recalcula a lista de PKs das imagens vinculadas (usada pelo template)
         imagens_vinculadas_pks = todas_imagens_repositorio.filter(galeria=galeria).values_list('pk', flat=True)
 
         context = {
@@ -363,7 +336,6 @@ class GerenciarImagensGaleriaView(FotografoRequiredMixin, View):
         imagens_selecionadas_pks = request.POST.getlist('imagens')
         imagens_selecionadas_pks = [int(p) for p in imagens_selecionadas_pks if p.isdigit()]
 
-        # CORREÇÃO: Permite associar imagens que ainda estão processando
         status_permitidos = ['PROCESSADA', 'UPLOADED', 'PROCESSANDO', 'ERRO']
 
         proprietario_filter = models.Q()
@@ -378,7 +350,6 @@ class GerenciarImagensGaleriaView(FotografoRequiredMixin, View):
         imagens_selecionadas_pks_finais = list(imagens_permitidas.values_list('pk', flat=True))
 
         with transaction.atomic():
-            # 1. Desvincular as imagens que não foram selecionadas
             imagens_a_desvincular_qs = Imagem.objects.filter(galeria=galeria).exclude(
                 pk__in=imagens_selecionadas_pks_finais)
 
@@ -386,11 +357,8 @@ class GerenciarImagensGaleriaView(FotografoRequiredMixin, View):
                 imagens_a_desvincular_qs = imagens_a_desvincular_qs.filter(fotografo=user)
 
             imagens_a_desvincular_qs.update(galeria=None)
-
-            # 2. Vincular e re-processar para aplicar marca d'água
             imagens_permitidas.update(galeria=galeria)
 
-            # CORREÇÃO: Dispara o processamento APÓS o commit para evitar race conditions
             def disparar_tasks(ids):
                 for img_id in ids:
                     processar_imagem_task.delay(img_id)
@@ -402,71 +370,49 @@ class GerenciarImagensGaleriaView(FotografoRequiredMixin, View):
 
 
 # --------------------------------------------------------------------------
-# 8. NOVA VIEW: Definir Capa da Galeria (AJAX)
+# 8. View: Definir Capa da Galeria (AJAX)
 # --------------------------------------------------------------------------
 
 class DefinirCapaGaleriaView(FotografoRequiredMixin, View):
-    """
-    Define uma Imagem específica como a capa de uma Galeria.
-    Endpoint usado via AJAX a partir da tela de gerenciamento de imagens.
-    """
-
     def post(self, request, galeria_pk, imagem_pk):
         user = request.user
-
-        # Filtro de permissão para a Imagem
         imagem_filter = {'pk': imagem_pk, 'status_processamento': 'PROCESSADA'}
         if not user.is_superuser and not user.is_fotografo_master:
             imagem_filter['fotografo'] = user
 
         try:
-            # 1. Recupera a Galeria (garante permissão)
             if user.is_superuser or user.is_fotografo_master:
                 galeria = get_object_or_404(Galeria, pk=galeria_pk)
             else:
                 galeria = get_object_or_404(Galeria, pk=galeria_pk, fotografo=user)
 
-            # 2. Recupera a Imagem
-            imagem = get_object_or_404(
-                Imagem,
-                **imagem_filter
-            )
+            imagem = get_object_or_404(Imagem, **imagem_filter)
 
-            # 3. VERIFICAÇÃO ADICIONAL: A imagem deve estar vinculada à galeria
             if imagem.galeria != galeria:
-                # Se a imagem estiver em outra galeria, não permite a capa.
                 if imagem.galeria is not None:
                     return JsonResponse({
                         'sucesso': False,
-                        'erro': 'A imagem selecionada já está em outra galeria e precisa ser desvinculada primeiro.'
+                        'erro': 'A imagem selecionada já está em outra galeria.'
                     }, status=400)
 
-                # Anexa à galeria se estiver livre e for permitida.
                 with transaction.atomic():
                     imagem.galeria = galeria
                     imagem.save(update_fields=['galeria'])
-                    transaction.on_commit(lambda: processar_imagem_task.delay(imagem.id))
+                    transaction.on_commit(lambda i_id=imagem.id: processar_imagem_task.delay(i_id))
 
-            # 4. Define a capa e salva a galeria
             galeria.capa = imagem
             galeria.save(update_fields=['capa', 'alterado_em'])
 
-            # Geração da URL do Proxy
             capa_url_proxy = reverse('private_media_proxy', kwargs={'path': imagem.arquivo_processado.name})
 
             return JsonResponse({
                 'sucesso': True,
-                'message': f'Imagem {imagem.pk} definida como capa da galeria "{galeria.nome}".',
+                'message': f'Capa definida com sucesso.',
                 'capa_url': capa_url_proxy
             })
 
-        except Imagem.DoesNotExist:
-            return JsonResponse({'sucesso': False, 'erro': 'Imagem não encontrada ou não processada.'}, status=404)
-        except Galeria.DoesNotExist:
-            return JsonResponse({'sucesso': False, 'erro': 'Galeria não encontrada ou sem permissão.'}, status=404)
         except Exception as e:
-            traceback.print_exc()
-            return JsonResponse({'sucesso': False, 'erro': f'Erro interno: {str(e)}'}, status=500)
+            return JsonResponse({'sucesso': False, 'erro': str(e)}, status=500)
 
 
 # --------------------------------------------------------------------------
@@ -495,10 +441,6 @@ class ExcluirGaleriaView(FotografoRequiredMixin, DeleteView):
 # --------------------------------------------------------------------------
 
 class PublicarGaleriaView(FotografoRequiredMixin, View):
-    """
-    Define o status da galeria como 'PUBLICADA'.
-    """
-
     def post(self, request, pk):
         user = request.user
         is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
@@ -511,7 +453,6 @@ class PublicarGaleriaView(FotografoRequiredMixin, View):
         publicado = galeria.publicar()
 
         if publicado:
-            # --- NOTIFICAÇÃO WEBSOCKET ---
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
                 "galerias_status_updates",
@@ -522,23 +463,14 @@ class PublicarGaleriaView(FotografoRequiredMixin, View):
                     "status_display": galeria.get_status_display()
                 }
             )
-            # -----------------------------
             message = f'Galeria "{galeria.nome}" publicada com sucesso!'
         else:
             message = f'Galeria "{galeria.nome}" já estava publicada.'
 
         if is_ajax:
-            return JsonResponse({
-                'status': galeria.status,
-                'message': message,
-                'status_mudou': publicado
-            })
+            return JsonResponse({'status': galeria.status, 'message': message, 'status_mudou': publicado})
 
-        if publicado:
-            messages.success(request, message)
-        else:
-            messages.info(request, message)
-
+        messages.success(request, message) if publicado else messages.info(request, message)
         return HttpResponseRedirect(reverse('repositorio:gerenciar_galerias'))
 
 
@@ -547,10 +479,6 @@ class PublicarGaleriaView(FotografoRequiredMixin, View):
 # --------------------------------------------------------------------------
 
 class ArquivarGaleriaView(FotografoRequiredMixin, View):
-    """
-    Define o status da galeria como 'ARQUIVADA'.
-    """
-
     def post(self, request, pk):
         user = request.user
         is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
@@ -563,7 +491,6 @@ class ArquivarGaleriaView(FotografoRequiredMixin, View):
         arquivado = galeria.arquivar()
 
         if arquivado:
-            # --- NOTIFICAÇÃO WEBSOCKET ---
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
                 "galerias_status_updates",
@@ -574,21 +501,12 @@ class ArquivarGaleriaView(FotografoRequiredMixin, View):
                     "status_display": galeria.get_status_display()
                 }
             )
-            # -----------------------------
             message = f'Galeria "{galeria.nome}" arquivada com sucesso!'
         else:
             message = f'Galeria "{galeria.nome}" já estava arquivada.'
 
         if is_ajax:
-            return JsonResponse({
-                'status': galeria.status,
-                'message': message,
-                'status_mudou': arquivado
-            })
+            return JsonResponse({'status': galeria.status, 'message': message, 'status_mudou': arquivado})
 
-        if arquivado:
-            messages.success(request, message)
-        else:
-            messages.info(request, message)
-
+        messages.success(request, message) if arquivado else messages.info(request, message)
         return HttpResponseRedirect(reverse('repositorio:gerenciar_galerias'))

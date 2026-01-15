@@ -117,7 +117,7 @@ class Imagem(models.Model):
         # CORREÇÃO CRÍTICA: Mudar para PrivateMediaStorage para garantir que
         # o acesso seja SEMPRE via o proxy com checagem de permissão,
         # cumprindo a regra de que NINGUÉM acessa imagens fora do site.
-        storage=repositorio_storage
+        storage=PrivateMediaStorage()
     )
 
     # NOVO: Necessário para visualização rápida no WebSocket e Galeria

@@ -45,12 +45,11 @@ class GaleriaConsumer(AsyncWebsocketConsumer):
     async def notificar_progresso(self, event):
         """
         Envia progresso individual da imagem.
-        As chaves foram normalizadas com o tasks.py (progress).
         """
         await self.send(text_data=json.dumps({
             'type': 'progresso_imagem',
             'imagem_id': event.get('imagem_id'),
-            'progresso': event.get('progress'),  # Sincronizado com task
+            'progresso': event.get('progress'),
             'status': event.get('status'),
             'url_thumb': event.get('url_thumb')
         }))

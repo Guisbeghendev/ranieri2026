@@ -6,6 +6,7 @@ from django.core.files.base import ContentFile
 from celery import shared_task
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
+from django.urls import reverse
 from .models import Imagem, WatermarkConfig, Galeria
 
 logger = logging.getLogger(__name__)
@@ -16,9 +17,10 @@ THUMBNAIL_QUALITY = 85
 GRID_THUMB_SIZE = (300, 300)
 
 
-def enviar_progresso_websocket(imagem_id, progresso, status, galeria=None, fotografo_id=None):
+def enviar_progresso_websocket(imagem_id, progresso, status, galeria=None, fotografo_id=None, url_thumb=None):
     """
     Função auxiliar para centralizar o envio de notificações via Channels.
+    Inclui url_thumb para atualização imediata no front-end.
     """
     channel_layer = get_channel_layer()
 
@@ -38,6 +40,7 @@ def enviar_progresso_websocket(imagem_id, progresso, status, galeria=None, fotog
             "imagem_id": imagem_id,
             "progress": progresso,
             "status": status,
+            "url_thumb": url_thumb,
         }
     )
 
@@ -109,7 +112,9 @@ def processar_imagem_task(self, imagem_id, total_arquivos=1, indice_atual=1):
         imagem.status_processamento = 'PROCESSADA'
         imagem.save(update_fields=['status_processamento', 'arquivo_processado', 'thumbnail'])
 
-        enviar_progresso_websocket(imagem_id, 100, 'PROCESSADA', galeria, imagem.fotografo.id)
+        # Gera a URL atualizada para o front-end
+        nova_url = reverse('private_media_proxy', kwargs={'path': imagem.arquivo_processado.name})
+        enviar_progresso_websocket(imagem_id, 100, 'PROCESSADA', galeria, imagem.fotografo.id, url_thumb=nova_url)
 
     except Exception as e:
         logger.error(f"Erro na task {imagem_id}: {str(e)}")

@@ -167,7 +167,11 @@
                 setTimeout(() => {
                     if (overlay) overlay.classList.add('hidden');
                     const img = document.getElementById(`img-${imgId}`);
-                    if (img) img.src = img.src.split('?')[0] + '?' + new Date().getTime();
+                    if (img) {
+                        // Prioriza a URL enviada pelo backend, senão força atualização via timestamp
+                        const newSrc = data.url_thumb ? data.url_thumb : img.src.split('?')[0];
+                        img.src = newSrc + (newSrc.includes('?') ? '&' : '?') + new Date().getTime();
+                    }
                 }, 1000);
             } else if (status === 'PROCESSANDO') {
                 if (overlay) overlay.classList.remove('hidden');

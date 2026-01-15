@@ -144,9 +144,9 @@
     const galeriaSlug = container.getAttribute('data-galeria-slug');
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-    // WebSocket: Sincronizado com routing.py
+    // WebSocket: Ajustado para o prefixo repositorio-admin
     const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-    const socketUrl = `${protocol}${window.location.host}/ws/repositorio/galerias/${galeriaSlug}/`;
+    const socketUrl = `${protocol}${window.location.host}/ws/repositorio-admin/galerias/${galeriaSlug}/`;
     const socket = new WebSocket(socketUrl);
 
     socket.onmessage = function(e) {
@@ -234,12 +234,12 @@
         });
     });
 
-    // Botão Girar: Chama a View GirarImagemView
+    // Botão Girar: Ajustado para o prefixo repositorio-admin
     document.querySelectorAll('.js-rotate-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             e.stopPropagation();
             const id = btn.dataset.imagePk;
-            const url = `/repositorio/imagem/${id}/girar/`; // Certifique-se que esta rota existe no urls.py
+            const url = `/repositorio-admin/imagem/${id}/girar/`;
 
             try {
                 const res = await fetch(url, {
@@ -248,7 +248,6 @@
                 });
                 const data = await res.json();
                 if (data.sucesso) {
-                    // O WebSocket cuidará de mostrar o overlay e o progresso
                     console.log("Rotação iniciada para:", id);
                 } else {
                     showCustomModal('Erro', data.erro || 'Falha ao girar', 'error');

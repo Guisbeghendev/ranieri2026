@@ -44,7 +44,7 @@ class GaleriaConsumer(AsyncWebsocketConsumer):
 
     async def notificar_progresso(self, event):
         """
-        Envia progresso individual da imagem.
+        Envia progresso individual da imagem com suporte a URLs forçadas (cache-bust).
         """
         await self.send(text_data=json.dumps({
             'type': 'progresso_imagem',

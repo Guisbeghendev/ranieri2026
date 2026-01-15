@@ -1,6 +1,7 @@
 import os
 import io
 import logging
+import time
 from PIL import Image, ImageOps
 from django.core.files.base import ContentFile
 from celery import shared_task
@@ -36,13 +37,18 @@ def enviar_progresso_websocket(imagem_id, progresso, status, galeria=None, fotog
     global_group = "galerias_status_updates"
     lista_geral_group = "galeria_lista_geral"
 
+    # Timestamp para forçar refresh de cache no front-end em caso de rotação
+    ts = int(time.time())
+    url_thumb_forced = f"{url_thumb}?t={ts}" if url_thumb else None
+    url_proc_forced = f"{arquivo_processado}?t={ts}" if arquivo_processado else None
+
     data = {
         "type": "notificar_progresso",
         "imagem_id": imagem_id,
         "progress": progresso,
         "status": status,
-        "url_thumb": url_thumb,
-        "arquivo_processado": arquivo_processado,
+        "url_thumb": url_thumb_forced,
+        "arquivo_processado": url_proc_forced,
     }
 
     # Envia para o grupo específico da galeria
@@ -82,6 +88,10 @@ def processar_imagem_task(self, imagem_id, total_arquivos=1, indice_atual=1):
         img_grid.thumbnail(GRID_THUMB_SIZE, Image.Resampling.LANCZOS)
         out_grid = io.BytesIO()
         img_grid.save(out_grid, format='JPEG', quality=70, optimize=True)
+
+        if imagem.thumbnail:
+            imagem.thumbnail.delete(save=False)
+
         thumb_name = f"thumb_{imagem.pk}.jpg"
         imagem.thumbnail.save(thumb_name, ContentFile(out_grid.getvalue()), save=False)
 
@@ -115,6 +125,9 @@ def processar_imagem_task(self, imagem_id, total_arquivos=1, indice_atual=1):
 
         output = io.BytesIO()
         img_proc.save(output, format='JPEG', quality=THUMBNAIL_QUALITY, optimize=True)
+
+        if imagem.arquivo_processado:
+            imagem.arquivo_processado.delete(save=False)
 
         file_name = f"proc_{imagem.pk}_{os.path.basename(imagem.nome_arquivo_original)}"
         imagem.arquivo_processado.save(file_name, ContentFile(output.getvalue()), save=False)
@@ -159,16 +172,18 @@ def girar_imagem_task(self, imagem_id, graus):
         format_img = 'JPEG' if imagem.arquivo_original.name.lower().endswith(('jpg', 'jpeg')) else 'PNG'
         img.save(buffer, format=format_img, quality=100)
 
+        nome_original = os.path.basename(imagem.arquivo_original.name)
+        imagem.arquivo_original.delete(save=False)
         imagem.arquivo_original.save(
-            os.path.basename(imagem.arquivo_original.name),
+            nome_original,
             ContentFile(buffer.getvalue()),
             save=False
         )
 
         enviar_progresso_websocket(imagem_id, 50, 'PROCESSANDO', imagem.galeria, imagem.fotografo.id)
 
-        # 4. Chama o processamento de visualização (Watermark/Thumb) para atualizar os arquivos derivados
-        processar_imagem_task.delay(imagem_id)
+        # 4. Chama o processamento de visualização (Watermark/Thumb) de forma síncrona/imediata
+        processar_imagem_task.run(imagem_id)
 
     except Exception as e:
         logger.error(f"Erro ao girar imagem {imagem_id}: {str(e)}")

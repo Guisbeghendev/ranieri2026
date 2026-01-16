@@ -21,3 +21,5 @@ media/
 
 #Variáveis de Ambiente
 .env
+tailwind
+tailwind.exe

@@ -2,6 +2,7 @@
 
 @source "../../../templates/**/*.html";
 @source "../../../**/templates/**/*.html";
+@source "../../../static/js/**/*.js";
 
 @theme {
   /* Cores Base da Paleta */

@@ -5,78 +5,126 @@
 {% block title %}Meus Chamados de Suporte{% endblock title %}
 
 {% block content %}
-<div class="section-title">
-    <h1>Meus Chamados de Suporte</h1>
-</div>
+<div class="container mx-auto px-4 py-12 max-w-6xl">
 
-<div class="mb-3">
-    <!-- Botão para criar novo chamado, usando a classe de ação primária -->
-    <a href="{% url 'suporte:topico_create' %}" class="btn btn-primary primary-action">
-        <i class="fa-solid fa-plus"></i> Novo Chamado
-    </a>
-</div>
-
-{% if object_list %}
-    <!-- Nova classe para listagem de cards de suporte -->
-    <div class="card-list-suporte grid-auto">
-        {% for topico in object_list %}
-        <div class="card card-default">
-            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-                <!-- Título do Tópico (Link para Detalhe) -->
-                <a href="{% url 'suporte:topico_detail' pk=topico.pk %}" class="text-primary" style="font-size: 1.25rem; font-weight: 600; line-height: 1.2;">
-                    {{ topico.assunto }}
-                </a>
-
-                <!-- Status (Badge) -->
-                {% if topico.status == 'ABERTO' %}
-                    <span class="badge badge-danger">Aberto</span>
-                {% elif topico.status == 'ANDAMENTO' %}
-                    <span class="badge badge-warning">Em Andamento</span>
-                {% elif topico.status == 'FECHADO' %}
-                    <span class="badge badge-success">Fechado</span>
-                {% else %}
-                    <span class="badge badge-info">{{ topico.status }}</span>
-                {% endif %}
-            </div>
-
-            <div class="card-body">
-                <p class="m-0"><strong>Usuário:</strong> {{ topico.autor.username }}</p>
-                <p class="m-0"><strong>Departamento:</strong> {{ topico.departamento }}</p>
-                <p class="m-0 mt-1"><strong>Criado:</strong> {{ topico.data_criacao|naturaltime }}</p>
-                <p class="m-0"><strong>Atualizado:</strong> {{ topico.data_ultima_atualizacao|naturaltime }}</p>
-            </div>
-
-            <div class="card-footer">
-                <!-- Botão light para ver detalhes -->
-                <a href="{% url 'suporte:topico_detail' pk=topico.pk %}" class="btn btn-light btn-sm">Ver Detalhes <i class="fa-solid fa-arrow-right"></i></a>
-            </div>
+    <div class="mb-10 border-b border-border-custom pb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+        <div>
+            <h1 class="text-3xl font-bold text-roxo1 tracking-tight uppercase">Suporte Técnico</h1>
+            <p class="text-text-main opacity-60 text-sm font-medium">Gerencie seus chamados e solicitações</p>
         </div>
-        {% endfor %}
+
+        <a href="{% url 'suporte:topico_create' %}" class="btn-primary px-8 py-4 flex items-center gap-3 shadow-lg group">
+            <i class="fa-solid fa-plus transition-transform group-hover:rotate-90"></i>
+            <span class="text-xs uppercase font-black tracking-widest">Novo Chamado</span>
+        </a>
     </div>
 
-    <!-- Implementação de Paginação Simples (Usando classes utilitárias) -->
-    {% if is_paginated %}
-    <div class="pagination mt-3 text-center">
-        {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-outline btn-sm">&laquo; Anterior</a>
-        {% endif %}
-
-        <span class="current" style="margin: 0 1rem; font-weight: 600;">
-            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}.
-        </span>
-
-        {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}" class="btn btn-outline btn-sm">Próxima &raquo;</a>
-        {% endif %}
-    </div>
+    {% if messages %}
+        <div class="mb-6 space-y-2">
+            {% for message in messages %}
+                <div class="p-4 rounded-xl text-sm font-medium border animate-in fade-in slide-in-from-top-4 duration-300
+                    {% if message.tags == 'success' %}bg-green-50 text-green-700 border-green-200{% else %}bg-blue-50 text-blue-700 border-blue-200{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
     {% endif %}
 
-{% else %}
-    <div class="alert alert-info text-center">
-        <p>Você não tem chamados de suporte abertos ou criados.</p>
-        <p class="mt-2"><a href="{% url 'suporte:topico_create' %}" class="btn btn-secondary">Abrir Novo Chamado</a></p>
-    </div>
-{% endif %}
+    {% if object_list %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for topico in object_list %}
+            <div class="card-ranieri bg-white rounded-2xl border border-border-custom shadow-sm flex flex-col hover:border-primary/50 transition-all group">
+
+                <div class="p-6 border-b border-border-custom bg-surface/30">
+                    <div class="flex justify-between items-start gap-4 mb-3">
+                        {% if topico.status == 'ABERTO' %}
+                            <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase bg-red-100 text-red-600 border border-red-200">Aberto</span>
+                        {% elif topico.status == 'ANDAMENTO' %}
+                            <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase bg-amber-100 text-amber-600 border border-amber-200">Em Andamento</span>
+                        {% elif topico.status == 'FECHADO' %}
+                            <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase bg-green-100 text-green-600 border border-green-200">Fechado</span>
+                        {% else %}
+                            <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase bg-blue-100 text-blue-600 border border-blue-200">{{ topico.status }}</span>
+                        {% endif %}
+
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">#{{ topico.pk }}</span>
+                    </div>
+
+                    <a href="{% url 'suporte:topico_detail' pk=topico.pk %}" class="block">
+                        <h2 class="text-lg font-bold text-roxo1 leading-tight group-hover:text-primary transition-colors line-clamp-2 min-h-[3.5rem]">
+                            {{ topico.assunto }}
+                        </h2>
+                    </a>
+                </div>
+
+                <div class="p-6 flex-grow space-y-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-roxo1/5 flex items-center justify-center text-roxo1">
+                            <i class="fa-solid fa-building text-xs"></i>
+                        </div>
+                        <div>
+                            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Departamento</p>
+                            <p class="text-xs font-bold text-roxo1">{{ topico.departamento }}</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 pt-2">
+                        <div>
+                            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Criado</p>
+                            <p class="text-[11px] font-medium text-text-main">{{ topico.data_criacao|naturaltime }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Atualizado</p>
+                            <p class="text-[11px] font-medium text-text-main">{{ topico.data_ultima_atualizacao|naturaltime }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-surface border-t border-border-custom rounded-b-2xl">
+                    <a href="{% url 'suporte:topico_detail' pk=topico.pk %}" class="w-full flex items-center justify-center gap-2 py-3 bg-white border border-border-custom rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-500 hover:bg-roxo1 hover:text-white hover:border-roxo1 transition-all">
+                        Ver Detalhes <i class="fa-solid fa-arrow-right-long transition-transform group-hover:translate-x-1"></i>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if is_paginated %}
+        <div class="mt-12 flex items-center justify-center gap-4">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}" class="w-10 h-10 flex items-center justify-center rounded-xl border-2 border-border-custom text-gray-400 hover:border-primary hover:text-primary transition-all">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </a>
+            {% endif %}
+
+            <div class="px-6 py-2 bg-white rounded-full border border-border-custom shadow-sm">
+                <span class="text-xs font-black text-roxo1 uppercase tracking-widest">
+                    Página <span class="text-primary">{{ page_obj.number }}</span> de {{ page_obj.paginator.num_pages }}
+                </span>
+            </div>
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" class="w-10 h-10 flex items-center justify-center rounded-xl border-2 border-border-custom text-gray-400 hover:border-primary hover:text-primary transition-all">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+    {% else %}
+        <div class="card-ranieri bg-white p-20 text-center rounded-3xl border border-border-custom shadow-sm max-w-2xl mx-auto">
+            <div class="w-20 h-20 bg-surface rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-dashed border-gray-200">
+                <i class="fa-solid fa-headset text-3xl text-gray-200"></i>
+            </div>
+            <h3 class="text-roxo1 font-bold text-xl mb-2 italic">Tudo em ordem por aqui!</h3>
+            <p class="text-gray-400 text-sm mb-8 leading-relaxed">Você não tem chamados de suporte ativos no momento. Caso precise de ajuda, clique no botão abaixo.</p>
+            <a href="{% url 'suporte:topico_create' %}" class="btn-primary inline-flex px-10 py-4 uppercase text-[10px] font-black tracking-widest">
+                Abrir Novo Chamado
+            </a>
+        </div>
+    {% endif %}
+
+</div>
 
 {% block extra_js %}
     <script src="{% static 'suporte/js/topico_list.js' %}"></script>

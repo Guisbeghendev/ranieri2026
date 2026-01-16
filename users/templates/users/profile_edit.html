@@ -4,120 +4,139 @@
 {% block title %}Editar Meu Perfil{% endblock title %}
 
 {% block content %}
-<div class="profile-main">
+<main class="container mx-auto px-4 py-12 max-w-4xl">
 
-    <div class="profile-header">
-        <h1 class="header-title">
-            Editar Perfil
-        </h1>
-        <p class="user-role">Atualize suas informações e foto de perfil</p>
+    <div class="mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+        <div>
+            <h1 class="text-3xl font-bold text-roxo1 tracking-tight uppercase leading-tight">Editar Perfil</h1>
+            <p class="text-text-main opacity-60 text-sm font-medium">Atualize suas informações e foto de perfil</p>
+        </div>
+        <a href="{% url 'users:profile' %}" class="btn-primary bg-white text-roxo1 border-2 border-border-custom hover:border-primary px-6 py-3 shadow-sm flex items-center gap-2 group">
+            <i class="fas fa-arrow-left transition-transform group-hover:-translate-x-1"></i>
+            <span class="text-[10px] font-black uppercase tracking-widest">Voltar ao Perfil</span>
+        </a>
     </div>
 
     {% if messages %}
-        <div class="mb-4">
+        <div class="mb-8 space-y-2">
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}" role="alert">
+                <div class="p-4 rounded-xl text-sm font-medium border {% if message.tags == 'success' %}bg-green-50 text-green-700 border-green-200{% else %}bg-blue-50 text-blue-700 border-blue-200{% endif %} animate-in fade-in slide-in-from-top-4">
                     {{ message }}
                 </div>
             {% endfor %}
         </div>
     {% endif %}
 
-    <div class="mb-4">
-        <a href="{% url 'users:profile' %}" class="btn btn-back">
-            &larr; Voltar para a Visualização do Perfil
-        </a>
-    </div>
+    <div class="card-ranieri bg-white rounded-3xl border border-border-custom shadow-xl overflow-hidden">
+        <div class="h-1.5 bg-gradient-to-r from-primary to-secondary w-full"></div>
 
-    <div class="card p-4">
-
-        <form method="post" enctype="multipart/form-data">
+        <form method="post" enctype="multipart/form-data" class="p-6 md:p-10 space-y-12">
             {% csrf_token %}
 
             {# 1. FORMULÁRIO CustomUser (user_form) #}
-            <fieldset class="mb-4 p-3 border rounded">
-                <legend class="h5 p-0 border-bottom-0 text-primary">Dados de Acesso e Identificação</legend>
+            <section class="space-y-6">
+                <div class="flex items-center gap-3 border-b border-border-custom pb-3">
+                    <div class="w-8 h-8 rounded-lg bg-roxo1/5 flex items-center justify-center text-roxo1">
+                        <i class="fas fa-id-card text-xs"></i>
+                    </div>
+                    <h2 class="text-xs font-black text-roxo1 uppercase tracking-[0.2em]">Dados de Acesso e Identificação</h2>
+                </div>
 
-                <div class="row">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {% for field in user_form %}
-                        <div class="form-group col-md-6"> <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                        <div class="form-group">
+                            <label for="{{ field.id_for_label }}" class="block text-[10px] font-black uppercase text-gray-400 mb-2 tracking-widest">{{ field.label }}</label>
                             {{ field }}
                             {% for error in field.errors %}
-                                <p class="form-error text-danger small mt-1">{{ error }}</p>
+                                <p class="text-red-500 text-[9px] font-bold mt-1 uppercase">{{ error }}</p>
                             {% endfor %}
                             {% if field.help_text %}
-                                <span class="form-help">{{ field.help_text|safe }}</span>
+                                <p class="mt-2 text-[10px] text-gray-400 font-medium italic leading-relaxed">{{ field.help_text|safe }}</p>
                             {% endif %}
                         </div>
                     {% endfor %}
                 </div>
-            </fieldset>
+            </section>
 
-            {# 2. FORMULÁRIO DE REGISTRO ESPECÍFICO (registro_form) - BLOCO ADICIONADO #}
+            {# 2. FORMULÁRIO DE REGISTRO ESPECÍFICO (registro_form) #}
             {% if registro_form %}
-            <fieldset class="mb-4 p-3 border rounded">
-                <legend class="h5 p-0 border-bottom-0 text-primary">
-                    Dados de {{ user.get_tipo_usuario_display }}
-                </legend>
+            <section class="space-y-6 bg-surface/50 p-6 rounded-2xl border border-border-custom shadow-inner">
+                <div class="flex items-center gap-3 border-b border-border-custom pb-3">
+                    <div class="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary">
+                        <i class="fas fa-user-tag text-xs"></i>
+                    </div>
+                    <h2 class="text-xs font-black text-roxo1 uppercase tracking-[0.2em]">Dados de {{ user.get_tipo_usuario_display }}</h2>
+                </div>
 
-                <div class="row">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {% for field in registro_form %}
-                        <div class="form-group col-md-6">
-                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                        <div class="form-group">
+                            <label for="{{ field.id_for_label }}" class="block text-[10px] font-black uppercase text-gray-400 mb-2 tracking-widest">{{ field.label }}</label>
                             {{ field }}
                             {% for error in field.errors %}
-                                <p class="form-error text-danger small mt-1">{{ error }}</p>
+                                <p class="text-red-500 text-[9px] font-bold mt-1 uppercase">{{ error }}</p>
                             {% endfor %}
                             {% if field.help_text %}
-                                <span class="form-help">{{ field.help_text|safe }}</span>
+                                <p class="mt-2 text-[10px] text-gray-400 font-medium italic leading-relaxed">{{ field.help_text|safe }}</p>
                             {% endif %}
                         </div>
                     {% endfor %}
                 </div>
 
                 {% if registro_form.non_field_errors %}
-                    <div class="alert alert-danger mt-3" role="alert">
+                    <div class="p-4 rounded-xl bg-red-50 border border-red-100 mt-4">
                         {% for error in registro_form.non_field_errors %}
-                            <p>{{ error }}</p>
+                            <p class="text-[11px] font-bold text-red-600 uppercase">{{ error }}</p>
                         {% endfor %}
                     </div>
                 {% endif %}
-            </fieldset>
+            </section>
             {% endif %}
 
             {# 3. FORMULÁRIO Profile (profile_form) #}
-            <fieldset class="mb-4 p-3 border rounded">
-                <legend class="h5 p-0 border-bottom-0 text-primary">Informações Complementares e Foto</legend>
+            <section class="space-y-6">
+                <div class="flex items-center gap-3 border-b border-border-custom pb-3">
+                    <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                        <i class="fas fa-camera text-xs"></i>
+                    </div>
+                    <h2 class="text-xs font-black text-roxo1 uppercase tracking-[0.2em]">Informações Complementares e Foto</h2>
+                </div>
 
-                <div class="row">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                     {% for field in profile_form %}
-                        <div class="form-group col-md-6">
-                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                        <div class="form-group">
+                            <label for="{{ field.id_for_label }}" class="block text-[10px] font-black uppercase text-gray-400 mb-2 tracking-widest">{{ field.label }}</label>
 
                             {% if field.name == 'foto_perfil' and request.user.profile.foto_perfil %}
-                                <div class="mb-2">
-                                    <p class="form-help m-0">Foto atual:</p>
-                                    <img src="{{ request.user.profile.foto_perfil.url }}" alt="Foto Atual" style="max-height: 80px; border-radius: var(--radius); border: 1px solid var(--color-border);">
+                                <div class="mb-4 flex items-center gap-4 p-3 bg-surface rounded-2xl border border-border-custom">
+                                    <img src="{{ request.user.profile.foto_perfil.url }}" alt="Foto Atual" class="w-16 h-16 object-cover rounded-xl border border-border-custom">
+                                    <div>
+                                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Foto atual</p>
+                                        <span class="text-[10px] font-medium text-text-main">Mantenha ou selecione outra abaixo</span>
+                                    </div>
                                 </div>
                             {% endif %}
 
                             {{ field }}
 
                             {% for error in field.errors %}
-                                <p class="form-error text-danger small mt-1">{{ error }}</p>
+                                <p class="text-red-500 text-[9px] font-bold mt-1 uppercase">{{ error }}</p>
                             {% endfor %}
                             {% if field.help_text %}
-                                <span class="form-help">{{ field.help_text|safe }}</span>
+                                <p class="mt-2 text-[10px] text-gray-400 font-medium italic leading-relaxed">{{ field.help_text|safe }}</p>
                             {% endif %}
                         </div>
                     {% endfor %}
                 </div>
-            </fieldset>
+            </section>
 
-            <button type="submit" class="btn btn-success btn-lg mt-3">
-                <i class="fas fa-save"></i> Salvar Alterações
-            </button>
+            <div class="pt-8 border-t border-border-custom">
+                <button type="submit" class="btn-primary w-full md:w-auto px-12 py-5 shadow-2xl flex items-center justify-center gap-3 group">
+                    <i class="fas fa-save text-xs transition-transform group-hover:scale-110"></i>
+                    <span class="text-xs font-black uppercase tracking-widest">Salvar Alterações</span>
+                </button>
+            </div>
         </form>
     </div>
-</div>
+</main>
 {% endblock content %}

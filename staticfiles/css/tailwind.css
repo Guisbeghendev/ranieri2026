@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@source "../../../templates/**/*.html";
+@source "../../../**/templates/**/*.html";
+
+@theme {
+  /* Cores Base da Paleta */
+  --color-roxo1: #61152d;
+  --color-roxo2: #681630;
+  --color-preto1: #0f0e0f;
+  --color-preto2: #000000;
+  --color-laranja-escuro1: #c9583e;
+  --color-laranja-escuro2: #cb703a;
+  --color-laranja-medio1: #cd862a;
+  --color-laranja-medio2: #cd8729;
+  --color-laranja-claro1: #c89c20;
+  --color-laranja-claro2: #c89c1e;
+  --color-verde-petroleo: #0a9396;
+
+  /* Identidade Visual e Semântica */
+  --color-primary: var(--color-roxo2);
+  --color-secondary: var(--color-laranja-escuro2);
+  --color-surface: #f9fafb;
+  --color-card-bg: var(--color-laranja-claro2);
+  --color-card-hover: var(--color-laranja-medio1);
+  --color-text-main: var(--color-preto1);
+  --color-border-custom: var(--color-laranja-medio2);
+}
+
+@layer base {
+  body {
+    @apply bg-surface text-text-main;
+  }
+
+  h1, h2 {
+    @apply text-roxo1;
+  }
+
+  h3, h4 {
+    @apply text-laranja-escuro1;
+  }
+
+  a {
+    @apply text-preto2 transition-colors duration-200;
+  }
+
+  a:hover {
+    @apply text-laranja-claro1;
+  }
+
+  /* Barra de Rolagem */
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-preto2);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-roxo1);
+    border-radius: 5px;
+  }
+}
+
+@layer components {
+  header, footer {
+    @apply bg-verde-petroleo text-white;
+  }
+
+  /* Cards */
+  .card-ranieri {
+    @apply bg-card-bg border border-border-custom transition-all duration-200 shadow-sm;
+  }
+  .card-ranieri:hover {
+    @apply bg-card-hover shadow-md;
+  }
+
+  /* Botões */
+  .btn-primary {
+    @apply bg-primary text-white px-4 py-2 rounded transition-colors hover:bg-roxo1;
+  }
+  .btn-secondary {
+    @apply bg-secondary text-white px-4 py-2 rounded transition-colors hover:bg-laranja-escuro1;
+  }
+}

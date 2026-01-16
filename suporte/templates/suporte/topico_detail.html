@@ -5,151 +5,171 @@
 {% block title %}Chamado #{{ topico.pk }} - {{ topico.assunto }}{% endblock title %}
 
 {% block content %}
-<div class="section-title">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-        <h1>Chamado #{{ topico.pk }}</h1>
-        {% if topico.status == 'NOVO' %}
-            <span class="badge badge-danger large">Status: Novo</span>
-        {% elif topico.status == 'ATND' %}
-            <span class="badge badge-warning large">Status: Em Atendimento</span>
-        {% elif topico.status == 'AGRD' %}
-            <span class="badge badge-info large">Status: Aguardando Informação</span>
-        {% elif topico.status == 'RESOLV' or topico.status == 'FECH' %}
-            <span class="badge badge-success large">Status: Encerrado</span>
-        {% else %}
-            <span class="badge badge-info large">Status: {{ topico.get_status_display|default:topico.status }}</span>
-        {% endif %}
+<div class="container mx-auto px-4 py-12 max-w-6xl">
+
+    <div class="mb-10 border-b border-border-custom pb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+        <div>
+            <div class="flex items-center gap-3 mb-2">
+                <span class="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em]">Ticket Suporte</span>
+                <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                <span class="text-[10px] font-black text-roxo1 uppercase tracking-[0.2em]">#{{ topico.pk }}</span>
+            </div>
+            <h1 class="text-3xl font-bold text-roxo1 tracking-tight uppercase leading-tight">{{ topico.assunto }}</h1>
+        </div>
+
+        <div class="flex items-center">
+            {% if topico.status == 'NOVO' %}
+                <span class="px-6 py-2 rounded-full text-xs font-black uppercase bg-red-100 text-red-600 border border-red-200 shadow-sm">Novo</span>
+            {% elif topico.status == 'ATND' %}
+                <span class="px-6 py-2 rounded-full text-xs font-black uppercase bg-amber-100 text-amber-600 border border-amber-200 shadow-sm">Em Atendimento</span>
+            {% elif topico.status == 'AGRD' %}
+                <span class="px-6 py-2 rounded-full text-xs font-black uppercase bg-blue-100 text-blue-600 border border-blue-200 shadow-sm">Aguardando Informação</span>
+            {% elif topico.status == 'RESOLV' or topico.status == 'FECH' %}
+                <span class="px-6 py-2 rounded-full text-xs font-black uppercase bg-green-100 text-green-600 border border-green-200 shadow-sm">Encerrado</span>
+            {% else %}
+                <span class="px-6 py-2 rounded-full text-xs font-black uppercase bg-gray-100 text-gray-600 border border-gray-200 shadow-sm">{{ topico.get_status_display|default:topico.status }}</span>
+            {% endif %}
+        </div>
     </div>
-    <h2 style="font-size: 1.5rem; color: var(--color-text-secondary); margin-top: 0.5rem;">{{ topico.assunto }}</h2>
-</div>
 
-<div class="topico-detail-grid">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
 
-    <div class="respostas-wrapper">
-        <h3 class="mb-2" style="font-size: 1.2rem;">Conversa</h3>
+        <div class="lg:col-span-2 space-y-8">
+            <div class="flex items-center gap-2 mb-4">
+                <i class="fa-solid fa-comments text-primary"></i>
+                <h3 class="text-sm font-black text-roxo1 uppercase tracking-widest">Histórico da Conversa</h3>
+            </div>
 
-        <div class="respostas-list" id="respostas-list">
-
-            {% for mensagem in mensagens %}
-                {% if mensagem.autor.is_staff or mensagem.autor.is_superuser %}
-                    <div class="resposta-item author-staff">
-                {% else %}
-                    <div class="resposta-item author-user">
-                {% endif %}
-                    <div class="header">
-                        <strong>
-                            {{ mensagem.autor.username }}
-                            {% if mensagem.autor.is_staff or mensagem.autor.is_superuser %} (Suporte){% endif %}
-                        </strong>
-                        <small>
-                            {% if forloop.first %}
-                                Criou em {{ mensagem.timestamp|naturaltime }}
+            <div class="space-y-6" id="respostas-list">
+                {% for mensagem in mensagens %}
+                    <div class="flex {% if mensagem.autor.is_staff or mensagem.autor.is_superuser %}justify-start{% else %}justify-end{% endif %}">
+                        <div class="max-w-[90%] md:max-w-[80%] rounded-2xl p-5 shadow-sm border
+                            {% if mensagem.autor.is_staff or mensagem.autor.is_superuser %}
+                                bg-surface border-border-custom rounded-tl-none
                             {% else %}
-                                Respondeu em {{ mensagem.timestamp|naturaltime }}
-                            {% endif %}
-                        </small>
+                                bg-primary text-white border-primary rounded-tr-none
+                            {% endif %}">
+
+                            <div class="flex items-center justify-between gap-4 mb-3">
+                                <span class="text-[10px] font-black uppercase tracking-widest {% if not mensagem.autor.is_staff %}opacity-80{% endif %}">
+                                    {{ mensagem.autor.username }}
+                                    {% if mensagem.autor.is_staff or mensagem.autor.is_superuser %} <span class="ml-1 text-primary italic">(Suporte)</span>{% endif %}
+                                </span>
+                                <span class="text-[9px] font-bold opacity-60">
+                                    {{ mensagem.timestamp|naturaltime }}
+                                </span>
+                            </div>
+
+                            <div class="text-sm leading-relaxed {% if not mensagem.autor.is_staff %}font-medium{% endif %}">
+                                {{ mensagem.conteudo|linebreaksbr }}
+                            </div>
+                        </div>
                     </div>
-                    <div class="body">
-                        <p>{{ mensagem.conteudo|linebreaksbr }}</p>
+                {% endfor %}
+            </div>
+
+            {% if topico.status != 'FECH' %}
+                <div class="card-ranieri bg-white p-6 rounded-2xl border border-border-custom shadow-sm mt-8">
+                    <h3 class="text-xs font-black text-roxo1 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-reply text-secondary"></i> Adicionar Resposta
+                    </h3>
+                    <form method="post" action="{% url 'suporte:topico_responder' pk=topico.pk %}" class="space-y-4">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            {{ form.conteudo }}
+                            {% for error in form.conteudo.errors %}<p class="text-[10px] text-red-500 font-bold mt-1 uppercase">{{ error }}</p>{% endfor %}
+                        </div>
+                        <button type="submit" class="btn-primary w-full py-4 shadow-md flex items-center justify-center gap-2">
+                            <span>Enviar Resposta</span>
+                            <i class="fa-solid fa-paper-plane text-xs"></i>
+                        </button>
+                    </form>
+                </div>
+            {% else %}
+                <div class="p-8 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 text-center">
+                    <i class="fa-solid fa-lock text-gray-300 text-2xl mb-3"></i>
+                    <p class="text-gray-400 text-sm font-bold uppercase tracking-widest">Este chamado foi encerrado e está em modo de leitura.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="space-y-6">
+
+            <div class="card-ranieri bg-white rounded-2xl border border-border-custom shadow-sm overflow-hidden">
+                <div class="px-5 py-4 bg-surface border-b border-border-custom">
+                    <h3 class="text-[10px] font-black text-roxo1 uppercase tracking-widest">Detalhes do Ticket</h3>
+                </div>
+                <div class="p-5 space-y-4">
+                    <div class="flex justify-between items-center py-2 border-b border-border-custom/50">
+                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-tighter">Autor</span>
+                        <span class="text-xs font-bold text-roxo1">{{ topico.criador.username }}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-border-custom/50">
+                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-tighter">Tipo</span>
+                        <span class="text-xs font-bold text-roxo1">{{ topico.criador.get_user_type_display|default:"Padrão" }}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-border-custom/50">
+                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-tighter">Abertura</span>
+                        <span class="text-xs font-bold text-roxo1">{{ topico.criado_em|date:"d/m/Y H:i" }}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2">
+                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-tighter">Atualizado</span>
+                        <span class="text-xs font-bold text-roxo1">{{ topico.atualizado_em|naturaltime }}</span>
                     </div>
                 </div>
-            {% endfor %}
-        </div>
-
-        {% if topico.status != 'FECH' %}
-            <div class="form-resposta-container mt-4">
-                <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">Adicionar Resposta</h3>
-                <form method="post" action="{% url 'suporte:topico_responder' pk=topico.pk %}">
-                    {% csrf_token %}
-                    {{ form.as_p }}
-                    <button type="submit" class="btn btn-primary primary-action mt-2">Enviar Resposta</button>
-                </form>
             </div>
-        {% else %}
-            <div class="alert alert-warning mt-4 text-center">
-                Este chamado está fechado. Você não pode adicionar novas respostas.
-            </div>
-        {% endif %}
 
-    </div>
-
-    <div class="sidebar">
-        <div class="card detail-card">
-            <div class="card-header">
-                Detalhes do Chamado
-            </div>
-            <div class="card-body">
-                <p><strong>Autor:</strong> {{ topico.criador.username }}</p>
-                <p><strong>Tipo de Usuário:</strong> {{ topico.criador.get_user_type_display|default:"Não definido" }}</p>
-                <p><strong>Criado em:</strong> {{ topico.criado_em|date:"d/m/Y H:i" }}</p>
-                <p><strong>Última Atualização:</strong> {{ topico.atualizado_em|naturaltime }}</p>
-            </div>
-        </div>
-
-        <div class="card actions-card mt-3">
-            <div class="card-header">Ações</div>
-            <div class="card-body">
+            <div class="card-ranieri bg-white rounded-2xl border border-border-custom shadow-sm p-5 space-y-3">
                 {% if topico.status != 'FECH' and topico.criador == user or user.is_staff or user.is_superuser %}
-                    <form method="post" action="{% url 'suporte:topico_fechar' pk=topico.pk %}" style="margin-bottom: 0.5rem;">
+                    <form method="post" action="{% url 'suporte:topico_fechar' pk=topico.pk %}">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-success btn-block" onclick="return confirm('Tem certeza que deseja fechar este chamado?');">
-                            <i class="fa-solid fa-lock"></i> Fechar Chamado
+                        <button type="submit" class="w-full py-3 bg-green-50 text-green-600 border border-green-200 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-green-600 hover:text-white transition-all shadow-sm" onclick="return confirm('Tem certeza que deseja fechar este chamado?');">
+                            <i class="fa-solid fa-check-double mr-2"></i> Encerrar Chamado
                         </button>
                     </form>
                 {% elif topico.status == 'FECH' and topico.criador == user or user.is_staff or user.is_superuser %}
                     <form method="post" action="{% url 'suporte:topico_reabrir' pk=topico.pk %}">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-warning btn-block" onclick="return confirm('Tem certeza que deseja reabrir este chamado?');">
-                            <i class="fa-solid fa-lock-open"></i> Reabrir Chamado
+                        <button type="submit" class="w-full py-3 bg-amber-50 text-amber-600 border border-amber-200 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 hover:text-white transition-all shadow-sm" onclick="return confirm('Deseja reabrir este chamado para suporte adicional?');">
+                            <i class="fa-solid fa-lock-open mr-2"></i> Reabrir Chamado
                         </button>
                     </form>
                 {% endif %}
-            </div>
-        </div>
 
-        {% if user.is_staff or user.is_superuser %}
-            {% if status_form %}
-            <div class="card workflow-card mt-3">
-                <div class="card-header text-primary">
-                    <i class="fa-solid fa-cogs"></i> Controle (Staff)
+                <a href="{% url 'suporte:topico_list' %}" class="w-full flex items-center justify-center py-3 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-roxo1 transition-colors">
+                    <i class="fa-solid fa-chevron-left mr-2"></i> Voltar à Lista
+                </a>
+            </div>
+
+            {% if user.is_staff or user.is_superuser %}
+                {% if status_form %}
+                <div class="card-ranieri bg-roxo1 text-white rounded-2xl p-6 shadow-xl">
+                    <h3 class="text-[10px] font-black uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-shield-halved text-secondary"></i> Painel de Controle
+                    </h3>
+                    <form method="post" action="{% url 'suporte:topico_update_status' pk=topico.pk %}" class="space-y-4">
+                        {% csrf_token %}
+                        <div class="space-y-2">
+                            <label class="text-[9px] font-black uppercase opacity-60 tracking-widest">{{ status_form.status.label }}</label>
+                            {{ status_form.status }}
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-[9px] font-black uppercase opacity-60 tracking-widest">{{ status_form.admin_responsavel.label }}</label>
+                            {{ status_form.admin_responsavel }}
+                        </div>
+                        <button type="submit" class="btn-primary bg-secondary hover:bg-white hover:text-roxo1 border-none w-full py-3 shadow-lg">
+                            <i class="fa-solid fa-save mr-2"></i> Atualizar Fluxo
+                        </button>
+                    </form>
                 </div>
-                <form method="post" action="{% url 'suporte:topico_update_status' pk=topico.pk %}" class="card-body">
-                    {% csrf_token %}
-
-                    <div class="form-group">
-                        <label class="form-label" for="{{ status_form.status.id_for_label }}">{{ status_form.status.label }}:</label>
-                        {{ status_form.status }}
-                        {% for error in status_form.status.errors %}
-                            <div class="form-feedback error">{{ error }}</div>
-                        {% endfor %}
-                    </div>
-
-                    <div class="form-group mt-2">
-                        <label class="form-label" for="{{ status_form.admin_responsavel.id_for_label }}">{{ status_form.admin_responsavel.label }}:</label>
-                        {{ status_form.admin_responsavel }}
-                         {% for error in status_form.admin_responsavel.errors %}
-                            <div class="form-feedback error">{{ error }}</div>
-                        {% endfor %}
-                    </div>
-
-                    {% if status_form.non_field_errors %}
-                        {% for error in status_form.non_field_errors %}
-                            <div class="form-feedback error">{{ error }}</div>
-                        {% endfor %}
-                    {% endif %}
-
-                    <button type="submit" class="btn btn-secondary primary-action btn-block mt-3">
-                        <i class="fa-solid fa-save"></i> Salvar Fluxo
-                    </button>
-                </form>
-            </div>
+                {% endif %}
             {% endif %}
-        {% endif %}
 
+        </div>
     </div>
 </div>
 
-<button id="scroll-to-bottom-button" class="scroll-to-bottom-button" title="Ir para o final da conversa">
+<button id="scroll-to-bottom-button" class="fixed bottom-6 right-6 w-12 h-12 bg-roxo1 text-white rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-50 opacity-0 pointer-events-none">
     <i class="fa-solid fa-arrow-down"></i>
 </button>
 

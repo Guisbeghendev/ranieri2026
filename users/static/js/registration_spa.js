@@ -1,9 +1,9 @@
-/*
-* Arquivo: registration_spa.js
-* Objetivo: Gerenciar a lógica de Single Page Application (SPA) para o formulário de cadastro,
-* mostrando ou ocultando campos com base no tipo de usuário selecionado.
-* CORREÇÃO: Alterada a lógica para buscar e atualizar a tag <label> diretamente.
-*/
+/**
+ * Arquivo: registration_spa.js
+ * Objetivo: Gerenciar a lógica de Single Page Application (SPA) para o formulário de cadastro,
+ * mostrando ou ocultando campos com base no tipo de usuário selecionado usando Tailwind.
+ * CORREÇÃO: Alterada a lógica para buscar e atualizar a tag <label> diretamente.
+ */
 
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Elementos de Referência
@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const LABEL_RESPONSAVEL = 'RA de um aluno pelo qual é responsável - somente números:';
 
     // Verifica se há erros de validação no formulário (para uso na lógica de inicialização)
-    const hasErrorElement = form.querySelector('.form-error');
+    const hasErrorElement = form.querySelector('.text-red-500'); // Atualizado para o seletor Tailwind do novo template
 
     // Mapeamento dos campos específicos para cada tipo de usuário.
     const fieldMap = {
@@ -42,13 +42,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- 1. Lógica Corrigida: Força a exibição se houver um erro ---
         if (selectedType || hasErrorElement) {
-            registroEspecificoBlock.classList.remove('js-hidden');
-            credenciaisBlock.classList.remove('js-hidden');
-            submitButton.classList.remove('is-disabled');
+            // registroEspecificoBlock.classList.remove('js-hidden');
+            registroEspecificoBlock.classList.remove('hidden');
+            // credenciaisBlock.classList.remove('js-hidden');
+            credenciaisBlock.classList.remove('hidden');
+            // submitButton.classList.remove('is-disabled');
+            submitButton.removeAttribute('disabled');
         } else {
-            registroEspecificoBlock.classList.add('js-hidden');
-            credenciaisBlock.classList.add('js-hidden');
-            submitButton.classList.add('is-disabled');
+            // registroEspecificoBlock.classList.add('js-hidden');
+            registroEspecificoBlock.classList.add('hidden');
+            // credenciaisBlock.classList.add('js-hidden');
+            credenciaisBlock.classList.add('hidden');
+            // submitButton.classList.add('is-disabled');
+            submitButton.setAttribute('disabled', 'true');
             return;
         }
 
@@ -74,10 +80,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Se o campo for requerido ou se ele contiver um erro de validação
-            if (isRequired || fieldGroup.querySelector('.form-error')) {
-                fieldGroup.classList.remove('js-hidden');
+            if (isRequired || fieldGroup.querySelector('.text-red-500')) {
+                // fieldGroup.classList.remove('js-hidden');
+                fieldGroup.classList.remove('hidden');
             } else {
-                fieldGroup.classList.add('js-hidden');
+                // fieldGroup.classList.add('js-hidden');
+                fieldGroup.classList.add('hidden');
             }
         });
     }

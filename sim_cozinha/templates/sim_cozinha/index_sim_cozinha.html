@@ -6,50 +6,64 @@
 {% endblock title %}
 
 {% block content %}
-    <div class="section-alt">
-        <div class="container text-center">
+<div class="container mx-auto px-4 py-16 max-w-4xl text-center">
+    <div class="mb-12">
+        <h1 class="text-4xl md:text-5xl font-bold text-roxo1 tracking-tighter uppercase mb-2">
+            {{ titulo_projeto }}
+        </h1>
+        <div class="w-24 h-1.5 bg-secondary mx-auto rounded-full"></div>
+    </div>
 
-            <h1 class="section-title mb-4">{{ titulo_projeto }}</h1>
+    <div class="card-ranieri bg-white p-8 md:p-12 rounded-3xl shadow-xl border border-border-custom mx-auto max-w-2xl transform transition-all hover:scale-[1.01]">
 
-            <div class="card mx-auto p-4" style="max-width: 600px;">
+        <div class="mb-10 p-6 bg-surface rounded-2xl border border-dashed border-gray-200">
+            <img src="{% static 'images/sim_cozinha/simoninha_na_cozinha_transp.png' %}"
+                 alt="Logo do Projeto Simoninha na Cozinha"
+                 class="h-40 md:h-52 object-contain mx-auto drop-shadow-md">
+        </div>
 
-                {# 🚨 CORREÇÃO DO CAMINHO DA IMAGEM #}
-                <img src="{% static 'images/sim_cozinha/simoninha_na_cozinha_transp.png' %}"
-                     alt="Logo do Projeto Simoninha na Cozinha"
-                     class="img-fluid mb-4 mx-auto"
-                     style="max-height: 200px;">
+        <div class="space-y-4 mb-10">
+            <p class="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em] mb-4">Acompanhe nos Canais Oficiais</p>
 
-                {# -------------------- BOTÕES MÚLTIPLOS PARA CANAIS DO YOUTUBE -------------------- #}
-                <div class="d-flex justify-content-center mb-4 flex-wrap">
+            <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
+                {# Primeiro Canal #}
+                <a href="https://www.youtube.com/channel/UCiV3o50mX82BzF2vQiexC3w"
+                   target="_blank"
+                   class="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 bg-[#FF0000] hover:bg-[#CC0000] text-white rounded-xl font-bold text-sm uppercase tracking-widest transition-all shadow-lg hover:shadow-[#FF0000]/20">
+                    <i class="fab fa-youtube text-lg"></i>
+                    <span>Simoninha</span>
+                </a>
 
-                    {# Primeiro Canal #}
-                    <a href="https://www.youtube.com/channel/UCiV3o50mX82BzF2vQiexC3w"
-                       target="_blank"
-                       class="btn btn-danger btn-lg mr-2 mb-2 action-button">
-                        <i class="fab fa-youtube"></i> &nbsp; Canal 1 (Simoninha)
-                    </a>
-
-                    {# Segundo Canal #}
-                    <a href="https://www.youtube.com/channel/UCXvUihPSbr4KzRfyRmt02Ew"
-                       target="_blank"
-                       class="btn btn-danger btn-lg mb-2 action-button">
-                        <i class="fab fa-youtube"></i> &nbsp; Canal 2 (Ranieri)
-                    </a>
-                </div>
-                {# -------------------- FIM BOTÕES MÚLTIPLOS -------------------- #}
-
-                <hr>
-
-                {# Link para Entrar no Livro Digital (Catálogo) #}
-                <p class="lead mt-4">
-                    Explore todas as receitas e eventos em nosso Catálogo Digital:
-                </p>
-                <a href="{% url 'sim_cozinha:catalogo' %}"
-                   class="btn btn-primary btn-lg action-button">
-                    Acessar o Livro Digital &rarr;
+                {# Segundo Canal #}
+                <a href="https://www.youtube.com/channel/UCXvUihPSbr4KzRfyRmt02Ew"
+                   target="_blank"
+                   class="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 bg-[#FF0000] hover:bg-[#CC0000] text-white rounded-xl font-bold text-sm uppercase tracking-widest transition-all shadow-lg hover:shadow-[#FF0000]/20">
+                    <i class="fab fa-youtube text-lg"></i>
+                    <span>Ranieri</span>
                 </a>
             </div>
+        </div>
 
+        <div class="relative py-4">
+            <div class="absolute inset-0 flex items-center">
+                <div class="w-full border-t border-border-custom"></div>
+            </div>
+            <div class="relative flex justify-center">
+                <span class="bg-white px-4 text-xs font-black text-gray-300 uppercase tracking-widest">Conteúdo Exclusivo</span>
+            </div>
+        </div>
+
+        <div class="mt-8 space-y-6">
+            <p class="text-text-main text-lg font-medium leading-relaxed italic opacity-80">
+                Explore todas as receitas e eventos em nosso Catálogo Digital:
+            </p>
+
+            <a href="{% url 'sim_cozinha:catalogo' %}"
+               class="btn-primary inline-flex items-center justify-center gap-3 px-12 py-5 text-base shadow-2xl group">
+                <span>Acessar o Livro Digital</span>
+                <i class="fas fa-chevron-right text-xs transition-transform group-hover:translate-x-2"></i>
+            </a>
         </div>
     </div>
+</div>
 {% endblock content %}

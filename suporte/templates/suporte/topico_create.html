@@ -4,53 +4,77 @@
 {% block title %}Abrir Novo Chamado{% endblock title %}
 
 {% block content %}
-<div class="form-create-suporte">
-    <div class="reset-box" style="max-width: 600px;">
-        <div class="reset-header">
-            <h2>Abrir Novo Chamado de Suporte</h2>
-            <p>Por favor, preencha os detalhes do seu problema ou solicitação.</p>
+<div class="container mx-auto px-4 py-12 max-w-2xl">
+
+    <div class="mb-10 text-center">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-surface border-2 border-dashed border-border-custom mb-4">
+            <i class="fa-solid fa-headset text-2xl text-primary"></i>
         </div>
-        <div class="reset-body">
-            <form method="post">
-                {% csrf_token %}
+        <h1 class="text-3xl font-bold text-roxo1 tracking-tight uppercase">Novo Chamado</h1>
+        <p class="text-text-main opacity-60 text-sm font-medium mt-2">Descreva sua solicitação e nossa equipe retornará em breve.</p>
+    </div>
 
-                {% if form.errors %}
-                    <div class="alert alert-danger">
-                        <strong>Por favor, corrija os seguintes erros:</strong>
-                        <ul>
-                        {% for field in form %}
-                            {% for error in field.errors %}
-                                <li>{{ field.label }}: {{ error }}</li>
-                            {% endfor %}
-                        {% endfor %}
-                        {% for error in form.non_field_errors %}
-                            <li>{{ error }}</li>
-                        {% endfor %}
-                        </ul>
+    <div class="card-ranieri bg-white p-8 md:p-10 rounded-3xl border border-border-custom shadow-xl relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary to-secondary"></div>
+
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+
+            {% if form.errors %}
+                <div class="p-4 rounded-xl bg-red-50 border border-red-100 mb-6">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i class="fa-solid fa-circle-exclamation text-red-600"></i>
+                        <strong class="text-xs font-black uppercase text-red-700 tracking-widest">Atenção aos erros:</strong>
                     </div>
-                {% endif %}
+                    <ul class="text-[11px] font-bold text-red-600 uppercase list-disc list-inside space-y-1">
+                        {% for field in form %}
+                            {% for error in field.errors %}<li>{{ field.label }}: {{ error }}</li>{% endfor %}
+                        {% endfor %}
+                        {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
 
-                <!-- Renderiza os campos do formulário -->
+            <div class="space-y-5">
                 {% for field in form %}
                     <div class="form-group">
-                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                        {{ field }}
+                        <label class="block text-[10px] font-black uppercase text-roxo1 mb-2 tracking-[0.15em]" for="{{ field.id_for_label }}">
+                            {{ field.label }}
+                        </label>
+
+                        <div class="relative group">
+                            {{ field }}
+
+                            <div class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-primary transition-colors">
+                                {% if 'assunto' in field.name %}<i class="fa-solid fa-pen-to-square text-xs"></i>
+                                {% elif 'departamento' in field.name %}<i class="fa-solid fa-building text-xs"></i>
+                                {% endif %}
+                            </div>
+                        </div>
+
                         {% if field.help_text %}
-                            <small class="form-text text-muted">{{ field.help_text }}</small>
+                            <p class="mt-2 text-[10px] text-gray-400 font-medium italic leading-relaxed">{{ field.help_text }}</p>
                         {% endif %}
-                        <!-- Adiciona um placeholder para validação JS ou feedback -->
-                        <div id="{{ field.id_for_label }}_feedback" class="form-feedback" style="display: none;"></div>
+
+                        <div id="{{ field.id_for_label }}_feedback" class="text-[9px] font-black uppercase mt-1 text-red-500 hidden animate-pulse"></div>
                     </div>
                 {% endfor %}
+            </div>
 
-                <button type="submit" id="submit-button" class="btn btn-primary primary-action btn-block mt-3">
-                    <i class="fa-solid fa-plus"></i> Abrir Chamado
+            <div class="pt-8 space-y-4">
+                <button type="submit" id="submit-button" class="btn-primary w-full py-5 shadow-2xl flex items-center justify-center gap-3 group">
+                    <span class="text-xs font-black uppercase tracking-widest">Enviar Solicitação</span>
+                    <i class="fa-solid fa-paper-plane text-xs transition-transform group-hover:translate-x-1 group-hover:-translate-y-1"></i>
                 </button>
-            </form>
-        </div>
-        <div class="reset-footer text-center">
-            <a href="{% url 'suporte:topico_list' %}" class="text-secondary">Voltar para a lista de chamados</a>
-        </div>
+
+                <div class="text-center">
+                    <a href="{% url 'suporte:topico_list' %}" class="inline-flex items-center gap-2 text-[10px] font-black uppercase text-gray-400 hover:text-roxo1 tracking-widest transition-all">
+                        <i class="fa-solid fa-arrow-left-long"></i>
+                        <span>Cancelar e voltar para a lista</span>
+                    </a>
+                </div>
+            </div>
+        </form>
     </div>
 </div>
 {% endblock content %}

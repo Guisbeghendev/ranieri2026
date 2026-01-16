@@ -6,25 +6,26 @@
 {% endblock title %}
 
 {% block content %}
-<div class="section-alt">
-    <div class="container text-center">
-        <h1 class="section-title">Projeto Coral Ranieri</h1>
-        <p class="section-subtitle">{{ livro_titulo }} Interativo. Música {{ musica_ordem }} de {{ total_musicas }}</p>
+<div class="bg-surface py-12">
+    <div class="container mx-auto px-4 text-center">
+        <h1 class="text-4xl font-bold text-roxo1 mb-2">Projeto Coral Ranieri</h1>
+        <p class="text-xl text-text-main opacity-80 mb-10">{{ livro_titulo }} Interativo. Música {{ musica_ordem }} de {{ total_musicas }}</p>
 
-        <div class="row mt-5 justify-content-center">
+        <div class="flex flex-col items-center mt-5">
             {% if musica %}
-                <div class="col-md-8 mb-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h2 style="color: #000000;">{{ musica.titulo }}</h2>
+                <div class="w-full max-w-4xl mb-8">
+                    <div class="card-ranieri rounded-xl overflow-hidden bg-white shadow-sm">
+                        <div class="bg-primary p-6">
+                            <h2 class="text-2xl font-bold text-white">{{ musica.titulo }}</h2>
                         </div>
 
-                        <div class="card-body">
-                            {# VÍDEO INCORPORADO E LINK EXTERNO (PADRÃO SIMONINHA) #}
+                        <div class="p-8">
+                            {# VÍDEO INCORPORADO E LINK EXTERNO #}
                             {% if musica.video_id %}
-                                <div class="video-content-wrapper mb-3 text-center">
-                                    <div class="video-iframe-container">
+                                <div class="mb-6 text-center">
+                                    <div class="relative w-full aspect-video rounded-lg overflow-hidden shadow-inner bg-black">
                                         <iframe
+                                            class="absolute top-0 left-0 w-full h-full"
                                             src="https://www.youtube.com/embed/{{ musica.video_id }}"
                                             frameborder="0"
                                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -34,13 +35,13 @@
                                     </div>
 
                                     {% if musica.link_externo %}
-                                        <div class="youtube-fallback-link p-3 border rounded mt-3" style="background-color: #fff3cd; border-color: #ffeeba;">
-                                            <p class="mb-2 text-dark">
+                                        <div class="mt-4 p-4 border border-yellow-200 rounded-lg bg-yellow-50">
+                                            <p class="mb-2 text-gray-800 text-sm">
                                                 <strong>Problemas com a exibição?</strong> Assista diretamente no YouTube:
                                             </p>
                                             <a href="{{ musica.link_externo }}"
                                                target="_blank"
-                                               class="btn btn-warning btn-sm">
+                                               class="inline-block bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-bold py-2 px-4 rounded transition-colors">
                                                 Abrir o Vídeo no YouTube
                                             </a>
                                         </div>
@@ -50,8 +51,8 @@
 
                             {# ARQUIVOS DE APOIO #}
                             {% if musica.arquivo %}
-                                <div class="mt-4 mb-4">
-                                    <a href="{{ musica.arquivo.url }}" class="btn-primary-custom" target="_blank" download style="background-color: #4b0082; color: #ffffff; border: none; padding: 10px 20px; display: inline-block; text-decoration: none; border-radius: 5px;">
+                                <div class="mb-8">
+                                    <a href="{{ musica.arquivo.url }}" class="btn-primary inline-flex items-center gap-2 shadow-md" target="_blank" download>
                                         <i class="fas fa-download"></i>
                                         {% if musica.nome_exibicao_arquivo %}
                                             {{ musica.nome_exibicao_arquivo }}
@@ -63,11 +64,11 @@
                                 </div>
                             {% endif %}
 
-                            <div class="chapter-content text-start mt-4">
+                            <div class="text-left mt-6 prose prose-lg max-w-none text-text-main leading-relaxed">
                                 {% if musica.descricao %}
                                     {{ musica.descricao|linebreaks|safe }}
                                 {% else %}
-                                    <p class="text-center text-muted">Não há descrição detalhada para esta música.</p>
+                                    <p class="text-center text-gray-500 italic">Não há descrição detalhada para esta música.</p>
                                 {% endif %}
                             </div>
                         </div>
@@ -75,26 +76,26 @@
                 </div>
 
                 {# NAVEGAÇÃO SEQUENCIAL #}
-                <div class="col-md-8 mt-4">
-                    <div class="chapter-navigation d-flex justify-content-between align-items-center">
+                <div class="w-full max-w-4xl">
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
                         {% if musica_anterior %}
-                            <a href="?page={{ musica_anterior.musica_index_base_1 }}" class="btn btn-back action-button" id="btn-anterior">
+                            <a href="?page={{ musica_anterior.musica_index_base_1 }}" class="btn-primary w-full sm:w-auto justify-center inline-flex items-center" id="btn-anterior">
                                 &larr; Música Anterior
                             </a>
                         {% else %}
-                            <button class="btn btn-back is-disabled action-button" disabled>
+                            <button class="bg-gray-300 text-gray-500 px-4 py-2 rounded cursor-not-allowed w-full sm:w-auto" disabled>
                                 &larr; Música Anterior
                             </button>
                         {% endif %}
 
-                        <div class="mx-auto"></div>
+                        <div class="hidden sm:block flex-grow"></div>
 
                         {% if proxima_musica %}
-                            <a href="?page={{ proxima_musica.musica_index_base_1 }}" class="btn btn-secondary primary-action action-button" id="btn-proximo">
+                            <a href="?page={{ proxima_musica.musica_index_base_1 }}" class="btn-secondary w-full sm:w-auto justify-center inline-flex items-center" id="btn-proximo">
                                 Próxima Música &rarr;
                             </a>
                         {% else %}
-                            <button class="btn btn-secondary is-disabled action-button" disabled>
+                            <button class="bg-gray-300 text-gray-500 px-4 py-2 rounded cursor-not-allowed w-full sm:w-auto" disabled>
                                 Fim do Repertório
                             </button>
                         {% endif %}
@@ -102,28 +103,26 @@
                 </div>
 
                 {# BARRA DE PROGRESSO #}
-                <div class="col-md-8 mx-auto mt-4">
-                    <div class="progress-bar-container">
-                        {% widthratio musica_ordem total_musicas 100 as progresso_percentual %}
-                        <div class="progress-bar-label text-center mb-1">
-                            Progresso: {{ progresso_percentual|floatformat:0 }}%
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-bar-fill" style="width: {{ progresso_percentual }}%;"></div>
-                        </div>
+                <div class="w-full max-w-4xl mx-auto mt-10">
+                    {% widthratio musica_ordem total_musicas 100 as progresso_percentual %}
+                    <div class="text-sm font-semibold text-center mb-2 text-text-main">
+                        Progresso: {{ progresso_percentual|floatformat:0 }}%
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden border border-border-custom">
+                        <div class="bg-primary h-full transition-all duration-500 ease-out" style="width: {{ progresso_percentual }}%;"></div>
                     </div>
                 </div>
 
             {% else %}
-                <div class="col-12">
-                    <p class="section-subtitle">Nenhuma música cadastrada no momento.</p>
+                <div class="w-full">
+                    <p class="text-xl text-gray-500 italic">Nenhuma música cadastrada no momento.</p>
                 </div>
             {% endif %}
         </div>
 
-        <div class="mt-5 pt-5">
-            <a href="{% url 'coral:index' %}" class="btn-secondary-custom">
-                <i class="fas fa-arrow-left"></i> Voltar ao Menu de Livros
+        <div class="mt-16">
+            <a href="{% url 'coral:index' %}" class="inline-flex items-center text-roxo1 font-bold hover:text-laranja-escuro1 transition-colors underline decoration-2 underline-offset-4">
+                <i class="fas fa-arrow-left mr-2"></i> Voltar ao Menu de Livros
             </a>
         </div>
     </div>
@@ -131,6 +130,5 @@
 {% endblock content %}
 
 {% block js %}
-    {# Utilizando o JS do sim_cozinha para garantir o padrão de transição #}
-        <script src="{% static 'coral/js/repertorio.js' %}"></script>
+    <script src="{% static 'coral/js/repertorio.js' %}"></script>
 {% endblock js %}

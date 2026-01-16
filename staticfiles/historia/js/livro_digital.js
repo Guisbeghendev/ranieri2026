@@ -1,61 +1,49 @@
-// coral/static/coral/js/livro_digital_coral.js
+// historia/static/historia/js/livro_digital.js
 
 document.addEventListener('DOMContentLoaded', function() {
     const chapterContent = document.querySelector('.chapter-content');
-    // Seleciona todos os botões de navegação que devem ter a ação de carregamento
-    const navButtons = document.querySelectorAll('.chapter-navigation .action-button');
-
     const btnAnterior = document.getElementById('btn-anterior');
     const btnProximo = document.getElementById('btn-proximo');
 
+    // Seleciona botões de navegação ignorando os desabilitados (bg-gray-300)
+    const navButtons = [btnAnterior, btnProximo].filter(btn => btn && !btn.hasAttribute('disabled'));
+
     // 1. EFEITO FADE-IN NA CARGA DO CAPÍTULO
-    // Adiciona uma classe de fade-in no carregamento para a transição inicial
     if (chapterContent) {
-        // Assume que o CSS tem a classe .fade-in-start (opacidade 0) e .fade-in-end (opacidade 1 + transition)
-        chapterContent.classList.add('fade-in-start');
+        chapterContent.style.opacity = '0';
+        chapterContent.style.transition = 'opacity 0.5s ease-in-out';
         setTimeout(() => {
-            chapterContent.classList.add('fade-in-end');
-            // Remove a classe inicial após a transição
-            chapterContent.classList.remove('fade-in-start');
+            chapterContent.style.opacity = '1';
         }, 100);
     }
 
-    // 2. ADICIONA COMPORTAMENTO DE LOADING/TRANSITION NOS CLIQUES
+    // 2. ADICIONA COMPORTAMENTO DE LOADING NOS CLIQUES
     navButtons.forEach(button => {
-        // Ignora botões que são de fato desabilitados (sem href)
-        if (!button.href) {
-            return;
-        }
-
         button.addEventListener('click', function(event) {
-            // Oculta o conteúdo com fade-out
             if (chapterContent) {
-                chapterContent.style.opacity = 0;
-
-                // Desabilita os botões para evitar cliques duplos durante a transição
-                navButtons.forEach(b => {
-                    b.classList.add('is-disabled');
-                    b.setAttribute('disabled', 'true');
-                    b.textContent = 'Carregando...'; // Feedback visual
-                });
+                chapterContent.style.opacity = '0';
             }
 
-            // Permite que o link original seja seguido após um pequeno atraso (para a animação)
-            setTimeout(() => {
-                window.location.href = button.href;
-            }, 300); // 300ms de atraso
+            // Desabilita os botões e altera visual para feedback
+            navButtons.forEach(b => {
+                b.classList.add('opacity-50', 'cursor-not-allowed');
+                b.setAttribute('disabled', 'true');
+                b.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Carregando...';
+            });
 
-            // Impede a ação padrão imediata do link
+            const targetHref = button.href;
+            setTimeout(() => {
+                window.location.href = targetHref;
+            }, 300);
+
             event.preventDefault();
         });
     });
 
-    // 3. Navegação por Teclas de Seta (mantida do código anterior)
+    // 3. NAVEGAÇÃO POR TECLAS DE SETA
     document.addEventListener('keydown', (event) => {
         const isTyping = event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA';
-        if (isTyping) {
-            return;
-        }
+        if (isTyping) return;
 
         if (event.key === 'ArrowLeft' && btnAnterior && !btnAnterior.hasAttribute('disabled')) {
             event.preventDefault();
@@ -69,15 +57,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // 4. PRÉ-BUSCA (PREFETCH) DO PRÓXIMO CAPÍTULO
-    if (btnProximo && !btnProximo.classList.contains('is-disabled')) {
-        const nextUrl = btnProximo.href;
-
+    if (btnProximo && btnProximo.tagName === 'A') {
         const link = document.createElement('link');
         link.rel = 'prefetch';
-        link.href = nextUrl;
+        link.href = btnProximo.href;
         document.head.appendChild(link);
-
-        console.log(`[Coral] Prefetching: ${nextUrl}`);
     }
-
 });

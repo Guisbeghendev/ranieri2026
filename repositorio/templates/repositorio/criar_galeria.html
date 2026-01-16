@@ -2,129 +2,120 @@
 {% load static %}
 
 {% block title %}
-{% if form.instance.pk %}
-Editar Galeria: {{ form.instance.nome }}
-{% else %}
-Criar Nova Galeria
-{% endif %}
-- Repositório
+    {% if form.instance.pk %}Editar Galeria: {{ form.instance.nome }}{% else %}Criar Nova Galeria{% endif %} - Repositório
 {% endblock %}
 
 {% block content %}
-<div class="dashboard-main-container">
-    <div class="dashboard-header mb-3">
-        <h1 class="header-title">Área do Fotógrafo</h1>
-        <p class="header-subtitle">Gestão de Mídias e Galerias</p>
+<div class="container mx-auto px-4 py-12 max-w-4xl">
+    <div class="mb-8 border-b border-border-custom pb-6">
+        <h1 class="text-3xl font-bold text-roxo1 tracking-tight uppercase">Área do Fotógrafo</h1>
+        <p class="text-text-main opacity-60 text-sm font-medium">Gestão de Mídias e Galerias</p>
     </div>
 
     {% if messages %}
-    <ul class="messages p-0">
-        {% for message in messages %}
-            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-        {% endfor %}
-    </ul>
+        <div class="mb-6 space-y-2">
+            {% for message in messages %}
+                <div class="p-4 rounded-xl text-sm font-medium border {% if message.tags == 'success' %}bg-green-50 text-green-700 border-green-200{% else %}bg-blue-50 text-blue-700 border-blue-200{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
     {% endif %}
 
-    <div class="card p-3">
-        <h2 class="card-header">
-            {% if form.instance.pk %}
-                Editar Galeria: {{ form.instance.nome }}
-            {% else %}
-                Criar Nova Galeria
-            {% endif %}
-        </h2>
-
-        <div class="card-body">
-            <p class="section-description">
-                Preencha os dados básicos da galeria. Após a criação, você poderá vincular as imagens enviadas.
-            </p>
-
-            <form method="post">
-                {% csrf_token %}
-
-                {# Título da Galeria #}
-                <div class="form-group mb-4">
-                    <label class="form-label" for="{{ form.nome.id_for_label }}">{{ form.nome.label }}</label>
-                    {{ form.nome }}
-                    <small class="form-help">{{ form.nome.help_text }}</small>
-                    {% for error in form.nome.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
-                </div>
-
-                {# Data do Evento #}
-                <div class="form-group mb-4">
-                    <label class="form-label" for="{{ form.data_do_evento.id_for_label }}">{{ form.data_do_evento.label }}</label>
-                    {{ form.data_do_evento }}
-                    <small class="form-help">{{ form.data_do_evento.help_text }}</small>
-                    {% for error in form.data_do_evento.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
-                </div>
-
-                {# Descrição #}
-                <div class="form-group mb-4">
-                    <label class="form-label" for="{{ form.descricao.id_for_label }}">{{ form.descricao.label }}</label>
-                    {{ form.descricao }}
-                    <small class="form-help">{{ form.descricao.help_text }}</small>
-                    {% for error in form.descricao.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
-                </div>
-
-                {# Status #}
-                <div class="form-group mb-4">
-                    <label class="form-label">{{ form.status.label }}</label>
-                    {{ form.status }}
-                    <small class="form-help">{{ form.status.help_text }}</small>
-                    {% for error in form.status.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
-                </div>
-
-                {# Watermark #}
-                <div class="form-group mb-4">
-                    <label class="form-label">{{ form.watermark_config.label }}</label>
-                    {{ form.watermark_config }}
-                    <small class="form-help">{{ form.watermark_config.help_text }}</small>
-                    {% for error in form.watermark_config.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
-                </div>
-
-                {# Acesso Público #}
-                <div class="form-group mb-4">
-                    <label class="form-label">Controle de Acesso Público</label>
-                    <div class="access-groups-grid-container">
-                        <ul>
-                            <li>
-                                <label class="form-label checkbox-label" for="{{ form.acesso_publico.id_for_label }}">
-                                    {{ form.acesso_publico }}
-                                    {{ form.acesso_publico.label }}
-                                </label>
-                            </li>
-                        </ul>
-                    </div>
-                    <small class="form-help">{{ form.acesso_publico.help_text }}</small>
-                    {% for error in form.acesso_publico.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
-                </div>
-
-                {# Grupos de Acesso #}
-                <div class="form-group mb-4">
-                    <label class="form-label">{{ form.grupos_acesso.label }}</label>
-                    <div class="access-groups-grid-container">
-                        <ul>
-                        {% for subwidget in form.grupos_acesso.subwidgets %}
-                            <li>{{ subwidget }}</li>
-                        {% endfor %}
-                        </ul>
-                    </div>
-                    <small class="form-help">Selecione os grupos que terão acesso a esta galeria.</small>
-                    {% for error in form.grupos_acesso.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
-                </div>
-
-                <div class="text-right card-footer mt-3">
-                    <a href="{% url 'repositorio:gerenciar_galerias' %}" class="btn btn-back mr-2">Voltar</a>
-                    <button type="submit" class="btn btn-primary">
-                        {% if form.instance.pk %}
-                            <i class="fas fa-save mr-1"></i> Salvar Alterações
-                        {% else %}
-                            <i class="fas fa-plus-circle mr-1"></i> Criar Galeria
-                        {% endif %}
-                    </button>
-                </div>
-            </form>
+    <div class="card-ranieri bg-white p-8 rounded-2xl shadow-sm border border-border-custom">
+        <div class="flex items-center gap-3 mb-8">
+            <div class="w-2 h-8 bg-primary rounded-full"></div>
+            <h2 class="text-xl font-bold text-roxo1 uppercase tracking-wider">
+                {% if form.instance.pk %}Editar Galeria{% else %}Nova Galeria{% endif %}
+            </h2>
         </div>
+
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="form-group col-span-1 md:col-span-2">
+                    <label class="block text-[10px] font-black uppercase text-roxo1 mb-2 tracking-widest" for="{{ form.nome.id_for_label }}">
+                        {{ form.nome.label }}
+                    </label>
+                    {{ form.nome }}
+                    {% if form.nome.help_text %}<p class="mt-1 text-[10px] text-gray-400 font-medium italic">{{ form.nome.help_text }}</p>{% endif %}
+                    {% for error in form.nome.errors %}<p class="text-red-500 text-[10px] mt-1 font-bold uppercase">{{ error }}</p>{% endfor %}
+                </div>
+
+                <div class="form-group">
+                    <label class="block text-[10px] font-black uppercase text-roxo1 mb-2 tracking-widest" for="{{ form.data_do_evento.id_for_label }}">
+                        {{ form.data_do_evento.label }}
+                    </label>
+                    {{ form.data_do_evento }}
+                    {% for error in form.data_do_evento.errors %}<p class="text-red-500 text-[10px] mt-1 font-bold uppercase">{{ error }}</p>{% endfor %}
+                </div>
+
+                <div class="form-group">
+                    <label class="block text-[10px] font-black uppercase text-roxo1 mb-2 tracking-widest">
+                        {{ form.status.label }}
+                    </label>
+                    {{ form.status }}
+                    {% for error in form.status.errors %}<p class="text-red-500 text-[10px] mt-1 font-bold uppercase">{{ error }}</p>{% endfor %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="block text-[10px] font-black uppercase text-roxo1 mb-2 tracking-widest" for="{{ form.descricao.id_for_label }}">
+                    {{ form.descricao.label }}
+                </label>
+                {{ form.descricao }}
+                {% for error in form.descricao.errors %}<p class="text-red-500 text-[10px] mt-1 font-bold uppercase">{{ error }}</p>{% endfor %}
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-surface rounded-xl border border-border-custom shadow-inner">
+                <div class="form-group">
+                    <label class="block text-[10px] font-black uppercase text-roxo1 mb-2 tracking-widest">
+                        {{ form.watermark_config.label }}
+                    </label>
+                    {{ form.watermark_config }}
+                    <p class="mt-2 text-[9px] text-gray-400 font-medium leading-relaxed uppercase">{{ form.watermark_config.help_text }}</p>
+                    {% for error in form.watermark_config.errors %}<p class="text-red-500 text-[10px] mt-1 font-bold uppercase">{{ error }}</p>{% endfor %}
+                </div>
+
+                <div class="form-group">
+                    <label class="block text-[10px] font-black uppercase text-roxo1 mb-2 tracking-widest">Visibilidade</label>
+                    <div class="flex items-center gap-3 p-3 bg-white rounded-lg border border-border-custom hover:border-primary transition-colors cursor-pointer">
+                        {{ form.acesso_publico }}
+                        <span class="text-xs font-bold text-roxo1 uppercase tracking-tighter">{{ form.acesso_publico.label }}</span>
+                    </div>
+                    <p class="mt-2 text-[9px] text-gray-400 font-medium leading-relaxed uppercase">{{ form.acesso_publico.help_text }}</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="block text-[10px] font-black uppercase text-roxo1 mb-3 tracking-widest">
+                    {{ form.grupos_acesso.label }}
+                </label>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {% for subwidget in form.grupos_acesso.subwidgets %}
+                        <label class="flex items-center gap-2 p-3 bg-white border border-border-custom rounded-lg hover:border-secondary transition-all cursor-pointer group">
+                            <span class="group-hover:scale-110 transition-transform">{{ subwidget.tag }}</span>
+                            <span class="text-[10px] font-bold text-gray-500 uppercase truncate">{{ subwidget.choice_label }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+                {% for error in form.grupos_acesso.errors %}<p class="text-red-500 text-[10px] mt-1 font-bold uppercase">{{ error }}</p>{% endfor %}
+            </div>
+
+            <div class="pt-8 border-t border-border-custom flex items-center justify-end gap-4">
+                <a href="{% url 'repositorio:gerenciar_galerias' %}" class="px-6 py-3 text-xs font-black text-gray-400 hover:text-roxo1 transition-colors uppercase tracking-widest">
+                    Voltar
+                </a>
+                <button type="submit" class="btn-primary px-10 py-4 shadow-lg flex items-center gap-2">
+                    {% if form.instance.pk %}
+                        <i class="fas fa-save"></i> <span>Salvar Alterações</span>
+                    {% else %}
+                        <i class="fas fa-plus-circle"></i> <span>Criar Galeria</span>
+                    {% endif %}
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 {% endblock %}

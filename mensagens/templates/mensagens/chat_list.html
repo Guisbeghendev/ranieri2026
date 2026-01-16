@@ -4,50 +4,49 @@
 {% block title %}Canais de Chat{% endblock %}
 
 {% block content %}
-    <div class="container chat-list-container">
-        <h1 class="chat-main-title">
+    <div class="container mx-auto px-4 py-12 max-w-4xl">
+        <h1 class="text-4xl font-bold text-center text-roxo1 mb-12">
             Seus Canais de Mensagens
         </h1>
 
         {% if canais %}
-            <div class="card chat-list-card p-0">
-                <ul class="m-0 p-0">
+            <div class="card-ranieri rounded-xl overflow-hidden bg-white shadow-sm border border-border-custom">
+                <ul class="divide-y divide-gray-100">
                     {% for canal in canais %}
-                        <li class="p-0 m-0">
-                            <a href="{% url 'mensagens:canal_chat' slug=canal.slug %}" class="chat-list-item">
+                        <li class="hover:bg-gray-50 transition-colors">
+                            <a href="{% url 'mensagens:canal_chat' slug=canal.slug %}" class="flex items-center p-5 gap-4">
 
-                                <div class="chat-list-avatar">
+                                <div class="w-14 h-14 rounded-full bg-verde-petroleo flex items-center justify-center text-white text-2xl font-bold shrink-0 shadow-sm">
                                     {{ canal.nome|slice:":1" }}
                                 </div>
 
-                                <div class="chat-list-content">
+                                <div class="flex-grow min-w-0">
 
-                                    <div class="chat-list-header">
-                                        <p class="chat-list-title">
+                                    <div class="flex justify-between items-center mb-1">
+                                        <p class="text-lg font-bold text-text-main truncate">
                                             {{ canal.nome }}
                                         </p>
 
                                         {% if canal.ultima_mensagem %}
-                                            <span class="chat-list-timestamp">
+                                            <span class="text-xs text-gray-400 whitespace-nowrap ml-2">
                                                 {{ canal.ultima_mensagem.data_envio|date:'H:i' }}
                                             </span>
                                         {% endif %}
                                     </div>
 
-                                    <div class="chat-list-preview-row">
-
-                                        <p class="chat-list-preview">
+                                    <div class="flex justify-between items-center gap-2">
+                                        <p class="text-sm text-gray-500 truncate">
                                             {% if canal.ultima_mensagem %}
-                                                <span class="chat-list-preview-sender">
+                                                <span class="font-semibold text-primary/80">
                                                     {{ canal.ultima_mensagem.autor.get_full_name|default:canal.ultima_mensagem.autor.username }}:
                                                 </span>
                                                 {{ canal.ultima_mensagem.conteudo|truncatechars:45 }}
                                             {% else %}
-                                                <span class="text-info">Nenhuma mensagem. Clique para começar!</span>
+                                                <span class="text-verde-petroleo font-medium">Nenhuma mensagem. Clique para começar!</span>
                                             {% endif %}
                                         </p>
 
-                                        <span class="chat-list-group">
+                                        <span class="inline-block bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider whitespace-nowrap">
                                             {{ canal.grupo.auth_group.name }}
                                         </span>
                                     </div>
@@ -59,10 +58,10 @@
                 </ul>
             </div>
         {% else %}
-            <div class="chat-empty-alert mt-3">
-                <div class="chat-empty-content-wrapper">
-                    <i class="fas fa-exclamation-triangle chat-empty-icon"></i>
-                    <p class="chat-empty-text">
+            <div class="flex justify-center mt-8">
+                <div class="bg-orange-50 border border-orange-200 text-orange-800 p-8 rounded-xl flex flex-col items-center gap-4 text-center max-w-lg shadow-sm">
+                    <i class="fas fa-exclamation-triangle text-4xl opacity-50"></i>
+                    <p class="text-lg font-medium leading-relaxed">
                         Você não está associado a nenhum canal de chat ativo. Entre em contato com o administrador para ter acesso aos canais.
                     </p>
                 </div>

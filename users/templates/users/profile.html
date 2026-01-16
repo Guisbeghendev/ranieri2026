@@ -4,157 +4,186 @@
 {% block title %}Perfil de {{ user.get_full_name|default:user.username }}{% endblock title %}
 
 {% block content %}
-
-<div class="profile-main">
+<main class="container mx-auto px-4 py-12 max-w-5xl">
 
     {% if messages %}
-        <div class="messages-container mb-4">
+        <div class="mb-8 space-y-2">
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}" role="alert">
+                <div class="p-4 rounded-xl text-sm font-medium border {% if message.tags == 'success' %}bg-green-50 text-green-700 border-green-200{% else %}bg-blue-50 text-blue-700 border-blue-200{% endif %} animate-in fade-in slide-in-from-top-4 shadow-sm">
                     {{ message }}
                 </div>
             {% endfor %}
         </div>
     {% endif %}
 
-    <div class="profile-header">
-        <div class="profile-header-content">
-            <h1 class="header-title login-header-title">
-                {{ user.first_name }} {{ user.last_name }}
-            </h1>
-            <p class="user-role">{{ user.get_tipo_usuario_display }}</p>
-        </div>
-        <p class="user-username">@{{ user.username }}</p>
-    </div>
-
-    <div class="profile-sections-container">
-
-        <div class="profile-info-block card-style">
-            <h2><i class="fas fa-user-circle icon-color"></i> Dados Pessoais</h2>
-            <div class="info-details">
-                {# Os dados abaixo são do AbstractUser e do Profile #}
-                <p><strong>Nome Completo:</strong> <span>{{ user.get_full_name }}</span></p>
-                <p><strong>E-mail:</strong> <span>{{ user.email }}</span></p>
-                <p><strong>WhatsApp:</strong> <span>{{ user.profile.whatsapp|default:"Não informado" }}</span></p>
-                <p><strong>Outro Contato:</strong> <span>{{ user.profile.outro_contato|default:"Não informado" }}</span></p>
-                <p><strong>Data de Nascimento:</strong> <span>{{ user.profile.data_nascimento|default:"Não informado" }}</span></p>
-                <p><strong>Endereço:</strong> <span>{{ user.profile.endereco|default:"Não informado" }}</span></p>
-                <p><strong>Cidade/UF:</strong> <span>{% if user.profile.cidade %}{{ user.profile.cidade }}{% if user.profile.estado %}, {{ user.profile.estado }}{% endif %}{% else %}Não informado{% endif %}</span></p>
-            </div>
+    <div class="card-ranieri bg-roxo1 text-white rounded-3xl p-8 md:p-12 mb-8 shadow-2xl relative overflow-hidden">
+        <div class="absolute top-0 right-0 p-12 opacity-10 pointer-events-none">
+            <i class="fas fa-user-circle text-9xl"></i>
         </div>
 
-        <div class="profile-info-block photo-block text-center card-style">
-            <h2><i class="fas fa-camera icon-color"></i> Foto de Perfil</h2>
-            <div class="mb-3">
+        <div class="relative z-10 flex flex-col md:flex-row items-center gap-8">
+            <div class="relative group">
                 {% if user.profile.foto_perfil %}
-                    <img src="{{ user.profile.foto_perfil.url }}" alt="Foto de Perfil" class="profile-photo" style="width: 150px; height: 150px;">
+                    <img src="{{ user.profile.foto_perfil.url }}" alt="Foto de Perfil" class="w-32 h-32 md:w-40 md:h-40 rounded-3xl object-cover border-4 border-white/20 shadow-2xl transition-transform group-hover:scale-105">
                 {% else %}
-                    <div class="profile-photo profile-photo-placeholder mx-auto">
-                        👤
+                    <div class="w-32 h-32 md:w-40 md:h-40 rounded-3xl bg-white/10 border-4 border-dashed border-white/20 flex items-center justify-center text-4xl shadow-2xl">
+                        <i class="fas fa-user"></i>
                     </div>
                 {% endif %}
+                <div class="absolute -bottom-2 -right-2 w-8 h-8 bg-secondary rounded-lg flex items-center justify-center shadow-lg">
+                    <i class="fas fa-check text-[10px]"></i>
+                </div>
             </div>
-            <div class="info-details bio-section">
-                <p class="mt-2"><strong>Bio:</strong> <span>{{ user.profile.bio|default:"Nenhuma bio definida." }}</span></p>
+
+            <div class="text-center md:text-left">
+                <span class="inline-block px-4 py-1 rounded-full bg-secondary/20 text-secondary text-[10px] font-black uppercase tracking-[0.2em] mb-4">
+                    {{ user.get_tipo_usuario_display }}
+                </span>
+                <h1 class="text-3xl md:text-5xl font-black tracking-tight mb-2">
+                    {{ user.first_name }} {{ user.last_name }}
+                </h1>
+                <p class="text-white/60 font-bold tracking-widest uppercase text-xs">@{{ user.username }}</p>
             </div>
         </div>
-
-        {# BLOCOS DE INFORMAÇÃO CONDICIONAL (BASEADOS NO CAMPO 'TIPO_USUARIO') #}
-
-        {# Aluno: RegistroAluno #}
-        {% if user.tipo_usuario == 'ALUNO' and user.registro_aluno %}
-            <div class="profile-info-block card-style">
-                <h2><i class="fas fa-graduation-cap icon-color"></i> Dados de Aluno</h2>
-                <div class="info-details">
-                    <p><strong>Matrícula/RA:</strong> <span>{{ user.registro_aluno.ra_numero }}-{{ user.registro_aluno.ra_digito_verificador }}</span></p>
-                    <p><strong>Turma:</strong> <span>{{ user.registro_aluno.turma.nome }} ({{ user.registro_aluno.turma.ano_letivo }})</span></p>
-                </div>
-            </div>
-
-        {# Professor: RegistroProfessor #}
-        {% elif user.tipo_usuario == 'PROFESSOR' and user.registro_professor %}
-            <div class="profile-info-block card-style">
-                <h2><i class="fas fa-chalkboard-teacher icon-color"></i> Dados de Professor</h2>
-                <div class="info-details">
-                    <p><strong>Tipo:</strong> <span>{{ user.registro_professor.get_tipo_professor_display }}</span></p>
-                    <p><strong>Turmas Adicionais:</strong>
-                        <ul>
-                            {% for turma in user.registro_professor.turmas.all %}
-                                <li>{{ turma.nome }} ({{ turma.ano_letivo }})</li>
-                            {% empty %}
-                                <li>Nenhuma turma adicional vinculada.</li>
-                            {% endfor %}
-                        </ul>
-                    </p>
-                </div>
-            </div>
-
-        {# Colaborador: RegistroColaborador #}
-        {% elif user.tipo_usuario == 'COLABORADOR' and user.registro_colaborador %}
-             <div class="profile-info-block card-style">
-                <h2><i class="fas fa-briefcase icon-color"></i> Dados de Colaborador</h2>
-                <div class="info-details">
-                    <p><strong>Função:</strong> <span>{{ user.registro_colaborador.get_funcao_display }}</span></p>
-                    <p><strong>Matrícula/Identificador:</strong> <span>{{ user.registro_colaborador.matricula_ou_identificador|default:"Não informado" }}</span></p>
-                </div>
-            </div>
-
-        {# Responsável: RegistroResponsavel #}
-        {% elif user.tipo_usuario == 'RESPONSAVEL' and user.registro_responsavel %}
-             <div class="profile-info-block card-style">
-                <h2><i class="fas fa-users icon-color"></i> Dependentes</h2>
-                <div class="info-details">
-                    <ul>
-                    {% for aluno in user.registro_responsavel.alunos.all %}
-                        <li><span>{{ aluno.nome_completo }} (RA: {{ aluno.ra_numero }}-{{ aluno.ra_digito_verificador }})</span></li>
-                    {% empty %}
-                        <p><span>Nenhum dependente vinculado.</span></p>
-                    {% endfor %}
-                    </ul>
-                </div>
-            </div>
-
-        {# URE: RegistroURE #}
-        {% elif user.tipo_usuario == 'URE' and user.registro_ure %}
-             <div class="profile-info-block card-style">
-                <h2><i class="fas fa-building icon-color"></i> Dados URE</h2>
-                <div class="info-details">
-                    <p><strong>Função/Cargo:</strong> <span>{{ user.registro_ure.funcao|default:"Não informado" }}</span></p>
-                </div>
-            </div>
-
-        {# Outros Visitantes: RegistroOutrosVisitantes #}
-        {% elif user.tipo_usuario == 'OUTRO_VISITANTE' and user.registro_visitante %}
-             <div class="profile-info-block card-style">
-                <h2><i class="fas fa-info-circle icon-color"></i> Vínculo de Visitante</h2>
-                <div class="info-details">
-                    <p><strong>Descrição do Vínculo:</strong> <span>{{ user.registro_visitante.descricao|default:"Nenhuma descrição informada." }}</span></p>
-                </div>
-            </div>
-
-        {# Administrador ou Usuário sem Vínculo #}
-        {% else %}
-             <div class="profile-info-block card-style">
-                <h2><i class="fas fa-info-circle icon-color"></i> Status da Conta</h2>
-                <div class="info-details">
-                    <p><strong>Tipo de Usuário:</strong> <span>{{ user.get_tipo_usuario_display }}</span></p>
-                    <p><span>Não há dados de registro adicionais para este tipo de perfil.</span></p>
-                </div>
-            </div>
-        {% endif %}
-        </div>
-
-    <div class="profile-actions mt-4">
-        {# CORREÇÃO AQUI: Adicionar o namespace 'users:' #}
-        <a href="{% url 'users:profile_edit' %}" class="btn btn-info action-button mb-2">
-            <i class="fas fa-edit"></i> Editar Meus Dados
-        </a>
-
-        {# CORREÇÃO AQUI: Adicionar o namespace 'users:' #}
-        <a href="{% url 'users:password_change' %}" class="btn btn-warning action-button">
-            <i class="fas fa-key"></i> Alterar Senha
-        </a>
     </div>
 
-</div>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        <div class="lg:col-span-2 space-y-8">
+            <div class="card-ranieri bg-white rounded-3xl border border-border-custom shadow-sm overflow-hidden">
+                <div class="px-8 py-6 border-b border-border-custom bg-surface/50 flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-xl bg-roxo1/5 flex items-center justify-center text-roxo1">
+                        <i class="fas fa-address-card"></i>
+                    </div>
+                    <h2 class="text-xs font-black text-roxo1 uppercase tracking-[0.2em]">Dados Pessoais</h2>
+                </div>
+
+                <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                    <div>
+                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">E-mail de Acesso</p>
+                        <p class="text-sm font-bold text-roxo1 truncate">{{ user.email }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">WhatsApp</p>
+                        <p class="text-sm font-bold text-roxo1">{{ user.profile.whatsapp|default:"Não informado" }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Data de Nascimento</p>
+                        <p class="text-sm font-bold text-roxo1">{{ user.profile.data_nascimento|default:"Não informado" }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Cidade / UF</p>
+                        <p class="text-sm font-bold text-roxo1">
+                            {% if user.profile.cidade %}{{ user.profile.cidade }}{% if user.profile.estado %}, {{ user.profile.estado }}{% endif %}{% else %}Não informado{% endif %}
+                        </p>
+                    </div>
+                    <div class="md:col-span-2">
+                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Endereço Residencial</p>
+                        <p class="text-sm font-bold text-roxo1">{{ user.profile.endereco|default:"Não informado" }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-ranieri bg-white rounded-3xl border border-border-custom shadow-sm overflow-hidden">
+                <div class="px-8 py-6 border-b border-border-custom bg-surface/50 flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
+                        <i class="fas fa-id-badge"></i>
+                    </div>
+                    <h2 class="text-xs font-black text-roxo1 uppercase tracking-[0.2em]">Vínculo Institucional</h2>
+                </div>
+
+                <div class="p-8">
+                    {% if user.tipo_usuario == 'ALUNO' and user.registro_aluno %}
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Matrícula/RA</p>
+                                <p class="text-lg font-black text-primary">{{ user.registro_aluno.ra_numero }}-{{ user.registro_aluno.ra_digito_verificador }}</p>
+                            </div>
+                            <div>
+                                <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Turma Atual</p>
+                                <p class="text-sm font-bold text-roxo1">{{ user.registro_aluno.turma.nome }} <span class="text-gray-300 mx-2">|</span> {{ user.registro_aluno.turma.ano_letivo }}</p>
+                            </div>
+                        </div>
+
+                    {% elif user.tipo_usuario == 'PROFESSOR' and user.registro_professor %}
+                        <div class="space-y-6">
+                            <div>
+                                <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Tipo de Docência</p>
+                                <p class="text-sm font-bold text-roxo1">{{ user.registro_professor.get_tipo_professor_display }}</p>
+                            </div>
+                            <div>
+                                <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-3">Atribuição de Turmas</p>
+                                <div class="flex flex-wrap gap-2">
+                                    {% for turma in user.registro_professor.turmas.all %}
+                                        <span class="px-3 py-1 bg-surface border border-border-custom rounded-lg text-[10px] font-bold text-roxo1">{{ turma.nome }} ({{ turma.ano_letivo }})</span>
+                                    {% empty %}
+                                        <p class="text-xs text-gray-400 italic">Nenhuma turma vinculada.</p>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                    {% elif user.tipo_usuario == 'COLABORADOR' and user.registro_colaborador %}
+                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Função / Setor</p>
+                                <p class="text-sm font-bold text-roxo1">{{ user.registro_colaborador.get_funcao_display }}</p>
+                            </div>
+                            <div>
+                                <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Identificador</p>
+                                <p class="text-sm font-bold text-roxo1">{{ user.registro_colaborador.matricula_ou_identificador|default:"-" }}</p>
+                            </div>
+                        </div>
+
+                    {% elif user.tipo_usuario == 'RESPONSAVEL' and user.registro_responsavel %}
+                         <div>
+                            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-3">Dependentes Vinculados</p>
+                            <div class="space-y-2">
+                                {% for aluno in user.registro_responsavel.alunos.all %}
+                                    <div class="flex items-center gap-3 p-3 bg-surface rounded-xl border border-border-custom">
+                                        <i class="fas fa-child text-primary text-xs"></i>
+                                        <span class="text-xs font-bold text-roxo1">{{ aluno.nome_completo }} <span class="opacity-40 font-medium ml-1">(RA: {{ aluno.ra_numero }})</span></span>
+                                    </div>
+                                {% empty %}
+                                    <p class="text-xs text-gray-400 italic">Nenhum dependente vinculado.</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                    {% else %}
+                        <div class="p-4 bg-surface rounded-2xl border-2 border-dashed border-border-custom text-center">
+                            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sem registros adicionais</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-8">
+            <div class="card-ranieri bg-white rounded-3xl border border-border-custom shadow-sm p-8">
+                <h3 class="text-[10px] font-black text-roxo1 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                    <i class="fas fa-quote-left text-secondary"></i> Biografia
+                </h3>
+                <p class="text-sm leading-relaxed text-text-main opacity-70 italic">
+                    "{{ user.profile.bio|default:"Este usuário ainda não escreveu uma biografia personalizada." }}"
+                </p>
+            </div>
+
+            <div class="card-ranieri bg-surface/50 rounded-3xl border border-border-custom p-6 space-y-3">
+                <p class="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 text-center">Gestão de Conta</p>
+
+                <a href="{% url 'users:profile_edit' %}" class="w-full flex items-center justify-center gap-3 py-4 bg-roxo1 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all shadow-lg">
+                    <i class="fas fa-edit text-xs"></i>
+                    Editar Perfil
+                </a>
+
+                <a href="{% url 'users:password_change' %}" class="w-full flex items-center justify-center gap-3 py-4 bg-white border border-border-custom text-roxo1 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-roxo1 transition-all">
+                    <i class="fas fa-key text-xs"></i>
+                    Alterar Senha
+                </a>
+            </div>
+        </div>
+    </div>
+
+</main>
 {% endblock content %}

@@ -4,120 +4,134 @@
 {% block title %}Cadastro - Criar Conta{% endblock title %}
 
 {% block content %}
-<main>
-    <div class="cadastro-container">
-        <div class="cadastro-card">
+<main class="container mx-auto px-4 py-12 max-w-2xl">
+    <div class="card-ranieri bg-white p-8 md:p-12 rounded-3xl shadow-2xl border border-border-custom relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary to-secondary"></div>
 
-            <h1 class="login-header-title">Criar Sua Conta</h1>
-            <p class="login-header-subtitle">Escolha seu tipo e finalize seu registro.</p>
+        <div class="text-center mb-10">
+            <h1 class="text-3xl font-bold text-roxo1 tracking-tight uppercase mb-2">Criar Sua Conta</h1>
+            <p class="text-text-main opacity-60 text-sm font-medium">Escolha seu tipo e finalize seu registro.</p>
+        </div>
 
-            <form method="post" id="registration-form">
-                {% csrf_token %}
+        <form method="post" id="registration-form" class="space-y-8">
+            {% csrf_token %}
 
-                {% if form.non_field_errors %}
-                    <div class="alert alert-danger">
-                        {% for error in form.non_field_errors %}
-                            <p>{{ error }}</p>
-                        {% endfor %}
-                    </div>
-                {% endif %}
+            {% if form.non_field_errors %}
+                <div class="p-4 rounded-xl bg-red-50 border border-red-100">
+                    {% for error in form.non_field_errors %}
+                        <p class="text-[11px] font-bold text-red-600 uppercase">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
 
-                <div class="form-group mb-3" id="tipo-usuario-selection">
-                    <label class="form-label">Eu sou:</label>
-                    <div class="tipo-escolha-radio-group">
-                        {# Renderização manual para aplicar a classe .radio-option ao wrapper de cada item #}
-                        {% for radio in form.tipo_usuario %}
-                            <div class="radio-option">
-                                {{ radio }}
+            <div class="form-group" id="tipo-usuario-selection">
+                <label class="block text-[10px] font-black uppercase text-roxo1 mb-4 tracking-[0.2em] text-center">Eu sou:</label>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {% for radio in form.tipo_usuario %}
+                        <label class="radio-option flex items-center justify-center p-3 bg-surface border border-border-custom rounded-xl cursor-pointer hover:border-primary transition-all group has-[:checked]:bg-roxo1 has-[:checked]:text-white has-[:checked]:border-roxo1 shadow-sm">
+                            <div class="flex items-center gap-2">
+                                {{ radio.tag }}
+                                <span class="text-[10px] font-black uppercase tracking-tighter">{{ radio.choice_label }}</span>
                             </div>
-                        {% endfor %}
-                    </div>
-                    {% if form.tipo_usuario.errors %}<p class="form-error">{{ form.tipo_usuario.errors }}</p>{% endif %}
+                        </label>
+                    {% endfor %}
                 </div>
+                {% if form.tipo_usuario.errors %}
+                    <p class="text-red-500 text-[9px] font-bold mt-2 uppercase text-center">{{ form.tipo_usuario.errors.0 }}</p>
+                {% endif %}
+            </div>
 
-                <div id="registro-especifico-fields" class="js-hidden">
-                    <h3 class="mb-2">Dados Específicos do Vínculo</h3>
+            <div id="registro-especifico-fields" class="hidden space-y-5 p-6 bg-surface rounded-2xl border border-border-custom shadow-inner">
+                <h3 class="text-[10px] font-black text-secondary uppercase tracking-[0.2em] mb-4 border-b border-border-custom pb-2">Dados Específicos do Vínculo</h3>
 
-                    <div class="form-group js-hidden" data-field-name="ra_numero">
-                        {# CORREÇÃO: Removido o filtro inválido 'replace'. A label original será usada. #}
-                        {{ form.ra_numero.label_tag }}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-group hidden" data-field-name="ra_numero">
+                        <label class="block text-[9px] font-black uppercase text-gray-400 mb-1 tracking-widest">{{ form.ra_numero.label }}</label>
                         {{ form.ra_numero }}
-                        {% if form.ra_numero.errors %}<p class="form-error">{{ form.ra_numero.errors }}</p>{% endif %}
+                        {% if form.ra_numero.errors %}<p class="text-red-500 text-[9px] font-bold mt-1 uppercase">{{ form.ra_numero.errors.0 }}</p>{% endif %}
                     </div>
 
-                    <div class="form-group js-hidden" data-field-name="ra_digito_verificador">
-                        {{ form.ra_digito_verificador.label_tag }}
+                    <div class="form-group hidden" data-field-name="ra_digito_verificador">
+                        <label class="block text-[9px] font-black uppercase text-gray-400 mb-1 tracking-widest">{{ form.ra_digito_verificador.label }}</label>
                         {{ form.ra_digito_verificador }}
-                        {% if form.ra_digito_verificador.errors %}<p class="form-error">{{ form.ra_digito_verificador.errors }}</p>{% endif %}
+                        {% if form.ra_digito_verificador.errors %}<p class="text-red-500 text-[9px] font-bold mt-1 uppercase">{{ form.ra_digito_verificador.errors.0 }}</p>{% endif %}
                     </div>
 
-                    <div class="form-group js-hidden" data-field-name="tipo_professor">
-                        {{ form.tipo_professor.label_tag }}
+                    <div class="form-group hidden" data-field-name="tipo_professor">
+                        <label class="block text-[9px] font-black uppercase text-gray-400 mb-1 tracking-widest">{{ form.tipo_professor.label }}</label>
                         {{ form.tipo_professor }}
-                        {% if form.tipo_professor.errors %}<p class="form-error">{{ form.tipo_professor.errors }}</p>{% endif %}
+                        {% if form.tipo_professor.errors %}<p class="text-red-500 text-[9px] font-bold mt-1 uppercase">{{ form.tipo_professor.errors.0 }}</p>{% endif %}
                     </div>
 
-                    <div class="form-group js-hidden" data-field-name="funcao_colaborador">
-                        {{ form.funcao_colaborador.label_tag }}
+                    <div class="form-group hidden" data-field-name="funcao_colaborador">
+                        <label class="block text-[9px] font-black uppercase text-gray-400 mb-1 tracking-widest">{{ form.funcao_colaborador.label }}</label>
                         {{ form.funcao_colaborador }}
-                        {% if form.funcao_colaborador.errors %}<p class="form-error">{{ form.funcao_colaborador.errors }}</p>{% endif %}
+                        {% if form.funcao_colaborador.errors %}<p class="text-red-500 text-[9px] font-bold mt-1 uppercase">{{ form.funcao_colaborador.errors.0 }}</p>{% endif %}
                     </div>
 
-                    <div class="form-group js-hidden" data-field-name="funcao_ure">
-                        {{ form.funcao_ure.label_tag }}
+                    <div class="form-group hidden" data-field-name="funcao_ure">
+                        <label class="block text-[9px] font-black uppercase text-gray-400 mb-1 tracking-widest">{{ form.funcao_ure.label }}</label>
                         {{ form.funcao_ure }}
-                        {% if form.funcao_ure.errors %}<p class="form-error">{{ form.funcao_ure.errors }}</p>{% endif %}
+                        {% if form.funcao_ure.errors %}<p class="text-red-500 text-[9px] font-bold mt-1 uppercase">{{ form.funcao_ure.errors.0 }}</p>{% endif %}
                     </div>
-
-                    <div class="form-group js-hidden" data-field-name="descricao_vinculo">
-                        {{ form.descricao_vinculo.label_tag }}
-                        {{ form.descricao_vinculo }}
-                        {% if form.descricao_vinculo.errors %}<p class="form-error">{{ form.descricao_vinculo.errors }}</p>{% endif %}
-                    </div>
-
                 </div>
 
-                <div id="credenciais-fields" class="js-hidden">
-                    <h3 class="mb-2 mt-3">Credenciais de Acesso</h3>
+                <div class="form-group hidden" data-field-name="descricao_vinculo">
+                    <label class="block text-[9px] font-black uppercase text-gray-400 mb-1 tracking-widest">{{ form.descricao_vinculo.label }}</label>
+                    {{ form.descricao_vinculo }}
+                    {% if form.descricao_vinculo.errors %}<p class="text-red-500 text-[9px] font-bold mt-1 uppercase">{{ form.descricao_vinculo.errors.0 }}</p>{% endif %}
+                </div>
+            </div>
 
-                    <div class="form-group">
-                        {{ form.nome_completo.label_tag }}
-                        {{ form.nome_completo }}
-                        {% if form.nome_completo.errors %}<p class="form-error">{{ form.nome_completo.errors }}</p>{% endif %}
-                    </div>
+            <div id="credenciais-fields" class="hidden space-y-5">
+                <h3 class="text-[10px] font-black text-roxo1 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                    <i class="fa-solid fa-key text-secondary"></i> Credenciais de Acesso
+                </h3>
 
+                <div class="form-group">
+                    <label class="block text-[10px] font-black uppercase text-roxo1 mb-2 tracking-widest" for="{{ form.nome_completo.id_for_label }}">{{ form.nome_completo.label }}</label>
+                    {{ form.nome_completo }}
+                    {% if form.nome_completo.errors %}<p class="text-red-500 text-[9px] font-bold mt-1 uppercase">{{ form.nome_completo.errors.0 }}</p>{% endif %}
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="form-group">
-                        {{ form.username.label_tag }}
+                        <label class="block text-[10px] font-black uppercase text-roxo1 mb-2 tracking-widest" for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
                         {{ form.username }}
-                        {% if form.username.errors %}<p class="form-error">{{ form.username.errors }}</p>{% endif %}
+                        {% if form.username.errors %}<p class="text-red-500 text-[9px] font-bold mt-1 uppercase">{{ form.username.errors.0 }}</p>{% endif %}
                     </div>
-
                     <div class="form-group">
-                        {{ form.email.label_tag }}
+                        <label class="block text-[10px] font-black uppercase text-roxo1 mb-2 tracking-widest" for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
                         {{ form.email }}
-                        {% if form.email.errors %}<p class="form-error">{{ form.email.errors }}</p>{% endif %}
-                    </div>
-
-                    <div class="form-group">
-                        {{ form.password.label_tag }}
-                        {{ form.password }}
-                        {% if form.password.errors %}<p class="form-error">{{ form.password.errors }}</p>{% endif %}
-                    </div>
-
-                    <div class="form-group">
-                        {{ form.password_confirm.label_tag }}
-                        {{ form.password_confirm }}
-                        {% if form.password_confirm.errors %}<p class="form-error">{{ form.password_confirm.errors }}</p>{% endif %}
+                        {% if form.email.errors %}<p class="text-red-500 text-[9px] font-bold mt-1 uppercase">{{ form.email.errors.0 }}</p>{% endif %}
                     </div>
                 </div>
 
-                <button type="submit" id="submit-button" class="btn btn-primary btn-lg mt-3 is-disabled">
-                    Criar Conta
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label class="block text-[10px] font-black uppercase text-roxo1 mb-2 tracking-widest" for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+                        {{ form.password }}
+                        {% if form.password.errors %}<p class="text-red-500 text-[9px] font-bold mt-1 uppercase">{{ form.password.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="block text-[10px] font-black uppercase text-roxo1 mb-2 tracking-widest" for="{{ form.password_confirm.id_for_label }}">{{ form.password_confirm.label }}</label>
+                        {{ form.password_confirm }}
+                        {% if form.password_confirm.errors %}<p class="text-red-500 text-[9px] font-bold mt-1 uppercase">{{ form.password_confirm.errors.0 }}</p>{% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-6">
+                <button type="submit" id="submit-button" class="btn-primary w-full py-5 shadow-2xl disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none transition-all">
+                    Criar Minha Conta
                 </button>
-            </form>
+            </div>
+        </form>
 
-            <p class="mt-3 login-header-subtitle">Já tem conta? <a href="{% url 'users:login' %}">Faça Login</a></p>
-
+        <div class="mt-10 text-center border-t border-border-custom pt-8">
+            <p class="text-sm font-medium text-text-main opacity-60 uppercase tracking-widest">
+                Já tem conta? <a href="{% url 'users:login' %}" class="text-roxo1 font-black hover:text-primary transition-colors ml-2">Faça Login</a>
+            </p>
         </div>
     </div>
 </main>

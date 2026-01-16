@@ -4,110 +4,163 @@
 {% block title %}Gerenciar Galerias - Repositório{% endblock %}
 
 {% block content %}
-<div class="dashboard-main-container">
-    <div class="dashboard-header mb-3">
-        <h1 class="header-title">Área do Fotógrafo</h1>
-        <p class="header-subtitle">Gestão de Mídias e Galerias</p>
+<div class="container mx-auto px-4 py-12 max-w-7xl dashboard-main-container">
+
+    <div class="mb-8 border-b border-border-custom pb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+        <div>
+            <h1 class="text-3xl font-bold text-roxo1 tracking-tight uppercase">Área do Fotógrafo</h1>
+            <p class="text-text-main opacity-60 text-sm font-medium">Gestão de Mídias e Galerias</p>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <a href="{% url 'repositorio:upload_imagem' %}" class="btn-primary bg-verde-petroleo hover:bg-verde-petroleo/90 px-6 py-3 flex items-center gap-2 shadow-md group">
+                <i class="fas fa-cloud-upload-alt transition-transform group-hover:-translate-y-1"></i>
+                <span class="text-xs uppercase font-black tracking-widest">Fazer Upload</span>
+            </a>
+            <a href="{% url 'repositorio:criar_galeria' %}" class="btn-primary px-6 py-3 flex items-center gap-2 shadow-md group">
+                <i class="fas fa-plus transition-transform group-hover:rotate-90"></i>
+                <span class="text-xs uppercase font-black tracking-widest">Nova Galeria</span>
+            </a>
+        </div>
     </div>
 
     {% if messages %}
-        <ul class="messages p-0">
+        <div class="mb-6 space-y-2">
             {% for message in messages %}
-                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                <div class="p-4 rounded-xl text-sm font-medium border animate-in fade-in slide-in-from-top-4 duration-300
+                    {% if message.tags == 'success' %}bg-green-50 text-green-700 border-green-200{% else %}bg-blue-50 text-blue-700 border-blue-200{% endif %}">
+                    <i class="fas {% if message.tags == 'success' %}fa-check-circle{% else %}fa-info-circle{% endif %} mr-2"></i>
+                    {{ message }}
+                </div>
             {% endfor %}
-        </ul>
+        </div>
     {% endif %}
 
-    <div class="card p-3">
-        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-            <h2 style="margin: 0;">Lista de Galerias</h2>
-            <div class="d-flex align-items-center">
-                <a href="{% url 'repositorio:upload_imagem' %}" class="btn btn-primary mr-2">
-                    <i class="fas fa-upload mr-1"></i> Fazer Upload
-                </a>
-                <a href="{% url 'repositorio:criar_galeria' %}" class="btn btn-secondary">
-                    <i class="fas fa-plus mr-1"></i> Nova Galeria
-                </a>
-            </div>
+    <div class="card-ranieri bg-white rounded-2xl border border-border-custom shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-border-custom bg-surface/30">
+            <h2 class="text-lg font-bold text-roxo1 uppercase tracking-wider flex items-center gap-2">
+                <i class="fas fa-layer-group text-primary"></i>
+                Lista de Galerias
+            </h2>
         </div>
 
-        <div class="card-body p-0">
+        <div class="overflow-x-auto">
             {% if object_list %}
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Capa</th>
-                                <th>Título/Descrição</th>
-                                <th>Status</th>
-                                <th>Itens</th>
-                                <th>Criado/Editado</th>
-                                <th style="text-align: center;">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for galeria in object_list %}
-                            <tr id="galeria-row-{{ galeria.pk }}">
-                                <td>
-                                    {% if galeria.capa_proxy_url %}
-                                        <img src="{{ galeria.capa_proxy_url }}" alt="Capa" class="table-gallery-thumb">
-                                    {% else %}
-                                        <span class="text-secondary" style="font-size: 0.85rem;">Sem capa</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <h3 class="m-0" style="font-size: 1rem; color: var(--color-primary-dark);">{{ galeria.nome }}</h3>
-                                    <p class="m-0" style="font-size: 0.85rem; color: var(--color-text-light);">
-                                        {{ galeria.descricao|truncatechars:50 }}
-                                    </p>
-                                </td>
-                                <td class="js-status-cell">
-                                    {% if galeria.status == 'PR' %}<span class="badge badge-status badge-warning">Rascunho</span>
-                                    {% elif galeria.status == 'PB' %}<span class="badge badge-status badge-success">Publicada</span>
-                                    {% elif galeria.status == 'AR' %}<span class="badge badge-status badge-danger">Arquivada</span>
-                                    {% elif galeria.status == 'PC' or galeria.status == 'RV' %}<span class="badge badge-status badge-info">Processamento</span>
-                                    {% endif %}
-                                </td>
-                                <td><span class="badge badge-info">{{ galeria.imagens_count }}</span></td>
-                                <td>
-                                    <p class="m-0" style="font-size: 0.8rem;">Criação: {{ galeria.criado_em|date:"d/m/Y" }}</p>
-                                    {% if galeria.alterado_em %}<p class="m-0" style="font-size: 0.8rem; color: var(--color-text-light);">Editado: {{ galeria.alterado_em|date:"d/m/Y" }}</p>{% endif %}
-                                </td>
-                                <td style="text-align: center;">
-                                    <div class="table-actions-group mx-auto" id="actions-{{ galeria.pk }}">
-                                        <a href="{% url 'repositorio:editar_galeria' pk=galeria.pk %}" class="btn btn-outline btn-icon-sm" title="Editar"><i class="fas fa-edit"></i></a>
-                                        <a href="{% url 'repositorio:gerenciar_imagens_galeria' pk=galeria.pk %}" class="btn btn-secondary btn-icon-sm" title="Imagens"><i class="fas fa-images"></i></a>
-
-                                        <div class="js-status-actions d-inline-block" data-pk="{{ galeria.pk }}" data-status="{{ galeria.status }}">
-                                            {% if galeria.status != 'PB' %}
-                                                <form method="post" action="{% url 'repositorio:publicar_galeria' pk=galeria.pk %}" class="d-inline js-action-form" data-action="publicar" data-galeria-pk="{{ galeria.pk }}">
-                                                    {% csrf_token %}
-                                                    <button type="submit" class="btn btn-success btn-icon-sm js-action-button" title="Publicar"><i class="fas fa-paper-plane"></i></button>
-                                                </form>
-                                            {% endif %}
-                                            {% if galeria.status == 'PR' or galeria.status == 'PB' %}
-                                                <form method="post" action="{% url 'repositorio:arquivar_galeria' pk=galeria.pk %}" class="d-inline js-action-form" data-action="arquivar" data-galeria-pk="{{ galeria.pk }}">
-                                                    {% csrf_token %}
-                                                    <button type="submit" class="btn btn-warning btn-icon-sm js-action-button" title="Arquivar"><i class="fas fa-archive"></i></button>
-                                                </form>
-                                            {% endif %}
-                                        </div>
-                                        <button class="btn btn-danger btn-icon-sm" title="Excluir" data-galeria-pk="{{ galeria.pk }}" data-delete-url="{% url 'repositorio:excluir_galeria' pk=galeria.pk %}" onclick="confirmDelete(this)"><i class="fas fa-trash"></i></button>
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-surface text-[10px] uppercase font-black text-gray-400 tracking-[0.2em] border-b border-border-custom">
+                            <th class="px-6 py-4 w-24">Capa</th>
+                            <th class="px-6 py-4">Título & Descrição</th>
+                            <th class="px-6 py-4">Status</th>
+                            <th class="px-6 py-4 text-center">Mídias</th>
+                            <th class="px-6 py-4">Cronologia</th>
+                            <th class="px-6 py-4 text-center">Gerenciamento</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-border-custom">
+                        {% for galeria in object_list %}
+                        <tr id="galeria-row-{{ galeria.pk }}" class="hover:bg-primary/5 transition-colors group">
+                            <td class="px-6 py-4">
+                                {% if galeria.capa_proxy_url %}
+                                    <div class="w-16 h-16 rounded-xl overflow-hidden border-2 border-border-custom shadow-sm group-hover:border-primary transition-colors">
+                                        <img src="{{ galeria.capa_proxy_url }}" alt="Capa" class="w-full h-full object-cover">
                                     </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                                {% else %}
+                                    <div class="w-16 h-16 rounded-xl bg-surface border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-300">
+                                        <i class="fas fa-image text-xl"></i>
+                                    </div>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4">
+                                <h3 class="text-base font-bold text-roxo1 leading-tight mb-1">{{ galeria.nome }}</h3>
+                                <p class="text-xs text-gray-400 font-medium line-clamp-1 italic">
+                                    {{ galeria.descricao|default:"Sem descrição informada." }}
+                                </p>
+                            </td>
+                            <td class="px-6 py-4 js-status-cell">
+                                {% if galeria.status == 'PR' %}<span class="px-3 py-1 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-600 border border-amber-200">Rascunho</span>
+                                {% elif galeria.status == 'PB' %}<span class="px-3 py-1 rounded-full text-[10px] font-black uppercase bg-green-100 text-green-600 border border-green-200">Publicada</span>
+                                {% elif galeria.status == 'AR' %}<span class="px-3 py-1 rounded-full text-[10px] font-black uppercase bg-red-100 text-red-600 border border-red-200">Arquivada</span>
+                                {% elif galeria.status == 'PC' or galeria.status == 'RV' %}<span class="px-3 py-1 rounded-full text-[10px] font-black uppercase bg-blue-100 text-blue-600 border border-blue-200 animate-pulse">Processando</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-roxo1/5 text-roxo1 font-bold text-xs border border-roxo1/10">
+                                    {{ galeria.imagens_count }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-2 text-[10px] font-bold text-gray-400">
+                                        <i class="far fa-calendar-plus"></i>
+                                        <span>{{ galeria.criado_em|date:"d/m/Y" }}</span>
+                                    </div>
+                                    {% if galeria.alterado_em %}
+                                    <div class="flex items-center gap-2 text-[10px] font-bold text-primary">
+                                        <i class="far fa-edit"></i>
+                                        <span>{{ galeria.alterado_em|date:"d/m/Y" }}</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center justify-center gap-2" id="actions-{{ galeria.pk }}">
+                                    <a href="{% url 'repositorio:editar_galeria' pk=galeria.pk %}" class="w-9 h-9 flex items-center justify-center rounded-lg bg-surface border border-border-custom text-gray-500 hover:bg-roxo1 hover:text-white hover:border-roxo1 transition-all" title="Editar Galeria">
+                                        <i class="fas fa-pencil-alt text-xs"></i>
+                                    </a>
+                                    <a href="{% url 'repositorio:gerenciar_imagens_galeria' pk=galeria.pk %}" class="w-9 h-9 flex items-center justify-center rounded-lg bg-surface border border-border-custom text-gray-500 hover:bg-secondary hover:text-white hover:border-secondary transition-all" title="Gerenciar Mídias">
+                                        <i class="fas fa-photo-video text-xs"></i>
+                                    </a>
+
+                                    <div class="js-status-actions flex gap-2" data-pk="{{ galeria.pk }}" data-status="{{ galeria.status }}">
+                                        {% if galeria.status != 'PB' %}
+                                            <form method="post" action="{% url 'repositorio:publicar_galeria' pk=galeria.pk %}" class="js-action-form" data-action="publicar" data-galeria-pk="{{ galeria.pk }}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="w-9 h-9 flex items-center justify-center rounded-lg bg-green-50 text-green-600 border border-green-100 hover:bg-green-600 hover:text-white transition-all js-action-button" title="Publicar">
+                                                    <i class="fas fa-rocket text-xs"></i>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                        {% if galeria.status == 'PR' or galeria.status == 'PB' %}
+                                            <form method="post" action="{% url 'repositorio:arquivar_galeria' pk=galeria.pk %}" class="js-action-form" data-action="arquivar" data-galeria-pk="{{ galeria.pk }}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="w-9 h-9 flex items-center justify-center rounded-lg bg-amber-50 text-amber-600 border border-amber-100 hover:bg-amber-600 hover:text-white transition-all js-action-button" title="Arquivar">
+                                                    <i class="fas fa-archive text-xs"></i>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+
+                                    <button class="w-9 h-9 flex items-center justify-center rounded-lg bg-red-50 text-red-600 border border-red-100 hover:bg-red-600 hover:text-white transition-all"
+                                            title="Excluir"
+                                            data-galeria-pk="{{ galeria.pk }}"
+                                            data-delete-url="{% url 'repositorio:excluir_galeria' pk=galeria.pk %}"
+                                            onclick="confirmDelete(this)">
+                                        <i class="fas fa-trash-alt text-xs"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             {% else %}
-                <div class="alert alert-info">Nenhuma galeria criada.</div>
+                <div class="p-20 text-center">
+                    <div class="w-20 h-20 bg-surface rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-dashed border-gray-200">
+                        <i class="fas fa-folder-open text-3xl text-gray-200"></i>
+                    </div>
+                    <h3 class="text-roxo1 font-bold text-lg mb-1">Nenhuma galeria encontrada</h3>
+                    <p class="text-gray-400 text-sm mb-6">Comece criando sua primeira galeria de mídias.</p>
+                    <a href="{% url 'repositorio:criar_galeria' %}" class="btn-primary inline-flex px-8 py-3 uppercase text-[10px] font-black tracking-widest">
+                        Criar Agora
+                    </a>
+                </div>
             {% endif %}
         </div>
     </div>
 </div>
 
-<form id="delete-form" method="post" style="display: none;">{% csrf_token %}</form>
+<form id="delete-form" method="post" class="hidden">{% csrf_token %}</form>
 
 <script>
 (function() {
@@ -134,25 +187,40 @@
         if (actionsGroup) {
             actionsGroup.setAttribute('data-status', newStatus);
             actionsGroup.innerHTML = '';
-            if (newStatus !== 'PB') actionsGroup.appendChild(createActionForm('publicar', pk, 'btn-success', 'fa-paper-plane', 'Publicar'));
-            if (newStatus === 'PR' || newStatus === 'PB') actionsGroup.appendChild(createActionForm('arquivar', pk, 'btn-warning', 'fa-archive', 'Arquivar'));
+
+            const btnContainer = document.createElement('div');
+            btnContainer.className = "flex gap-2";
+
+            if (newStatus !== 'PB') {
+                btnContainer.appendChild(createActionForm('publicar', pk, 'bg-green-50 text-green-600 border-green-100 hover:bg-green-600', 'fa-rocket', 'Publicar'));
+            }
+            if (newStatus === 'PR' || newStatus === 'PB') {
+                btnContainer.appendChild(createActionForm('arquivar', pk, 'bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-600', 'fa-archive', 'Arquivar'));
+            }
+
+            actionsGroup.appendChild(btnContainer);
             actionsGroup.querySelectorAll('.js-action-form').forEach(f => f.addEventListener('submit', handleActionSubmit));
         }
     }
 
     function createStatusBadge(status) {
-        const badges = {'PR': 'warning', 'PB': 'success', 'AR': 'danger', 'PC': 'info', 'RV': 'info'};
+        const badges = {'PR': 'amber', 'PB': 'green', 'AR': 'red', 'PC': 'blue', 'RV': 'blue'};
         const labels = {'PR': 'Rascunho', 'PB': 'Publicada', 'AR': 'Arquivada', 'PC': 'Processamento', 'RV': 'Processamento'};
-        return `<span class="badge badge-status badge-${badges[status]}">${labels[status]}</span>`;
+        const pulseClass = (status === 'PC' || status === 'RV') ? 'animate-pulse' : '';
+
+        return `<span class="px-3 py-1 rounded-full text-[10px] font-black uppercase bg-${badges[status]}-100 text-${badges[status]}-600 border border-${badges[status]}-200 ${pulseClass}">${labels[status]}</span>`;
     }
 
-    function createActionForm(action, pk, btnClass, iconClass, title) {
+    function createActionForm(action, pk, btnColors, iconClass, title) {
         const url = action === 'publicar' ? `{% url 'repositorio:publicar_galeria' pk=0 %}`.replace('0', pk) : `{% url 'repositorio:arquivar_galeria' pk=0 %}`.replace('0', pk);
         const div = document.createElement('div');
-        div.innerHTML = `<form method="post" action="${url}" class="d-inline js-action-form" data-action="${action}" data-galeria-pk="${pk}">
-            <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
-            <button type="submit" class="btn ${btnClass} btn-icon-sm js-action-button" title="${title}"><i class="fas ${iconClass}"></i></button>
-        </form>`.trim();
+        div.innerHTML = `
+            <form method="post" action="${url}" class="js-action-form" data-action="${action}" data-galeria-pk="${pk}">
+                <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                <button type="submit" class="w-9 h-9 flex items-center justify-center rounded-lg border transition-all hover:text-white ${btnColors} js-action-button" title="${title}">
+                    <i class="fas ${iconClass} text-xs"></i>
+                </button>
+            </form>`.trim();
         return div.firstChild;
     }
 
@@ -161,6 +229,8 @@
         const form = e.currentTarget;
         const btn = form.querySelector('.js-action-button');
         btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin text-xs"></i>';
+
         try {
             const res = await fetch(form.action, {
                 method: 'POST',
@@ -169,13 +239,16 @@
             });
             const data = await res.json();
             if (data.status_mudou) updateGalleryRow(form.getAttribute('data-galeria-pk'), data.status);
-            alert(data.message);
-        } catch (err) { alert('Erro na ação'); }
-        finally { btn.disabled = false; }
+            // Poderia usar um toast aqui em vez de alert
+        } catch (err) {
+            console.error('Erro na ação:', err);
+        } finally {
+            btn.disabled = false;
+        }
     }
 
     window.confirmDelete = function(btn) {
-        if (confirm('Excluir galeria?')) {
+        if (confirm('Tem certeza que deseja excluir permanentemente esta galeria?')) {
             deleteForm.action = btn.getAttribute('data-delete-url');
             deleteForm.submit();
         }

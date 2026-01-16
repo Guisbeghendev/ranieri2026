@@ -5,43 +5,90 @@
 {% block bodyclass %}change-list{% endblock %}
 
 {% block content %}
-<p>{% blocktranslate count counter=queryset|length %}Você está prestes a aplicar uma ação em 1 CustomUser selecionado.{% plural %}Você está prestes a aplicar uma ação em {{ counter }} CustomUsers selecionados.{% endblocktranslate %}</p>
+<main class="container mx-auto px-4 py-8 max-w-4xl">
+    <div class="mb-8 p-6 bg-surface rounded-2xl border border-border-custom shadow-sm">
+        <h1 class="text-xl font-black text-roxo1 uppercase tracking-tight mb-2">
+            {% blocktranslate count counter=queryset|length %}
+                Confirmar ação em 1 usuário selecionado
+            {% plural %}
+                Confirmar ação em {{ counter }} usuários selecionados
+            {% endblocktranslate %}
+        </h1>
+        <p class="text-sm font-medium text-text-main opacity-60 leading-relaxed">{{ description }}</p>
+    </div>
 
-<p>{{ description }}</p>
+    <div class="card-ranieri bg-white rounded-3xl border border-border-custom shadow-xl overflow-hidden">
+        <div class="h-1.5 bg-gradient-to-r from-primary to-secondary w-full"></div>
 
-<form action="" method="post">
-    {% csrf_token %}
+        <form action="" method="post" class="p-8 md:p-10 space-y-8">
+            {% csrf_token %}
 
-    {% comment %}
-    Ação oculta padrão (hidden action) e a lista de checkboxes
-    {% endcomment %}
-    <input type="hidden" name="action" value="{{ action_name }}" />
+            <input type="hidden" name="action" value="{{ action_name }}" />
 
-    {% comment %}
-    Renderiza o formulário do GrupoSelectForm (ou qualquer form que você passou para o action)
-    {% endcomment %}
-    {% for field in form %}
-        <div class="form-row">
-            {{ field.label_tag }}
-            {{ field }}
-            {% if field.help_text %}
-                <div class="help">{{ field.help_text|safe }}</div>
-            {% endif %}
-            {{ field.errors }}
-        </div>
-    {% endfor %}
+            <div class="space-y-6">
+                {% for field in form %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}" class="block text-[10px] font-black uppercase text-roxo1 mb-2 tracking-[0.15em]">
+                            {{ field.label }}
+                        </label>
 
-    {% comment %}
-    Lista de IDs de objetos para garantir que a seleção seja transferida para o POST
-    (Esta é a parte que precisa do filtro unlocalize)
-    {% endcomment %}
-    {% for obj in queryset %}
-        <input type="hidden" name="{{ action_checkbox_name }}" value="{{ obj.pk|unlocalize }}" />
-    {% endfor %}
+                        <div class="form-control-container">
+                            {{ field }}
+                        </div>
 
-    <p>
-        <input type="submit" name="{{ action_button_name }}" value="{% translate 'Aplicar Ação' %}" />
-        <a href="{% url opts|admin_urlname:'changelist' %}" class="button cancel-link">{% translate 'Cancelar' %}</a>
-    </p>
-</form>
+                        {% if field.help_text %}
+                            <p class="mt-2 text-[10px] text-gray-400 font-medium italic leading-relaxed">
+                                {{ field.help_text|safe }}
+                            </p>
+                        {% endif %}
+
+                        {% if field.errors %}
+                            <div class="mt-2 p-2 rounded-lg bg-red-50 border border-red-100">
+                                {% for error in field.errors %}
+                                    <p class="text-red-500 text-[9px] font-bold uppercase tracking-tighter">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            {% for obj in queryset %}
+                <input type="hidden" name="{{ action_checkbox_name }}" value="{{ obj.pk|unlocalize }}" />
+            {% endfor %}
+
+            <div class="pt-8 border-t border-border-custom flex flex-col sm:flex-row items-center gap-4">
+                <button type="submit" name="{{ action_button_name }}" class="btn-primary w-full sm:w-auto px-10 py-4 shadow-lg flex items-center justify-center gap-3 group">
+                    <span class="text-xs font-black uppercase tracking-widest">{% translate 'Aplicar Ação' %}</span>
+                    <i class="fa-solid fa-bolt-lightning text-xs transition-transform group-hover:scale-110"></i>
+                </button>
+
+                <a href="{% url opts|admin_urlname:'changelist' %}" class="w-full sm:w-auto text-center px-10 py-4 rounded-2xl border-2 border-border-custom text-[10px] font-black uppercase tracking-widest text-roxo1 hover:border-roxo1 transition-all">
+                    {% translate 'Cancelar' %}
+                </a>
+            </div>
+        </form>
+    </div>
+</main>
+
+<style>
+    /* Ajuste para widgets do Django no layout Tailwind */
+    .form-control-container select,
+    .form-control-container input[type="text"] {
+        width: 100%;
+        padding: 1rem;
+        border-radius: 1rem;
+        border: 2px solid #E5E7EB; /* border-border-custom */
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #2D1B4E; /* text-roxo1 */
+        transition: all 0.3s ease;
+    }
+    .form-control-container select:focus,
+    .form-control-container input:focus {
+        border-color: #6D28D9; /* primary */
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(109, 40, 217, 0.1);
+    }
+</style>
 {% endblock %}

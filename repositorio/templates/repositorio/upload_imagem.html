@@ -4,65 +4,65 @@
 {% block title %}Upload de Imagens - Repositório{% endblock %}
 
 {% block content %}
-<div class="dashboard-main-container">
-    <div class="dashboard-header mb-3 border-b border-silver/10 pb-4">
-        <h1 class="text-2xl font-bold text-primary-purple uppercase tracking-tighter">Área do Fotógrafo</h1>
-        <p class="text-silver text-xs">Upload Direto para S3 & Processamento Assíncrono</p>
+<div class="container mx-auto px-4 py-12 max-w-4xl">
+    <div class="mb-8 border-b border-border-custom pb-6">
+        <h1 class="text-3xl font-bold text-roxo1 tracking-tight uppercase">Área do Fotógrafo</h1>
+        <p class="text-text-main opacity-60 text-sm font-medium">Upload Direto para S3 & Processamento Assíncrono</p>
     </div>
 
-    <div class="card-surface bg-surface p-6 rounded-lg border border-silver/10">
-        <h2 class="text-white font-bold uppercase text-sm mb-4">Upload de Novas Imagens</h2>
+    <div class="card-ranieri bg-white p-8 rounded-2xl shadow-sm border border-border-custom">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-2 h-8 bg-secondary rounded-full"></div>
+            <h2 class="text-text-main font-bold uppercase text-base tracking-wider">Upload de Novas Imagens</h2>
+        </div>
 
-        <div class="card-body">
-            <p class="text-silver text-xs mb-6 uppercase tracking-widest">
-                As imagens serão enviadas diretamente ao storage e marcadas d'água automaticamente.
+        <div class="space-y-6">
+            <p class="text-gray-500 text-xs uppercase tracking-widest leading-relaxed">
+                As imagens serão enviadas diretamente ao storage e marcadas d'água automaticamente pelo sistema.
             </p>
 
-            <form id="upload-form" class="space-y-6">
+            <form id="upload-form" class="space-y-8">
                 {% csrf_token %}
 
                 <div class="form-group" id="id_arquivos_group">
-                    {# Área de Drop Otimizada (Guisbeghen Style) #}
-                    <div class="file-upload-wrapper border-2 border-dashed border-silver/20 rounded-lg p-10 text-center cursor-pointer hover:border-primary-purple transition-all" id="file-upload-area">
-                        <i class="fas fa-images text-4xl text-silver/30 mb-4"></i>
-                        <p class="text-white font-bold uppercase text-xs tracking-widest" id="file-count-text">
+                    <div class="group relative border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-300" id="file-upload-area">
+                        <i class="fas fa-cloud-upload-alt text-5xl text-gray-300 group-hover:text-primary mb-4 transition-colors"></i>
+                        <p class="text-text-main font-bold uppercase text-sm tracking-widest mb-2" id="file-count-text">
                             Clique ou arraste as fotos aqui
                         </p>
-                        <p class="text-silver text-[10px] mt-2 uppercase">PNG, JPG ou JPEG</p>
+                        <p class="text-gray-400 text-[10px] uppercase font-semibold">Formatos aceitos: PNG, JPG ou JPEG</p>
                     </div>
 
-                    {# Input Oculto #}
                     <div class="hidden">
                         {{ form.arquivos }}
                     </div>
                 </div>
 
-                {# Container de Progresso Duplo #}
-                <div id="progress-container" class="hidden space-y-4 mt-6 bg-black/20 p-4 rounded border border-silver/5">
-                    <div class="space-y-1">
-                        <div class="flex justify-between text-[10px] uppercase font-bold">
-                            <span class="text-silver">Progresso Total</span>
-                            <span id="total-percent" class="text-primary-purple">0%</span>
+                <div id="progress-container" class="hidden space-y-6 bg-surface p-6 rounded-xl border border-border-custom shadow-inner">
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-end">
+                            <span class="text-[10px] uppercase font-black text-roxo1">Progresso Total</span>
+                            <span id="total-percent" class="text-lg font-bold text-primary leading-none">0%</span>
                         </div>
-                        <div class="w-full bg-black h-1 rounded-full overflow-hidden">
-                            <div id="total-bar" class="bg-primary-purple h-full transition-all duration-300" style="width: 0%"></div>
+                        <div class="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                            <div id="total-bar" class="bg-primary h-full transition-all duration-500 rounded-full" style="width: 0%"></div>
                         </div>
                     </div>
 
-                    <div class="space-y-1">
-                        <div class="flex justify-between text-[10px] uppercase font-bold">
-                            <span id="current-file-name" class="text-silver truncate max-w-[200px]">Aguardando...</span>
-                            <span id="current-percent" class="text-white">0%</span>
+                    <div class="space-y-2 bg-white/50 p-3 rounded-lg">
+                        <div class="flex justify-between items-center text-[10px] uppercase font-bold">
+                            <span id="current-file-name" class="text-gray-500 truncate max-w-[250px]">Aguardando início...</span>
+                            <span id="current-percent" class="text-roxo1">0%</span>
                         </div>
-                        <div class="w-full bg-black/50 h-1 rounded-full overflow-hidden">
-                            <div id="current-bar" class="bg-white h-full transition-all duration-100" style="width: 0%"></div>
+                        <div class="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
+                            <div id="current-bar" class="bg-secondary h-full transition-all duration-100 rounded-full" style="width: 0%"></div>
                         </div>
                     </div>
                 </div>
 
-                <div class="flex justify-center mt-6">
-                    <button type="button" class="px-8 py-3 bg-primary-purple hover:bg-purple-hover text-white font-bold uppercase text-xs tracking-widest disabled:opacity-50 transition-all" id="submit-button" disabled>
-                        Iniciar Sincronização
+                <div class="flex justify-center">
+                    <button type="button" class="btn-primary px-12 py-4 shadow-lg disabled:opacity-30 disabled:grayscale transition-all" id="submit-button" disabled>
+                        <i class="fas fa-sync-alt mr-2"></i> Iniciar Sincronização
                     </button>
                 </div>
             </form>
@@ -81,7 +81,6 @@
     const fileCountText = document.getElementById('file-count-text');
     const submitButton = document.getElementById('submit-button');
 
-    // Elementos de Progresso
     const progressContainer = document.getElementById('progress-container');
     const totalBar = document.getElementById('total-bar');
     const totalPercent = document.getElementById('total-percent');
@@ -117,7 +116,7 @@
     function handleFileSelect(e) {
         const count = e.target.files.length;
         if (count > 0) {
-            fileCountText.textContent = `${count} arquivo(s) prontos para upload.`;
+            fileCountText.innerHTML = `<span class="text-primary">${count}</span> arquivo(s) prontos para upload.`;
             submitButton.disabled = false;
         }
     }
@@ -129,10 +128,10 @@
 
         submitButton.disabled = true;
         uploadArea.style.pointerEvents = 'none';
+        uploadArea.style.opacity = '0.5';
         progressContainer.classList.remove('hidden');
 
         for (let i = 0; i < total; i++) {
-            // Atualiza barra geral antes de começar o arquivo
             const overallProgress = (i / total) * 100;
             totalBar.style.width = `${overallProgress}%`;
             totalPercent.textContent = `${Math.round(overallProgress)}%`;
@@ -143,10 +142,9 @@
         totalBar.style.width = '100%';
         totalPercent.textContent = '100%';
 
-        // Pequeno delay para o usuário ver o 100% antes de redirecionar
         setTimeout(() => {
             window.location.href = REDIRECT_URL;
-        }, 500);
+        }, 800);
     });
 
     function uploadToS3(url, formData, onProgress) {
@@ -170,10 +168,10 @@
     async function processFile(file, index, total) {
         try {
             currentFileName.textContent = `Enviando: ${file.name}`;
+            currentFileName.classList.remove('text-red-500');
             currentBar.style.width = '0%';
             currentPercent.textContent = '0%';
 
-            // 1. Solicita Assinatura S3
             const signRes = await fetch(SIGN_URL, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrftoken},
@@ -181,7 +179,6 @@
             });
             const signData = await signRes.json();
 
-            // 2. Upload para S3 com monitoramento de progresso
             const formData = new FormData();
             Object.entries(signData.campos_assinados).forEach(([key, value]) => {
                 formData.append(key, value);
@@ -193,7 +190,6 @@
                 currentPercent.textContent = `${Math.round(percent)}%`;
             });
 
-            // 3. Confirmar e disparar Celery
             await fetch(CONFIRM_URL, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrftoken},
@@ -206,8 +202,8 @@
 
         } catch (error) {
             console.error(error);
-            currentFileName.textContent = `Erro: ${file.name}`;
-            currentFileName.style.color = '#ff4444';
+            currentFileName.textContent = `Erro no arquivo: ${file.name}`;
+            currentFileName.classList.add('text-red-500');
         }
     }
 })();

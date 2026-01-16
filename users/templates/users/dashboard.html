@@ -1,158 +1,182 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Dashboard - Bem-vindo(a), {{ user.first_name }}{% endblock title %}
 
 {% block content %}
-<div class="dashboard-main-container">
+<main class="container mx-auto px-4 py-12 max-w-7xl">
 
-    {# cabeçalho dashboard #}
-    <div class="dashboard-header mb-2">
-        <h1 class="header-title">
-            Bem-vindo(a), {{ user.first_name }}!
-        </h1>
-        <p class="header-subtitle">
-            Seu Painel de Controle ({{ user.get_tipo_usuario_display }})
-        </p>
+    <div class="mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+        <div>
+            <h1 class="text-3xl md:text-4xl font-black text-roxo1 tracking-tight uppercase leading-tight">
+                Bem-vindo(a), {{ user.first_name }}!
+            </h1>
+            <p class="text-text-main opacity-60 text-sm font-medium tracking-widest uppercase mt-2">
+                Painel de Controle <span class="text-primary mx-2">|</span> {{ user.get_tipo_usuario_display }}
+            </p>
+        </div>
+        <div class="hidden md:block">
+            <span class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Status: Conectado</span>
+        </div>
     </div>
-    {# fim cabeçalho dashboard #}
 
     {% if messages %}
-        <ul class="messages mb-2">
+        <div class="mb-8 space-y-2">
             {% for message in messages %}
-                <li class="message {{ message.tags }}">{{ message }}</li>
+                <div class="p-4 rounded-xl text-sm font-medium border bg-white shadow-sm animate-in fade-in slide-in-from-top-4 border-border-custom text-roxo1">
+                    <i class="fa-solid fa-circle-info mr-2 text-primary"></i> {{ message }}
+                </div>
             {% endfor %}
-        </ul>
+        </div>
     {% endif %}
 
     {% include 'users/includes/approval_section.html' %}
 
-    {# PRIMEIRA GRID: Informações de Conta e Mensagens (3 Cards) #}
-    <div class="dashboard-grid mb-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
 
-        {# card resumo profile #}
-        <div class="card card-primary">
-            <h3 class="card-title">Minha Conta</h3>
-            <div class="card-body">
-                <p><strong>Usuário:</strong> @{{ user.username }}</p>
-                <p><strong>E-mail:</strong> {{ user.email }}</p>
-                <p><strong>Tipo:</strong> {{ user.get_tipo_usuario_display }}</p>
+        <div class="card-ranieri bg-white rounded-3xl border border-border-custom shadow-sm overflow-hidden flex flex-col">
+            <div class="p-6 border-b border-border-custom flex items-center gap-3 bg-surface/30">
+                <i class="fa-solid fa-user-gear text-primary text-xs"></i>
+                <h3 class="text-[10px] font-black text-roxo1 uppercase tracking-[0.2em]">Minha Conta</h3>
             </div>
-            <div class="card-footer">
-                <a href="{% url 'users:profile' %}" class="btn btn-back btn-sm">Ver Perfil Completo</a>
+            <div class="p-8 flex-grow space-y-4">
+                <div>
+                    <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Identificação</p>
+                    <p class="text-sm font-bold text-roxo1">@{{ user.username }}</p>
+                </div>
+                <div>
+                    <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">E-mail Cadastrado</p>
+                    <p class="text-sm font-bold text-roxo1 truncate">{{ user.email }}</p>
+                </div>
             </div>
-        </div>
-        {# fim card resumo profile #}
-
-        {# card resumo ações rapidas #}
-        <div class="card card-secondary">
-            <h3 class="card-title">Ações Rápidas</h3>
-            <div class="card-body action-list">
-                <a href="{% url 'users:profile_edit' %}" class="btn-dashboard-action">
-                    <i class="fas fa-edit"></i> Editar Dados
-                </a>
-                <a href="{% url 'users:password_change' %}" class="btn-dashboard-action">
-                    <i class="fas fa-key"></i> Alterar Senha
-                </a>
-                <a href="#" class="btn-dashboard-action is-disabled">
-                    <i class="fas fa-plus-circle"></i> Novo Registro (Em Breve)
+            <div class="p-6 bg-surface/30 border-t border-border-custom">
+                <a href="{% url 'users:profile' %}" class="btn-primary py-3 w-full text-center block text-[9px] font-black uppercase tracking-widest">
+                    Perfil Completo
                 </a>
             </div>
         </div>
-        {# fim card resumo ações rapidas #}
 
-        {# CARD central msgs #}
-        <div class="card card-warning">
-            <h3 class="card-title"><i class="fas fa-bell"></i> Central de Mensagens</h3>
-            <div class="card-body">
+        <div class="card-ranieri bg-white rounded-3xl border border-border-custom shadow-sm overflow-hidden flex flex-col">
+            <div class="p-6 border-b border-border-custom flex items-center gap-3 bg-surface/30">
+                <i class="fa-solid fa-bolt text-secondary text-xs"></i>
+                <h3 class="text-[10px] font-black text-roxo1 uppercase tracking-[0.2em]">Ações Rápidas</h3>
+            </div>
+            <div class="p-8 flex-grow space-y-3">
+                <a href="{% url 'users:profile_edit' %}" class="flex items-center gap-4 p-4 rounded-2xl bg-surface hover:bg-roxo1 hover:text-white transition-all group border border-border-custom">
+                    <i class="fa-solid fa-pen-to-square text-xs opacity-40 group-hover:opacity-100"></i>
+                    <span class="text-[10px] font-black uppercase tracking-widest">Editar Dados</span>
+                </a>
+                <a href="{% url 'users:password_change' %}" class="flex items-center gap-4 p-4 rounded-2xl bg-surface hover:bg-roxo1 hover:text-white transition-all group border border-border-custom">
+                    <i class="fa-solid fa-key text-xs opacity-40 group-hover:opacity-100"></i>
+                    <span class="text-[10px] font-black uppercase tracking-widest">Alterar Senha</span>
+                </a>
+                <div class="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 opacity-40 cursor-not-allowed border border-dashed border-gray-200">
+                    <i class="fa-solid fa-plus-circle text-xs"></i>
+                    <span class="text-[10px] font-black uppercase tracking-widest">Novo Registro</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-ranieri bg-white rounded-3xl border border-border-custom shadow-sm overflow-hidden flex flex-col">
+            <div class="p-6 border-b border-border-custom flex items-center gap-3 bg-surface/30">
+                <i class="fa-solid fa-bell text-roxo1 text-xs"></i>
+                <h3 class="text-[10px] font-black text-roxo1 uppercase tracking-[0.2em]">Notificações</h3>
+            </div>
+            <div class="p-8 flex-grow overflow-y-auto max-h-[250px] scrollbar-thin">
                 {% if canais_nao_lidos %}
-                    <p class="text-danger">
-                        Você tem **{{ canais_nao_lidos|length }}** mensage{{ canais_nao_lidos|length|pluralize:"m,ns" }} não lida{{ canais_nao_lidos|length|pluralize:"s" }}:
-                    </p>
-                    <ul class="list-unstyled mt-2 notification-list">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="flex h-2 w-2 rounded-full bg-red-500 animate-ping"></span>
+                        <p class="text-[10px] font-black text-red-500 uppercase tracking-widest">
+                            {{ canais_nao_lidos|length }} Mensage{{ canais_nao_lidos|length|pluralize:"m,ns" }} pendente{{ canais_nao_lidos|length|pluralize:",s" }}
+                        </p>
+                    </div>
+                    <div class="space-y-2">
                         {% for canal in canais_nao_lidos %}
-                            <li>
-                                <a href="{% url 'mensagens:canal_chat' slug=canal.slug %}" class="btn btn-sm btn-outline-danger mb-1 btn-block text-left">
-                                    <i class="fas fa-comment-dots"></i> **{{ canal.nome }}** (Ler)
-                                </a>
-                            </li>
+                            <a href="{% url 'mensagens:canal_chat' slug=canal.slug %}" class="flex items-center justify-between p-3 rounded-xl bg-red-50 border border-red-100 group hover:bg-red-500 hover:text-white transition-all">
+                                <span class="text-[10px] font-bold uppercase truncate">{{ canal.nome }}</span>
+                                <i class="fa-solid fa-chevron-right text-[8px]"></i>
+                            </a>
                         {% endfor %}
-                    </ul>
+                    </div>
                 {% else %}
-                    <p>
-                        <i class="fas fa-check-circle text-success"></i> Sem novas mensagens ou avisos urgentes.
-                    </p>
-                    <a href="{% url 'mensagens:chat_list' %}" class="btn btn-sm btn-outline-secondary mt-2">
-                        Ver todos os Canais
-                    </a>
+                    <div class="text-center py-6">
+                        <i class="fa-solid fa-circle-check text-green-500 text-3xl mb-4"></i>
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tudo em dia!</p>
+                    </div>
                 {% endif %}
             </div>
+            <div class="p-6 bg-surface/30 border-t border-border-custom">
+                <a href="{% url 'mensagens:chat_list' %}" class="w-full block text-center py-3 border border-border-custom rounded-xl text-[9px] font-black uppercase text-roxo1 hover:bg-white transition-all">
+                    Ver Todos os Canais
+                </a>
+            </div>
         </div>
-        {# fim CARD central msgs #}
 
     </div>
-    {# fim PRIMEIRA GRID: Informações de Conta e Mensagens (3 Cards) #}
 
-    {# SEGUNDA GRID: Apenas Galerias (2 Cards) #}
-    <div class="dashboard-grid mb-4">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
 
-        {# CARD ÚLTIMAS GALERIAS PÚBLICAS #}
-        <div class="card card-success">
-            <h3 class="card-title"><i class="fas fa-images"></i> Galerias Públicas</h3>
-            <div class="card-body">
+        <div class="card-ranieri bg-white rounded-3xl border border-border-custom shadow-sm overflow-hidden">
+            <div class="p-6 border-b border-border-custom flex items-center justify-between bg-surface/30">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-images text-primary text-xs"></i>
+                    <h3 class="text-[10px] font-black text-roxo1 uppercase tracking-[0.2em]">Galerias Públicas</h3>
+                </div>
+                <span class="bg-primary/10 text-primary text-[8px] font-black px-2 py-1 rounded uppercase tracking-tighter">Novidades</span>
+            </div>
+            <div class="p-8">
                 {% if ultimas_galerias_publicas %}
-                    <p class="small text-muted mb-2">Últimas atualizações públicas:</p>
-                    <div class="grid-dashboard-galerias">
+                    <div class="grid grid-cols-1 gap-4">
                         {% for galeria in ultimas_galerias_publicas %}
-                            <a href="{% url 'galerias:detalhe_galeria' pk=galeria.pk %}" class="gallery-card-dash-item">
-                                {% if galeria.capa_proxy_url %}
-                                    <img src="{{ galeria.capa_proxy_url }}" alt="Capa" class="gallery-card-dash-thumb me-2">
-                                {% else %}
-                                    <div class="bg-light d-flex align-items-center justify-content-center gallery-card-dash-thumb me-2">
-                                        <i class="fas fa-image text-muted"></i>
-                                    </div>
-                                {% endif %}
-                                <div class="text-truncate">
-                                    <span class="d-block text-dark fw-bold text-truncate" style="font-size: 0.9rem;">{{ galeria.nome }}</span>
-                                    <small class="text-muted" style="font-size: 0.75rem;">{{ galeria.data_do_evento|date:"d/m/Y" }}</small>
+                            <a href="{% url 'galerias:detalhe_galeria' pk=galeria.pk %}" class="flex items-center gap-4 p-3 rounded-2xl hover:bg-surface transition-all border border-transparent hover:border-border-custom group">
+                                <div class="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
+                                    {% if galeria.capa_proxy_url %}
+                                        <img src="{{ galeria.capa_proxy_url }}" class="w-full h-full object-cover">
+                                    {% else %}
+                                        <div class="w-full h-full flex items-center justify-center"><i class="fa-solid fa-image text-gray-300"></i></div>
+                                    {% endif %}
+                                </div>
+                                <div class="overflow-hidden">
+                                    <h4 class="text-xs font-black text-roxo1 uppercase truncate tracking-tight group-hover:text-primary transition-colors">{{ galeria.nome }}</h4>
+                                    <p class="text-[9px] font-bold text-gray-400 mt-1 uppercase">{{ galeria.data_do_evento|date:"d M Y" }}</p>
                                 </div>
                             </a>
                         {% endfor %}
                     </div>
                 {% else %}
-                    <p>Nenhuma galeria pública disponível no momento.</p>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase text-center py-10">Nenhuma galeria pública disponível.</p>
                 {% endif %}
             </div>
-            <div class="card-footer">
-                <a href="{% url 'galerias:lista_galerias' %}" class="btn btn-sm btn-outline-success btn-block">
-                    Ver Galerias Completa
-                </a>
+            <div class="p-6 border-t border-border-custom">
+                <a href="{% url 'galerias:lista_galerias' %}" class="w-full block text-center py-3 text-[9px] font-black uppercase text-gray-400 hover:text-roxo1 transition-all">Ver Galerias Completa</a>
             </div>
         </div>
-        {# fim CARD ÚLTIMAS GALERIAS PÚBLICAS #}
 
-        {# CARD ÚLTIMAS GALERIAS EXCLUSIVAS - GRUPOS #}
-        <div class="card card-success">
-            <h3 class="card-title"><i class="fas fa-lock"></i> Galerias Exclusivas</h3>
-            <div class="card-body">
+        <div class="card-ranieri bg-white rounded-3xl border border-border-custom shadow-sm overflow-hidden">
+            <div class="p-6 border-b border-border-custom flex items-center gap-3 bg-surface/30">
+                <i class="fa-solid fa-lock text-secondary text-xs"></i>
+                <h3 class="text-[10px] font-black text-roxo1 uppercase tracking-[0.2em]">Galerias Exclusivas</h3>
+            </div>
+            <div class="p-8 max-h-[450px] overflow-y-auto scrollbar-thin">
                 {% if grupos_com_galerias %}
                     {% for item in grupos_com_galerias %}
-                        <div class="grupo-galeria-section mb-3">
-                            <h4 class="h6 fw-bold text-primary border-bottom pb-1 mb-2">
-                                <i class="fas fa-users-cog"></i> {{ item.nome_grupo }}
+                        <div class="mb-8 last:mb-0">
+                            <h4 class="text-[9px] font-black text-secondary uppercase tracking-[0.3em] mb-4 border-l-4 border-secondary pl-3">
+                                {{ item.nome_grupo }}
                             </h4>
-                            <div class="grid-dashboard-galerias">
+                            <div class="space-y-3">
                                 {% for galeria in item.galerias %}
-                                    <a href="{% url 'galerias:detalhe_galeria' pk=galeria.pk %}" class="gallery-card-dash-item">
-                                        {% if galeria.capa_proxy_url %}
-                                            <img src="{{ galeria.capa_proxy_url }}" alt="Capa" class="gallery-card-dash-thumb me-2">
-                                        {% else %}
-                                            <div class="bg-light d-flex align-items-center justify-content-center gallery-card-dash-thumb me-2">
-                                                <i class="fas fa-lock text-muted" style="font-size: 0.8rem;"></i>
-                                            </div>
-                                        {% endif %}
-                                        <div class="text-truncate">
-                                            <span class="d-block text-dark fw-bold text-truncate" style="font-size: 0.9rem;">{{ galeria.nome }}</span>
-                                            <small class="text-muted" style="font-size: 0.75rem;">{{ galeria.data_do_evento|date:"d/m/Y" }}</small>
+                                    <a href="{% url 'galerias:detalhe_galeria' pk=galeria.pk %}" class="flex items-center gap-4 p-3 rounded-2xl bg-surface/50 border border-border-custom hover:bg-white hover:shadow-lg transition-all group">
+                                        <div class="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                                            {% if galeria.capa_proxy_url %}
+                                                <img src="{{ galeria.capa_proxy_url }}" class="w-full h-full object-cover">
+                                            {% else %}
+                                                <div class="w-full h-full flex items-center justify-center"><i class="fa-solid fa-lock text-gray-300 text-[10px]"></i></div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="overflow-hidden">
+                                            <h4 class="text-[10px] font-black text-roxo1 uppercase truncate group-hover:text-secondary transition-colors">{{ galeria.nome }}</h4>
+                                            <p class="text-[8px] font-bold text-gray-400 mt-1">{{ galeria.data_do_evento|date:"d/m/Y" }}</p>
                                         </div>
                                     </a>
                                 {% endfor %}
@@ -160,38 +184,39 @@
                         </div>
                     {% endfor %}
                 {% else %}
-                    <p class="text-muted">Nenhuma galeria restrita encontrada para seus grupos.</p>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase text-center py-10">Sem galerias exclusivas no momento.</p>
                 {% endif %}
             </div>
-            <div class="card-footer">
-                <a href="{% url 'galerias:lista_galerias' %}" class="btn btn-sm btn-outline-info btn-block">
-                    Ver Todas do Grupo
+            <div class="p-6 border-t border-border-custom">
+                <a href="{% url 'galerias:lista_galerias' %}" class="w-full block text-center py-3 text-[9px] font-black uppercase text-gray-400 hover:text-roxo1 transition-all">Ver Todas do Grupo</a>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="card-ranieri bg-gradient-to-r from-roxo1 to-roxo2 p-8 md:p-12 rounded-[2rem] text-white shadow-2xl relative overflow-hidden">
+        <div class="absolute right-0 top-0 h-full w-1/3 opacity-10 flex items-center justify-center">
+            <i class="fa-solid fa-headset text-[10rem] rotate-12"></i>
+        </div>
+        <div class="relative z-10 max-w-2xl">
+            <h2 class="text-2xl md:text-3xl font-black uppercase tracking-tight mb-4 flex items-center gap-4">
+                <span class="w-10 h-1 bg-secondary rounded-full"></span>
+                Suporte e Ajuda
+            </h2>
+            <p class="text-white/70 font-medium text-sm md:text-base mb-8 leading-relaxed">
+                Precisa de ajuda com o sistema ou encontrou um problema? Nossa equipe técnica está pronta para analisar sua solicitação.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4">
+                <a href="{% url 'suporte:topico_create' %}" class="btn-primary bg-secondary border-none text-roxo1 hover:bg-white hover:scale-105 transition-all flex items-center justify-center gap-3 px-8">
+                    <i class="fa-solid fa-ticket-alt"></i>
+                    <span class="text-xs font-black uppercase tracking-widest">Abrir Chamado</span>
+                </a>
+                <a href="{% url 'suporte:topico_list' %}" class="flex items-center justify-center gap-3 px-8 py-4 rounded-2xl border-2 border-white/20 hover:border-white transition-all text-xs font-black uppercase tracking-widest text-white">
+                    Meus Chamados
                 </a>
             </div>
         </div>
-        {# FIM CARD ÚLTIMAS GALERIAS EXCLUSIVAS - GRUPOS #}
-
     </div>
-    {# fim SEGUNDA GRID: Apenas Galerias (2 Cards) #}
 
-    {# SEÇÃO DE SUPORTE #}
-    <div class="dashboard-support-container mt-4">
-        <div class="card card-info">
-            <h3 class="card-title"><i class="fas fa-headset"></i> Suporte e Ajuda</h3>
-            <div class="card-body">
-                <p>Precisa de ajuda com o sistema ou encontrou um problema? Nossa equipe de suporte está pronta para atendê-lo(a).</p>
-            </div>
-            <div class="card-footer">
-                <a href="{% url 'suporte:topico_create' %}" class="btn btn-primary btn-block">
-                    <i class="fas fa-ticket-alt"></i> Abrir Novo Chamado
-                </a>
-                <a href="{% url 'suporte:topico_list' %}" class="btn btn-outline-secondary btn-sm mt-2 btn-block">
-                    Ver Meus Chamados
-                </a>
-            </div>
-        </div>
-    </div>
-    {# FIM SEÇÃO DE SUPORTE #}
-
-</div>
+</main>
 {% endblock content %}

@@ -5,26 +5,26 @@
 {% block title %}{{ galeria.nome }} - Galerias{% endblock %}
 
 {% block content %}
-<main class="container py-4">
-    <div class="mb-4">
-        <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">
-            <i class="fas fa-chevron-left"></i> Voltar
+<main class="container mx-auto px-4 py-8">
+    <div class="mb-6">
+        <a href="javascript:history.back()" class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-roxo1 transition-colors">
+            <i class="fas fa-chevron-left mr-2"></i> Voltar
         </a>
     </div>
 
-    <div class="gallery-detail-header text-center mb-5">
-        <h1 class="gallery-detail-title display-4">{{ galeria.nome }}</h1>
-        <p class="gallery-detail-subtitle lead text-muted">{{ galeria.descricao }}</p>
+    <div class="text-center mb-12">
+        <h1 class="text-4xl md:text-5xl font-bold text-roxo1 mb-4">{{ galeria.nome }}</h1>
+        <p class="text-xl text-gray-600 max-w-3xl mx-auto">{{ galeria.descricao }}</p>
 
-        <div class="gallery-detail-info d-flex justify-content-center gap-4 flex-wrap mt-3">
-            <span>
-                <i class="fas fa-calendar-alt text-primary"></i>
-                Data do Evento: <strong>{{ galeria.data_do_evento|date:"d/m/Y" }}</strong>
+        <div class="flex flex-wrap justify-center items-center gap-6 mt-6 text-sm md:text-base">
+            <span class="flex items-center text-text-main">
+                <i class="fas fa-calendar-alt text-primary mr-2"></i>
+                Data: <strong class="ml-1">{{ galeria.data_do_evento|date:"d/m/Y" }}</strong>
             </span>
-            <span>
-                <i class="fas fa-camera text-primary"></i>
+            <span class="flex items-center text-text-main">
+                <i class="fas fa-camera text-primary mr-2"></i>
                 Fotógrafo:
-                <strong>
+                <strong class="ml-1">
                     {% if galeria.fotografo.registro %}
                         {{ galeria.fotografo.registro.nome_completo }}
                     {% else %}
@@ -33,71 +33,69 @@
                 </strong>
             </span>
             {% if not galeria.acesso_publico %}
-                <span class="badge bg-secondary py-2 px-3">
-                    <i class="fas fa-user-lock"></i> Exclusiva
+                <span class="bg-gray-200 text-gray-700 py-1 px-3 rounded-full text-xs font-bold uppercase tracking-wider flex items-center">
+                    <i class="fas fa-user-lock mr-1"></i> Exclusiva
                 </span>
             {% endif %}
         </div>
 
-        <div class="mt-3">
-            <span class="like-count badge bg-light text-dark border p-2">
-                <i class="fas fa-heart text-danger"></i> Total de Curtidas na Galeria: <strong id="total-likes">{{ curtidas_totais_galeria }}</strong>
+        <div class="mt-6">
+            <span class="inline-flex items-center bg-white border border-border-custom text-text-main px-4 py-2 rounded-full shadow-sm">
+                <i class="fas fa-heart text-danger mr-2"></i> Curtidas: <strong id="total-likes" class="ml-1">{{ curtidas_totais_galeria }}</strong>
             </span>
         </div>
     </div>
 
-    <div class="image-detail-grid row g-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
         {% for imagem in galeria.imagens.all %}
-            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12" id="image-card-{{ imagem.pk }}">
-                <div class="card h-100 shadow-sm border-0">
-                    <div class="position-relative overflow-hidden">
-                        <a href="{{ imagem.proxy_url }}"
-                           class="lightbox-trigger d-block"
-                           data-index="{{ forloop.counter0 }}"
-                           data-title="{{ galeria.nome }} - Foto {{ forloop.counter }}">
+            <div class="card-ranieri group rounded-xl overflow-hidden flex flex-col h-full bg-white" id="image-card-{{ imagem.pk }}">
+                <div class="relative overflow-hidden aspect-[4/3]">
+                    <a href="{{ imagem.proxy_url }}"
+                       class="lightbox-trigger block w-full h-full"
+                       data-index="{{ forloop.counter0 }}"
+                       data-title="{{ galeria.nome }} - Foto {{ forloop.counter }}">
 
-                            <img
-                                src="{{ imagem.proxy_url }}"
-                                alt="{{ galeria.nome }} Foto {{ forloop.counter }}"
-                                class="card-img-top image-detail-thumb"
-                                style="height: 250px; object-fit: cover;"
-                            >
-                            <div class="lightbox-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-25 opacity-0 transition-opacity">
-                                 <i class="fas fa-search-plus text-white fa-2x"></i>
-                            </div>
+                        <img
+                            src="{{ imagem.proxy_url }}"
+                            alt="{{ galeria.nome }} Foto {{ forloop.counter }}"
+                            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        >
+                        <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                             <i class="fas fa-search-plus text-white text-3xl"></i>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="p-4 mt-auto flex justify-between items-center border-t border-gray-100">
+                    <span class="text-gray-500 text-sm flex items-center">
+                        <i class="fas fa-heart text-danger mr-1"></i>
+                        <span id="likes-count-{{ imagem.pk }}">{{ imagem.curtidas.count }}</span>
+                    </span>
+
+                    {% if request.user.is_authenticated %}
+                        <button
+                            type="button"
+                            class="like-button px-3 py-1.5 rounded-md text-sm font-semibold transition-all duration-200 flex items-center gap-2
+                            {% if curtidas_pelo_usuario|get_item:imagem.pk %} bg-primary text-white {% else %} border border-secondary text-secondary hover:bg-secondary hover:text-white {% endif %}"
+                            data-image-pk="{{ imagem.pk }}"
+                            data-url="{% url 'galerias:curtir_imagem' imagem_pk=imagem.pk %}"
+                            aria-label="Curtir ou Descurtir">
+
+                            <i class="{% if curtidas_pelo_usuario|get_item:imagem.pk %}fas{% else %}far{% endif %} fa-heart"></i>
+                            <span>{% if curtidas_pelo_usuario|get_item:imagem.pk %}Descurtir{% else %}Curtir{% endif %}</span>
+                        </button>
+                    {% else %}
+                        <a href="{% url 'users:login' %}" class="text-sm border border-gray-300 text-gray-500 px-3 py-1.5 rounded-md hover:bg-gray-50 transition-colors">
+                            <i class="far fa-heart mr-1"></i> Curtir
                         </a>
-                    </div>
-
-                    <div class="card-footer bg-white border-top-0 d-flex justify-content-between align-items-center p-3">
-                        <span class="text-muted small">
-                            <i class="fas fa-heart text-danger"></i>
-                            <span id="likes-count-{{ imagem.pk }}">{{ imagem.curtidas.count }}</span>
-                        </span>
-
-                        {% if request.user.is_authenticated %}
-                            <button
-                                type="button"
-                                class="btn btn-sm {% if curtidas_pelo_usuario|get_item:imagem.pk %}btn-danger is-liked{% else %}btn-outline-danger{% endif %} like-button"
-                                data-image-pk="{{ imagem.pk }}"
-                                data-url="{% url 'galerias:curtir_imagem' imagem_pk=imagem.pk %}"
-                                aria-label="Curtir ou Descurtir esta imagem"
-                                style="position: relative; z-index: 10;">
-
-                                <i class="{% if curtidas_pelo_usuario|get_item:imagem.pk %}fas{% else %}far{% endif %} fa-heart"></i>
-                                <span>{% if curtidas_pelo_usuario|get_item:imagem.pk %}Descurtir{% else %}Curtir{% endif %}</span>
-                            </button>
-                        {% else %}
-                            <a href="{% url 'users:login' %}" class="btn btn-sm btn-outline-secondary" title="Faça login para curtir">
-                                <i class="far fa-heart"></i> Curtir
-                            </a>
-                        {% endif %}
-                    </div>
+                    {% endif %}
                 </div>
             </div>
         {% empty %}
-            <div class="col-12 text-center py-5">
-                <div class="alert alert-warning d-inline-block">
-                    <i class="fas fa-exclamation-triangle"></i> Esta galeria ainda não possui imagens.
+            <div class="col-span-full flex justify-center py-20">
+                <div class="bg-orange-50 border border-orange-200 text-orange-800 px-6 py-4 rounded-lg flex items-center gap-3">
+                    <i class="fas fa-exclamation-triangle text-xl"></i>
+                    <p class="font-medium">Esta galeria ainda não possui imagens.</p>
                 </div>
             </div>
         {% endfor %}
@@ -109,29 +107,32 @@
          x-cloak>
 
         <div x-show="isOpen"
-             class="lightbox-alpine-modal position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-90"
-             style="z-index: 9999;"
+             class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/95 backdrop-blur-sm"
              @click.self="closeLightbox()"
-             x-transition>
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0">
 
-            <button class="lightbox-close position-absolute top-0 end-0 m-4 btn btn-link text-white text-decoration-none fs-1" @click="closeLightbox()" aria-label="Fechar">&times;</button>
+            <button class="absolute top-5 right-5 text-white text-4xl hover:text-secondary transition-colors" @click="closeLightbox()" aria-label="Fechar">&times;</button>
 
-            <div class="lightbox-content-wrapper d-flex align-items-center justify-content-center w-100 px-3">
+            <div class="relative flex items-center justify-between w-full h-full px-4 md:px-10">
 
-                <button class="lightbox-prev btn btn-link text-white fs-1" @click.stop="prevImage()" :disabled="currentIndex === 0" x-show="gallery.length > 1" aria-label="Anterior">
+                <button class="text-white text-4xl p-4 hover:text-secondary disabled:opacity-20 transition-all" @click.stop="prevImage()" :disabled="currentIndex === 0" x-show="gallery.length > 1">
                     <i class="fas fa-chevron-left"></i>
                 </button>
 
-                <figure class="lightbox-figure m-0 text-center flex-grow-1">
+                <figure class="flex flex-col items-center justify-center flex-grow max-h-full">
                     <img :src="currentImage.url"
                          :alt="currentImage.title"
-                         class="lightbox-content mw-100 mh-100 shadow-lg"
-                         style="max-height: 85vh; object-fit: contain;">
+                         class="max-w-full max-h-[80vh] shadow-2xl object-contain border-4 border-white/10 rounded-sm">
 
-                    <figcaption x-text="currentImage.title" class="lightbox-caption mt-3 text-white fs-5"></figcaption>
+                    <figcaption x-text="currentImage.title" class="mt-6 text-white text-lg font-medium tracking-wide"></figcaption>
                 </figure>
 
-                <button class="lightbox-next btn btn-link text-white fs-1" @click.stop="nextImage()" :disabled="currentIndex === gallery.length - 1" x-show="gallery.length > 1" aria-label="Próxima">
+                <button class="text-white text-4xl p-4 hover:text-secondary disabled:opacity-20 transition-all" @click.stop="nextImage()" :disabled="currentIndex === gallery.length - 1" x-show="gallery.length > 1">
                     <i class="fas fa-chevron-right"></i>
                 </button>
             </div>
@@ -140,12 +141,9 @@
 </main>
 
 <script>
-// --- Lógica de Curtidas (DOM Content Loaded) ---
 document.addEventListener('DOMContentLoaded', function() {
     const likeButtons = document.querySelectorAll('.like-button');
     const totalLikesDisplay = document.getElementById('total-likes');
-
-    // Tenta obter o token do input hidden gerado pelo Django
     const csrfElement = document.querySelector('input[name="csrfmiddlewaretoken"]');
     const CSRF_TOKEN = csrfElement ? csrfElement.value : '';
 
@@ -155,9 +153,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (likeButtons.length > 0) {
         likeButtons.forEach(button => {
-            // Alterado para onclick direto para garantir prioridade de execução e interrupção de propagação
             button.onclick = function(e) {
-                // Impede que o clique no botão dispare outros eventos (como abrir a imagem)
                 e.preventDefault();
                 e.stopPropagation();
 
@@ -180,45 +176,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
                 .then(response => {
                     if (response.status === 403) {
-                        alert("Acesso Negado: Você não tem permissão para curtir esta galeria.");
+                        alert("Acesso Negado.");
                         return Promise.reject('Forbidden');
                     }
-                    if (!response.ok) {
-                        throw new Error('Erro na requisição.');
-                    }
+                    if (!response.ok) throw new Error('Erro na requisição.');
                     return response.json();
                 })
                 .then(data => {
                     if (data.success) {
                         if (data.curtiu) {
-                            button.classList.add('is-liked', 'btn-danger');
-                            button.classList.remove('btn-outline-danger');
+                            this.classList.add('bg-primary', 'text-white');
+                            this.classList.remove('border', 'border-secondary', 'text-secondary');
                             icon.className = 'fas fa-heart';
                             textSpan.textContent = 'Descurtir';
                             currentTotalLikes += 1;
                         } else {
-                            button.classList.remove('is-liked', 'btn-danger');
-                            button.classList.add('btn-outline-danger');
+                            this.classList.remove('bg-primary', 'text-white');
+                            this.classList.add('border', 'border-secondary', 'text-secondary');
                             icon.className = 'far fa-heart';
                             textSpan.textContent = 'Curtir';
                             currentTotalLikes -= 1;
                         }
-
-                        if (likesCountElement) {
-                            likesCountElement.textContent = data.new_count;
-                        }
-
+                        if (likesCountElement) likesCountElement.textContent = data.new_count;
                         totalLikesDisplay.textContent = currentTotalLikes;
-
-                    } else {
-                        alert(data.message || 'Erro ao processar a curtida.');
                     }
                 })
-                .catch(error => {
-                    if (error !== 'Forbidden') {
-                         console.error('Falha na interação:', error);
-                    }
-                });
+                .catch(error => console.error(error));
 
                 return false;
             };
@@ -226,7 +209,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// --- Lógica Alpine.js (Lightbox) ---
 document.addEventListener('alpine:init', () => {
     Alpine.data('galleryLightbox', () => ({
         isOpen: false,
@@ -235,7 +217,6 @@ document.addEventListener('alpine:init', () => {
 
         initTriggers() {
             const triggers = document.querySelectorAll('.lightbox-trigger');
-
             this.gallery = Array.from(triggers).map(trigger => ({
                 url: trigger.getAttribute('href'),
                 title: trigger.getAttribute('data-title'),
@@ -251,7 +232,6 @@ document.addEventListener('alpine:init', () => {
 
             window.addEventListener('keydown', (e) => {
                 if (!this.isOpen) return;
-
                 if (e.key === 'ArrowRight' || e.key === ' ') {
                     e.preventDefault();
                     this.nextImage();
@@ -269,24 +249,20 @@ document.addEventListener('alpine:init', () => {
         openLightbox(index) {
             this.currentIndex = index;
             this.isOpen = true;
-            document.body.classList.add('modal-open');
+            document.body.style.overflow = 'hidden';
         },
 
         closeLightbox() {
             this.isOpen = false;
-            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
         },
 
         nextImage() {
-            if (this.currentIndex < this.gallery.length - 1) {
-                this.currentIndex++;
-            }
+            if (this.currentIndex < this.gallery.length - 1) this.currentIndex++;
         },
 
         prevImage() {
-            if (this.currentIndex > 0) {
-                this.currentIndex--;
-            }
+            if (this.currentIndex > 0) this.currentIndex--;
         }
     }));
 });

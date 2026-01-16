@@ -4,71 +4,90 @@
 {% block title %}Chat: {{ canal.nome }}{% endblock %}
 
 {% block content %}
-    <div class="chat-app-container">
+    <div class="flex h-[calc(100vh-80px)] bg-surface overflow-hidden relative">
 
-        <div id="toggle-container" class="chat-toggle-container">
-            <span class="chat-toggle-label">Listar Membros</span>
-            <button id="sidebar-toggle-button" class="chat-sidebar-toggle-button" title="Mostrar/Ocultar Membros">
-                &#9776;
-            </button>
-        </div>
-        <aside id="members-sidebar" class="members-sidebar">
-            <h2 class="chat-sidebar-title">Membros do Canal ({{ membros_canal|length }})</h2>
+        <aside id="members-sidebar" class="fixed inset-y-0 right-0 z-40 w-72 bg-white border-l border-border-custom transform translate-x-full transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0">
+            <div class="p-6 border-b border-gray-100 bg-primary/5">
+                <h2 class="text-lg font-bold text-roxo1 flex items-center gap-2">
+                    <i class="fas fa-users text-primary"></i> Membros ({{ membros_canal|length }})
+                </h2>
+            </div>
 
-            <div class="chat-members-list-wrapper">
+            <div class="overflow-y-auto h-[calc(100%-70px)] p-4 space-y-3">
                 {% for membro in membros_canal %}
-                    <div class="chat-member-item {% if membro.id == user_id %}chat-member-current{% else %}chat-member-other{% endif %}" data-user-id="{{ membro.id }}">
-                        <div class="chat-member-avatar">
+                    <div class="flex items-center gap-3 p-2 rounded-lg transition-colors {% if membro.id == user_id %}bg-primary/10 border border-primary/20{% else %}hover:bg-gray-50{% endif %}" data-user-id="{{ membro.id }}">
+
+                        <div class="w-10 h-10 rounded-full bg-verde-petroleo flex items-center justify-center text-white font-bold shrink-0 shadow-sm text-sm">
                             {{ membro.username|slice:":1"|upper }}
                         </div>
 
-                        <div class="chat-member-info">
-                            <span class="chat-member-name" title="{{ membro.get_full_name|default:membro.username }}">
+                        <div class="flex-grow min-w-0">
+                            <span class="block text-sm font-semibold text-text-main truncate" title="{{ membro.get_full_name|default:membro.username }}">
                                 {{ membro.get_full_name|default:membro.username }}
                                 {% if membro.id == user_id %}
-                                    <span class="chat-member-you">(Você)</span>
+                                    <span class="text-xs text-primary font-normal">(Você)</span>
                                 {% endif %}
                             </span>
+                            <span class="flex items-center gap-1.5 text-[10px] text-gray-400">
+                                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> Online
+                            </span>
                         </div>
-
-                        <div class="chat-member-status-online" title="Online (simulado)"></div>
                     </div>
                 {% endfor %}
             </div>
         </aside>
 
-        <main class="chat-main-content chat-layout">
+        <main class="flex-grow flex flex-col min-w-0 relative">
 
-            <header class="chat-header">
-                <h1 class="chat-title">
-                    Canal: <span>{{ canal.nome }}</span>
-                </h1>
-                <p class="chat-group-info">
-                    Grupo: {{ canal.grupo.auth_group.name }}
-                </p>
+            <header class="h-20 bg-white border-b border-border-custom px-6 flex items-center justify-between shrink-0 shadow-sm z-10">
+                <div class="min-w-0">
+                    <h1 class="text-xl font-bold text-roxo1 truncate flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-primary shrink-0"></span>
+                        {{ canal.nome }}
+                    </h1>
+                    <p class="text-xs text-gray-500 font-medium">
+                        Grupo: {{ canal.grupo.auth_group.name }}
+                    </p>
+                </div>
 
-                </header>
+                <div class="flex items-center gap-4">
+                    <button id="sidebar-toggle-button" class="lg:hidden p-2 text-primary hover:bg-primary/10 rounded-full transition-colors" title="Ver Membros">
+                        <i class="fas fa-users-cog text-xl"></i>
+                    </button>
+                </div>
+            </header>
 
-            <div id="chat-log" class="chat-container">
-                <ul class="chat-messages-wrapper">
+            <div id="chat-log" class="flex-grow overflow-y-auto p-6 bg-surface/50 space-y-4">
+                <ul class="flex flex-col gap-4">
                     {% for mensagem in mensagens %}
-                        <li class="chat-message-row chat-message-{% if mensagem.autor.id == user_id %}user{% else %}other{% endif %}">
-                            <div class="chat-bubble {% if mensagem.autor.id == user_id %}user-message{% else %}other-message{% endif %}">
-                                <span class="message-sender">
+                        <li class="flex {% if mensagem.autor.id == user_id %}justify-end{% else %}justify-start{% endif %}">
+                            <div class="max-w-[80%] sm:max-w-[60%] rounded-2xl p-4 shadow-sm relative group
+                                {% if mensagem.autor.id == user_id %}
+                                    bg-primary text-white rounded-br-none
+                                {% else %}
+                                    bg-white border border-border-custom text-text-main rounded-bl-none
+                                {% endif %}">
+
+                                <span class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
                                     {% if mensagem.autor.id == user_id %}
                                         Você
                                     {% else %}
                                         {{ mensagem.autor.get_full_name|default:mensagem.autor.username }}
                                     {% endif %}
                                 </span>
-                                <p class="message-content">{{ mensagem.conteudo }}</p>
-                                <span class="message-timestamp">
+
+                                <p class="text-sm leading-relaxed">{{ mensagem.conteudo }}</p>
+
+                                <span class="block text-[9px] text-right mt-2 opacity-60 italic">
                                     {{ mensagem.data_envio|date:"H:i" }}
                                 </span>
                             </div>
                         </li>
                     {% empty %}
-                        <p class="chat-empty-log-message">Nenhuma mensagem no histórico. Comece a conversa!</p>
+                        <div class="flex flex-col items-center justify-center h-full opacity-40 py-20">
+                            <i class="far fa-comments text-5xl mb-4 text-primary"></i>
+                            <p class="text-lg font-medium">Nenhuma mensagem ainda. Comece a conversa!</p>
+                        </div>
                     {% endfor %}
                 </ul>
 
@@ -76,21 +95,21 @@
                 <script id="user-id" type="text/template">{{ user_id }}</script>
             </div>
 
-            <div class="chat-input-area">
-                <div class="chat-input-wrapper">
+            <div class="p-4 bg-white border-t border-border-custom">
+                <div class="max-w-4xl mx-auto flex gap-3">
                     <input
                         id="chat-message-input"
                         type="text"
                         placeholder="Digite sua mensagem..."
-                        class="chat-input-field"
+                        class="flex-grow bg-surface border border-border-custom rounded-full px-6 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                         autocomplete="off"
                     >
                     <button
                         id="chat-message-submit"
-                        class="chat-send-button"
+                        class="bg-secondary hover:bg-laranja-escuro1 disabled:bg-gray-200 disabled:cursor-not-allowed text-white w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-md active:scale-95"
                         disabled
                     >
-                        Enviar
+                        <i class="fas fa-paper-plane"></i>
                     </button>
                 </div>
             </div>

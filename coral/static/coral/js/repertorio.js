@@ -1,11 +1,12 @@
 /**
  * Arquivo: repertorio.js
  * App: coral
- * * Implementa a lógica de transição e navegação do Repertório Musical
+ * Adaptado para Tailwind v4
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-    const contentContainer = document.querySelector('.section-alt .container');
+    // Seletor atualizado para a estrutura do novo template
+    const contentContainer = document.querySelector('.bg-surface .container');
     if (!contentContainer) return;
 
     // Transição de entrada
@@ -24,19 +25,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const navigateChapter = (event) => {
         const link = event.currentTarget;
 
-        if (link.classList.contains('is-disabled')) {
+        // Verifica a classe de estado desabilitado do Tailwind
+        if (link.classList.contains('cursor-not-allowed')) {
             event.preventDefault();
             return;
         }
 
         contentContainer.style.opacity = '0';
 
-        document.querySelectorAll('.action-button').forEach(btn => {
-            btn.classList.add('is-disabled');
-            if (btn.id === 'btn-proximo') {
-                btn.textContent = 'Carregando...';
-            } else if (btn.id === 'btn-anterior') {
-                btn.textContent = 'Carregando...';
+        // Seleciona os botões de navegação
+        const navButtons = [document.getElementById('btn-anterior'), document.getElementById('btn-proximo')];
+
+        navButtons.forEach(btn => {
+            if (btn) {
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Carregando...';
             }
         });
 
@@ -50,8 +53,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnAnterior = document.getElementById('btn-anterior');
     const btnProximo = document.getElementById('btn-proximo');
 
-    if (btnAnterior) btnAnterior.addEventListener('click', navigateChapter);
-    if (btnProximo) btnProximo.addEventListener('click', navigateChapter);
+    if (btnAnterior && btnAnterior.tagName === 'A') btnAnterior.addEventListener('click', navigateChapter);
+    if (btnProximo && btnProximo.tagName === 'A') btnProximo.addEventListener('click', navigateChapter);
 
     // Prefetch da próxima página
     if (btnProximo && btnProximo.href) {

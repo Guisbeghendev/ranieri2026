@@ -2,147 +2,130 @@
 {% load static %}
 
 {% block title %}
-    {% if capitulo %}
-        {{ capitulo.titulo }} - Catálogo Simoninha na Cozinha
-    {% else %}
-        Catálogo Simoninha na Cozinha
-    {% endif %}
+    {% if capitulo %}{{ capitulo.titulo }} - Catálogo Simoninha na Cozinha{% else %}Catálogo Simoninha na Cozinha{% endif %}
 {% endblock title %}
 
 {% block content %}
+<div class="container mx-auto px-4 py-12 max-w-5xl">
 
-    <div class="section-alt">
-        <div class="container">
-            {# Título principal do projeto/módulo #}
-            <h1 class="section-title">Projeto Simoninha na Cozinha</h1>
-
-            {% if total_capitulos > 0 %}
-                {# Exibe a contagem e título do capítulo atual #}
-                <p class="section-subtitle">
-                    {{ catalogo_titulo }}. Evento {{ capitulo_ordem }} de {{ total_capitulos }}
-                </p>
-
-                <div class="card mb-3">
-                    <div class="card-header">
-                        {# Título do Evento/Receita #}
-                        <h2>{{ capitulo.titulo }}</h2>
-                    </div>
-
-                    <div class="card-body">
-                        {# -------------------- VÍDEO INCORPORADO E LINK EXTERNO (CORRIGIDO) -------------------- #}
-                        {% if capitulo.link_video %}
-
-                            {# NOVO CONTAINER PAI PARA AGRUPAR VÍDEO E LEGENDA #}
-                            <div class="video-content-wrapper mb-3 text-center">
-
-                                {# CONTAINER PARA O ASPECT RATIO DO IFRAME. APLICAR CSS DE ASPECT RATIO A ESTA CLASSE! #}
-                                <div class="video-iframe-container">
-                                    <iframe
-                                        {# Montando o Embed com o ID do vídeo #}
-                                        src="https://www.youtube.com/embed/{{ capitulo.link_video }}"
-                                        frameborder="0"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                        allowfullscreen
-                                        title="Vídeo do Evento: {{ capitulo.titulo }}">
-                                    </iframe>
-                                </div>
-
-                                {# O LINK EXTERNO AGORA É IRMÃO DO CONTAINER DO IFRAME, FICANDO VISÍVEL ABAIXO #}
-                                {% if capitulo.link_externo|length > 0 %}
-                                    <div class="youtube-fallback-link p-3 border rounded mt-3" style="background-color: #fff3cd; border-color: #ffeeba;">
-
-                                        <p class="mb-2 text-dark">
-                                            **Problemas com a exibição?** Assista diretamente no YouTube:
-                                        </p>
-
-                                        {# Botão de link externo (agora é o único link visível) #}
-                                        <a href="{{ capitulo.link_externo }}"
-                                           target="_blank"
-                                           class="btn btn-warning btn-sm">
-                                            Abrir o Vídeo no YouTube
-                                        </a>
-
-                                    </div>
-                                {% endif %}
-
-                                <p class="form-help mt-1 text-center">
-                                    ID do Vídeo: <code>{{ capitulo.link_video }}</code>
-                                </p>
-                            </div>
-                        {% endif %}
-                        {# -------------------- FIM VÍDEO INCORPORADO E LINK EXTERNO -------------------- #}
-
-                        <div class="chapter-content">
-                            {# Assume que o conteúdo é HTML (safe) #}
-                            {% if capitulo.descricao_detalhada %}
-                                {{ capitulo.descricao_detalhada|safe }}
-                            {% else %}
-                                <p class="text-center text-muted">Não há descrição detalhada para este evento.</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-
-                {# -------------------- NAVEGAÇÃO SEQUENCIAL -------------------- #}
-                <div class="chapter-navigation mt-3 center">
-
-                    {% if capitulo_anterior %}
-                        {# Link para o evento anterior #}
-                        <a href="{% url 'sim_cozinha:catalogo' %}?page={{ capitulo_anterior.capitulo_index_base_1 }}"
-                           class="btn btn-back action-button mr-2"
-                           id="btn-anterior">
-                            &larr; Evento Anterior
-                        </a>
-                    {% else %}
-                        {# Botão desabilitado no primeiro capítulo #}
-                        <button class="btn btn-back is-disabled action-button mr-2" disabled>
-                            &larr; Evento Anterior
-                        </button>
-                    {% endif %}
-
-                    <div class="mx-auto"></div>
-
-                    {% if proximo_capitulo %}
-                        {# Link para o próximo evento #}
-                        <a href="{% url 'sim_cozinha:catalogo' %}?page={{ proximo_capitulo.capitulo_index_base_1 }}"
-                           class="btn btn-secondary primary-action action-button ml-2"
-                           id="btn-proximo">
-                            Próximo Evento &rarr;
-                        </a>
-                    {% else %}
-                        {# Botão desabilitado no último capítulo #}
-                        <button class="btn btn-secondary is-disabled action-button ml-2" disabled>
-                            Fim do Catálogo
-                        </button>
-                    {% endif %}
-
-                </div>
-                {# -------------------- BARRA DE PROGRESSO -------------------- #}
-                <div class="progress-bar-container mt-3">
-                    {# Usa widthratio para calcular (capitulo_ordem / total_capitulos) * 100 #}
-                    {% widthratio capitulo_ordem total_capitulos 100 as progresso_percentual %}
-
-                    <div class="progress-bar-label text-center mb-1">
-                        Progresso: {{ progresso_percentual|floatformat:0 }}%
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-bar-fill" style="width: {{ progresso_percentual }}%;"></div>
-                    </div>
-                </div>
-                {# -------------------- FIM BARRA DE PROGRESSO -------------------- #}
-
-            {% else %}
-                <div class="alert alert-warning text-center">
-                    <p><strong>Atenção:</strong> Ainda não há eventos ou receitas cadastradas para o projeto Simoninha na Cozinha.</p>
-                </div>
-            {% endif %}
-
-        </div>
+    <div class="mb-10 text-center">
+        <h1 class="text-4xl font-bold text-roxo1 tracking-tighter uppercase mb-2">Projeto Simoninha na Cozinha</h1>
+        {% if total_capitulos > 0 %}
+            <p class="text-sm font-black text-primary uppercase tracking-widest">
+                {{ catalogo_titulo }} — Evento <span class="text-secondary">{{ capitulo_ordem }}</span> de {{ total_capitulos }}
+            </p>
+        {% endif %}
+        <div class="w-24 h-1 bg-secondary mx-auto mt-4 rounded-full"></div>
     </div>
 
+    {% if total_capitulos > 0 %}
+        <div class="card-ranieri bg-white rounded-3xl border border-border-custom shadow-xl overflow-hidden mb-8">
+            <div class="p-6 md:p-8 border-b border-border-custom bg-surface/30">
+                <h2 class="text-2xl md:text-3xl font-bold text-roxo1 leading-tight">{{ capitulo.titulo }}</h2>
+            </div>
+
+            <div class="p-6 md:p-10">
+                {% if capitulo.link_video %}
+                    <div class="mb-10 group">
+                        <div class="relative w-full rounded-2xl overflow-hidden shadow-2xl bg-black aspect-video border-4 border-white">
+                            <iframe
+                                class="absolute inset-0 w-full h-full"
+                                src="https://www.youtube.com/embed/{{ capitulo.link_video }}"
+                                frameborder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowfullscreen
+                                title="Vídeo do Evento: {{ capitulo.titulo }}">
+                            </iframe>
+                        </div>
+
+                        {% if capitulo.link_externo|length > 0 %}
+                            <div class="mt-6 p-4 rounded-xl bg-amber-50 border border-amber-100 flex flex-col md:flex-row items-center justify-between gap-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                    </div>
+                                    <p class="text-xs font-bold text-amber-800 uppercase tracking-tight">Problemas com a exibição? Assista direto no YouTube:</p>
+                                </div>
+                                <a href="{{ capitulo.link_externo }}" target="_blank" class="btn-primary bg-[#FF0000] hover:bg-[#CC0000] border-none px-6 py-2 text-[10px] shadow-lg">
+                                    <i class="fab fa-youtube mr-2"></i> Abrir no YouTube
+                                </a>
+                            </div>
+                        {% endif %}
+
+                        <p class="text-[9px] font-mono text-gray-400 mt-4 text-center uppercase tracking-widest">
+                            Ref ID: <span class="text-roxo1 font-bold">{{ capitulo.link_video }}</span>
+                        </p>
+                    </div>
+                {% endif %}
+
+                <div class="prose prose-roxo max-w-none text-text-main">
+                    {% if capitulo.descricao_detalhada %}
+                        <div class="chapter-content leading-relaxed">
+                            {{ capitulo.descricao_detalhada|safe }}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-10 bg-surface rounded-2xl border border-dashed border-gray-200">
+                            <i class="fas fa-pen-nib text-gray-300 text-3xl mb-3"></i>
+                            <p class="text-gray-400 font-medium italic">Não há descrição detalhada para este evento.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="max-w-2xl mx-auto space-y-8">
+            <div class="space-y-3">
+                {% widthratio capitulo_ordem total_capitulos 100 as progresso_percentual %}
+                <div class="flex justify-between items-end px-2">
+                    <span class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Seu Progresso</span>
+                    <span class="text-lg font-black text-roxo1">{{ progresso_percentual }}%</span>
+                </div>
+                <div class="w-full bg-gray-200 h-3 rounded-full overflow-hidden p-1 shadow-inner">
+                    <div class="bg-gradient-to-r from-primary to-secondary h-full rounded-full transition-all duration-1000 shadow-sm" style="width: {{ progresso_percentual }}%;"></div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between gap-4">
+                {% if capitulo_anterior %}
+                    <a href="{% url 'sim_cozinha:catalogo' %}?page={{ capitulo_anterior.capitulo_index_base_1 }}"
+                       class="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-white border-2 border-border-custom text-roxo1 rounded-2xl font-black text-xs uppercase tracking-widest hover:border-primary hover:bg-primary/5 transition-all group"
+                       id="btn-anterior">
+                        <i class="fas fa-arrow-left transition-transform group-hover:-translate-x-2"></i> Anterior
+                    </a>
+                {% else %}
+                    <button class="flex-1 px-6 py-4 bg-gray-100 text-gray-300 rounded-2xl font-black text-xs uppercase tracking-widest cursor-not-allowed border-2 border-transparent" disabled>
+                        Início
+                    </button>
+                {% endif %}
+
+                {% if proximo_capitulo %}
+                    <a href="{% url 'sim_cozinha:catalogo' %}?page={{ proximo_capitulo.capitulo_index_base_1 }}"
+                       class="flex-[1.5] flex items-center justify-center gap-3 px-6 py-4 btn-primary rounded-2xl shadow-xl group"
+                       id="btn-proximo">
+                        <span class="text-xs font-black uppercase tracking-widest">Próximo Evento</span>
+                        <i class="fas fa-arrow-right transition-transform group-hover:translate-x-2"></i>
+                    </a>
+                {% else %}
+                    <button class="flex-[1.5] px-6 py-4 bg-verde-petroleo text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg border-2 border-verde-petroleo" disabled>
+                        <i class="fas fa-check-double mr-2"></i> Fim do Catálogo
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+
+    {% else %}
+        <div class="card-ranieri bg-white p-16 text-center rounded-3xl border border-border-custom shadow-sm">
+            <div class="w-24 h-24 bg-surface rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-utensils text-4xl text-gray-200"></i>
+            </div>
+            <h3 class="text-roxo1 font-bold text-xl mb-2">Cozinha em Preparo!</h3>
+            <p class="text-gray-500 max-w-sm mx-auto">Ainda não há eventos ou receitas cadastradas para o projeto Simoninha na Cozinha.</p>
+        </div>
+    {% endif %}
+
+</div>
 {% endblock content %}
 
 {% block js %}
-    {# Inclui o script JS para transições e lógica do Livro Digital #}
     <script src="{% static 'sim_cozinha/js/catalogo.js' %}"></script>
 {% endblock js %}

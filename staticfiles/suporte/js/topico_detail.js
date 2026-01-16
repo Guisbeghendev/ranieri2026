@@ -21,9 +21,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // 1. Rolagem Automática para o final da lista de respostas
     function scrollToBottom() {
         if (respostasList) {
-            // Usa setTimeout para garantir que a rolagem ocorra após o render completo
+            // No novo layout, a rolagem é feita via window para acompanhar o fluxo Tailwind
             setTimeout(() => {
-                respostasList.scrollTop = respostasList.scrollHeight;
+                window.scrollTo({
+                    top: document.body.scrollHeight,
+                    behavior: 'smooth'
+                });
             }, 100);
         }
     }
@@ -32,28 +35,32 @@ document.addEventListener('DOMContentLoaded', function() {
     scrollToBottom();
 
     // 2. Lógica do botão 'Voltar ao Fim'
-    if (respostasList && scrollButton) {
+    if (scrollButton) {
 
         // Define a altura limite para o botão aparecer
-        const SCROLL_THRESHOLD = 200;
+        const SCROLL_THRESHOLD = 300;
 
-        // Função para mostrar/esconder o botão
-        respostasList.addEventListener('scroll', function() {
+        // Função para mostrar/esconder o botão usando classes utilitárias do Tailwind
+        window.addEventListener('scroll', function() {
             // A diferença entre a altura total e a posição atual do scroll.
             // Se for maior que o limite, significa que o usuário não está no fim.
-            const distanceToBottom = respostasList.scrollHeight - respostasList.scrollTop - respostasList.clientHeight;
+            const distanceToBottom = document.documentElement.scrollHeight - window.innerHeight - window.scrollY;
 
             if (distanceToBottom > SCROLL_THRESHOLD) {
-                scrollButton.classList.add('show');
+                // scrollButton.classList.add('show');
+                scrollButton.classList.remove('opacity-0', 'pointer-events-none');
+                scrollButton.classList.add('opacity-100', 'pointer-events-auto');
             } else {
-                scrollButton.classList.remove('show');
+                // scrollButton.classList.remove('show');
+                scrollButton.classList.add('opacity-0', 'pointer-events-none');
+                scrollButton.classList.remove('opacity-100', 'pointer-events-auto');
             }
         });
 
         // Evento de clique no botão para rolar para o final
         scrollButton.addEventListener('click', function() {
-            respostasList.scrollTo({
-                top: respostasList.scrollHeight,
+            window.scrollTo({
+                top: document.body.scrollHeight,
                 behavior: 'smooth'
             });
         });

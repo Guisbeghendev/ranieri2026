@@ -4,36 +4,47 @@
 {% block title %}Galerias Públicas{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <h1 class="text-center mb-2">Galerias Públicas</h1>
-    <p class="text-center text-muted mb-5">Confira os eventos abertos da nossa escola.</p>
+<div class="container mx-auto px-4 py-12">
+    <h1 class="text-4xl font-bold text-center text-roxo1 mb-2">Galerias Públicas</h1>
+    <p class="text-xl text-center text-text-main opacity-80 mb-12">Confira os eventos abertos da nossa escola.</p>
 
-    <div class="gallery-grid">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
         {% for galeria in galerias %}
-        <div class="gallery-card">
-            <a href="{% url 'galerias:detalhe_galeria' galeria.pk %}">
+        <div class="card-ranieri group rounded-xl overflow-hidden flex flex-col h-full bg-white">
+            <a href="{% url 'galerias:detalhe_galeria' galeria.pk %}" class="block overflow-hidden aspect-[3/2]">
                 {% if galeria.capa_proxy_url %}
-                <img src="{{ galeria.capa_proxy_url }}" class="gallery-card-image" alt="{{ galeria.nome }}">
+                <img src="{{ galeria.capa_proxy_url }}"
+                     class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                     alt="{{ galeria.nome }}">
                 {% else %}
-                <img src="{% static 'images/default-gallery-cover.jpg' %}" class="gallery-card-image" alt="Capa padrão">
+                <img src="{% static 'images/default-gallery-cover.jpg' %}"
+                     class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                     alt="Capa padrão">
                 {% endif %}
             </a>
 
-            <div class="gallery-card-content">
-                <h5 class="gallery-card-title text-truncate">{{ galeria.nome }}</h5>
-                <p class="gallery-card-meta">
-                    <i class="fas fa-calendar-alt"></i> {{ galeria.data_do_evento|date:"d/m/Y" }}
+            <div class="p-5 flex flex-col flex-grow">
+                <h3 class="text-lg font-bold text-text-main truncate mb-2" title="{{ galeria.nome }}">
+                    {{ galeria.nome }}
+                </h3>
+                <p class="text-sm text-gray-500 mb-6 flex items-center gap-2">
+                    <i class="fas fa-calendar-alt text-primary"></i>
+                    {{ galeria.data_do_evento|date:"d/m/Y" }}
                 </p>
                 <div class="mt-auto">
-                    <a href="{% url 'galerias:detalhe_galeria' galeria.pk %}" class="btn btn-primary w-100">
+                    <a href="{% url 'galerias:detalhe_galeria' galeria.pk %}"
+                       class="btn-primary w-full inline-flex items-center justify-center shadow-sm">
                         Ver Fotos
                     </a>
                 </div>
             </div>
         </div>
         {% empty %}
-        <div style="grid-column: 1 / -1;" class="text-center py-5">
-            <div class="alert alert-info">Nenhuma galeria pública disponível no momento.</div>
+        <div class="col-span-full flex justify-center py-20">
+            <div class="bg-blue-50 border border-blue-200 text-blue-800 px-8 py-6 rounded-xl flex items-center gap-4 shadow-sm">
+                <i class="fas fa-info-circle text-2xl"></i>
+                <p class="text-lg font-medium">Nenhuma galeria pública disponível no momento.</p>
+            </div>
         </div>
         {% endfor %}
     </div>

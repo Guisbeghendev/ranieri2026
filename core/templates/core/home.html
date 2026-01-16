@@ -4,69 +4,85 @@
 {% block title %}Escola Ranieri - História e Modernidade{% endblock %}
 
 {% block content %}
-<div class="page-home">
+<div class="space-y-12">
 
-    <section class="hero-section">
-        <div class="hero-content text-center">
-            <h1>Escola Professor José Ranieri</h1>
-            <h4>Mais de 40 anos educando gerações em Bauru!</h4>
-            <br>
+    <section class="py-12 bg-white rounded-2xl shadow-sm border border-border-custom/20">
+        <div class="max-w-4xl mx-auto px-4 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">Escola Professor José Ranieri</h1>
+            <h4 class="text-xl md:text-2xl opacity-90">Mais de 40 anos educando gerações em Bauru!</h4>
         </div>
     </section>
 
-    <section class="featured-sections container">
-        <div class="card-grid">
+    <section class="container mx-auto px-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 
-            <div class="card card-hover">
-                <i class="fas fa-book-open card-icon"></i>
-                <h3>História Digital</h3>
-                <p>Uma narrativa interativa sobre as décadas de fundação e crescimento da Ranieri.</p>
-                <a href="{% url 'historia:livro_digital' %}" class="text-link">Ler o Livro <i class="fas fa-chevron-right"></i></a>
+            <div class="card-ranieri p-8 rounded-xl flex flex-col items-center text-center">
+                <i class="fas fa-book-open text-4xl mb-4 text-roxo1"></i>
+                <h3 class="text-2xl font-bold mb-3 text-laranja-escuro1">História Digital</h3>
+                <p class="text-preto1 mb-6">Uma narrativa interativa sobre as décadas de fundação e crescimento da Ranieri.</p>
+                <a href="{% url 'historia:livro_digital' %}" class="font-bold text-preto2 hover:text-roxo1 transition-colors mt-auto">
+                    Ler o Livro <i class="fas fa-chevron-right ml-1"></i>
+                </a>
             </div>
 
-            <div class="card card-hover">
-                <i class="fas fa-music card-icon"></i>
-                <h3>Coral Ranieri</h3>
-                <p>Descubra o repertório, os eventos e o legado musical de nossa comunidade.</p>
-                <a href="{% url 'coral:index' %}" class="text-link">Ver Livros <i class="fas fa-chevron-right"></i></a>
+            <div class="card-ranieri p-8 rounded-xl flex flex-col items-center text-center">
+                <i class="fas fa-music text-4xl mb-4 text-roxo1"></i>
+                <h3 class="text-2xl font-bold mb-3 text-laranja-escuro1">Coral Ranieri</h3>
+                <p class="text-preto1 mb-6">Descubra o repertório, os eventos e o legado musical de nossa comunidade.</p>
+                <a href="{% url 'coral:index' %}" class="font-bold text-preto2 hover:text-roxo1 transition-colors mt-auto">
+                    Ver Livros <i class="fas fa-chevron-right ml-1"></i>
+                </a>
             </div>
 
-            <div class="card card-hover">
-                <i class="fas fa-utensils card-icon"></i>
-                <h3>Simoninha na Cozinha</h3>
-                <p>Receitas e eventos culinários em formato de catálogo digital.</p>
-                <a href="{% url 'sim_cozinha:index' %}" class="text-link">Explorar Receitas <i class="fas fa-chevron-right"></i></a>
+            <div class="card-ranieri p-8 rounded-xl flex flex-col items-center text-center">
+                <i class="fas fa-utensils text-4xl mb-4 text-roxo1"></i>
+                <h3 class="text-2xl font-bold mb-3 text-laranja-escuro1">Simoninha na Cozinha</h3>
+                <p class="text-preto1 mb-6">Receitas e eventos culinários em formato de catálogo digital.</p>
+                <a href="{% url 'sim_cozinha:index' %}" class="font-bold text-preto2 hover:text-roxo1 transition-colors mt-auto">
+                    Explorar Receitas <i class="fas fa-chevron-right ml-1"></i>
+                </a>
             </div>
 
-            <div class="card card-hover">
-                <i class="fas fa-camera-retro card-icon"></i>
-                <h3>Galerias públicas</h3>
-                <p>Confira os registros fotográficos públicos de nossos eventos e atividades abertas.</p>
-                <a href="{% url 'galerias:lista_publicas' %}" class="text-link">Ver Fotos <i class="fas fa-chevron-right"></i></a>
+            <div class="card-ranieri p-8 rounded-xl flex flex-col items-center text-center">
+                <i class="fas fa-camera-retro text-4xl mb-4 text-roxo1"></i>
+                <h3 class="text-2xl font-bold mb-3 text-laranja-escuro1">Galerias públicas</h3>
+                <p class="text-preto1 mb-6">Confira os registros fotográficos públicos de nossos eventos e atividades abertas.</p>
+                <a href="{% url 'galerias:lista_publicas' %}" class="font-bold text-preto2 hover:text-roxo1 transition-colors mt-auto">
+                    Ver Fotos <i class="fas fa-chevron-right ml-1"></i>
+                </a>
             </div>
 
-            <div class="card card-hover">
-                <i class="fas fa-user-lock card-icon"></i>
-                <h3>Galerias Exclusivas</h3>
-                <p>Conteúdo exclusivo para usuários cadastrados.</p>
-                <a href="{% url 'galerias:lista_galerias' %}" class="text-link">Acessar Exclusivas <i class="fas fa-chevron-right"></i></a>
+            <div class="card-ranieri p-8 rounded-xl flex flex-col items-center text-center">
+                <i class="fas fa-user-lock text-4xl mb-4 text-roxo1"></i>
+                <h3 class="text-2xl font-bold mb-3 text-laranja-escuro1">Galerias Exclusivas</h3>
+                <p class="text-preto1 mb-6">Conteúdo exclusivo para usuários cadastrados.</p>
+                <a href="{% url 'galerias:lista_galerias' %}" class="font-bold text-preto2 hover:text-roxo1 transition-colors mt-auto">
+                    Acessar Exclusivas <i class="fas fa-chevron-right ml-1"></i>
+                </a>
             </div>
 
         </div>
     </section>
 
-    <section class="cta-section bg-secondary">
-        <div class="container text-center">
-            <h2>Comunidade Ranieri</h2>
-            <p>Acesse seu painel para mensagens, materiais exclusivos e informações da sua turma, entre outras!</p>
-            {% if not user.is_authenticated %}
-                <div id="home-auth-unique-container">
-                    <a href="{% url 'users:login' %}" class="btn-secondary btn-lg">Fazer Login <i class="fas fa-sign-in-alt"></i></a>
-                    <a href="{% url 'users:register' %}" class="btn-primary btn-lg">Cadastre-se <i class="fas fa-user-plus"></i></a>
-                </div>
-            {% else %}
-                <a href="{% url 'users:dashboard' %}" class="btn-secondary btn-lg">Ir para o Painel <i class="fas fa-user-circle"></i></a>
-            {% endif %}
+    <section class="bg-secondary/10 py-16 border-y border-secondary/20">
+        <div class="max-w-4xl mx-auto px-4 text-center">
+            <h2 class="text-3xl font-bold mb-4">Comunidade Ranieri</h2>
+            <p class="text-lg mb-8 text-preto1">Acesse seu painel para mensagens, materiais exclusivos e informações da sua turma, entre outras!</p>
+
+            <div class="flex flex-wrap justify-center gap-4">
+                {% if not user.is_authenticated %}
+                    <a href="{% url 'users:login' %}" class="btn-secondary text-lg px-8 py-3">
+                        Fazer Login <i class="fas fa-sign-in-alt ml-2"></i>
+                    </a>
+                    <a href="{% url 'users:register' %}" class="btn-primary text-lg px-8 py-3">
+                        Cadastre-se <i class="fas fa-user-plus ml-2"></i>
+                    </a>
+                {% else %}
+                    <a href="{% url 'users:dashboard' %}" class="btn-secondary text-lg px-8 py-3">
+                        Ir para o Painel <i class="fas fa-user-circle ml-2"></i>
+                    </a>
+                {% endif %}
+            </div>
         </div>
     </section>
 

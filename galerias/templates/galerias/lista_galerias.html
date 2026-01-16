@@ -4,36 +4,51 @@
 {% block title %}Galerias Restritas{% endblock %}
 
 {% block content %}
-<main class="gallery-list-container container py-5">
+<main class="container mx-auto px-4 py-12">
 
-    <h1 class="text-center mb-4">Galerias Exclusivas</h1>
-    <p class="section-subtitle text-center mb-5">Conteúdo destinado a usuários cadastrados.</p>
+    <h1 class="text-4xl font-bold text-center text-roxo1 mb-2">Galerias Exclusivas</h1>
+    <p class="text-xl text-center text-text-main opacity-80 mb-12">Conteúdo destinado a usuários cadastrados.</p>
 
     {% if grupos_com_galerias %}
         {% for item in grupos_com_galerias %}
-            <section class="grupo-galeria-section mb-5">
-                <h2 class="segment-title">
+            <section class="mb-16">
+                <h2 class="text-2xl font-bold text-primary mb-8 flex items-center gap-3 border-b border-border-custom pb-2">
                     <i class="fas fa-users-cog"></i> {{ item.nome_grupo }}
                 </h2>
 
-                <div class="gallery-grid">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                     {% for galeria in item.galerias %}
-                        <div class="gallery-card">
-                            <a href="{% url 'galerias:detalhe_galeria' pk=galeria.pk %}">
+                        <div class="card-ranieri group rounded-xl overflow-hidden flex flex-col h-full bg-white">
+                            <a href="{% url 'galerias:detalhe_galeria' pk=galeria.pk %}" class="block overflow-hidden aspect-[3/2]">
                                 {% if galeria.capa_proxy_url %}
-                                    <img src="{{ galeria.capa_proxy_url }}" alt="{{ galeria.nome }}" class="gallery-card-image">
+                                    <img src="{{ galeria.capa_proxy_url }}" alt="{{ galeria.nome }}"
+                                         class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
                                 {% else %}
-                                    <img src="{% static 'images/default-gallery-cover.jpg' %}" class="gallery-card-image">
+                                    <img src="{% static 'images/default-gallery-cover.jpg' %}"
+                                         class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
                                 {% endif %}
                             </a>
-                            <div class="gallery-card-content">
-                                <h3 class="gallery-card-title text-truncate">{{ galeria.nome }}</h3>
-                                <div class="gallery-card-meta mb-3 small text-muted">
-                                    <span><i class="fas fa-calendar-alt"></i> {{ galeria.data_do_evento|date:"d/m/Y" }}</span><br>
-                                    <span class="badge bg-secondary mt-2"><i class="fas fa-user-lock"></i> Exclusiva</span>
+
+                            <div class="p-5 flex flex-col flex-grow">
+                                <h3 class="text-lg font-bold text-text-main truncate mb-3" title="{{ galeria.nome }}">
+                                    {{ galeria.nome }}
+                                </h3>
+
+                                <div class="text-sm text-gray-500 mb-6 space-y-1">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fas fa-calendar-alt text-primary w-4"></i>
+                                        {{ galeria.data_do_evento|date:"d/m/Y" }}
+                                    </div>
+                                    <div class="inline-block bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider mt-2">
+                                        <i class="fas fa-user-lock mr-1"></i> Exclusiva
+                                    </div>
                                 </div>
+
                                 <div class="mt-auto">
-                                    <a href="{% url 'galerias:detalhe_galeria' pk=galeria.pk %}" class="btn btn-secondary w-100">Ver Fotos <i class="fas fa-arrow-right"></i></a>
+                                    <a href="{% url 'galerias:detalhe_galeria' pk=galeria.pk %}"
+                                       class="btn-secondary w-full inline-flex items-center justify-center gap-2 shadow-sm">
+                                        Ver Fotos <i class="fas fa-arrow-right text-xs"></i>
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -42,9 +57,10 @@
             </section>
         {% endfor %}
     {% else %}
-        <div class="col-12 text-center py-5">
-            <div class="alert alert-warning">
-                <i class="fas fa-lock"></i> No momento não há galerias exclusivas liberadas para o seu perfil.
+        <div class="flex justify-center py-20">
+            <div class="bg-orange-50 border border-orange-200 text-orange-800 px-8 py-6 rounded-xl flex flex-col items-center gap-4 text-center max-w-lg shadow-sm">
+                <i class="fas fa-lock text-4xl opacity-50"></i>
+                <p class="text-lg font-medium">No momento não há galerias exclusivas liberadas para o seu perfil.</p>
             </div>
         </div>
     {% endif %}

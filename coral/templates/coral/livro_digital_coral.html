@@ -7,71 +7,71 @@
 
 {% block content %}
 
-    <div class="section-alt">
-        <div class="container">
-            <h1 class="section-title">Projeto Coral Ranieri</h1>
-            <p class="section-subtitle">{{ livro_titulo }} Interativo. Capítulo {{ capitulo_ordem }} de {{ total_capitulos }}</p>
+    <div class="bg-surface py-12">
+        <div class="container mx-auto px-4">
+            <h1 class="text-4xl font-bold text-center text-roxo1 mb-2">Projeto Coral Ranieri</h1>
+            <p class="text-xl text-center text-text-main opacity-80 mb-10">{{ livro_titulo }} Interativo. Capítulo {{ capitulo_ordem }} de {{ total_capitulos }}</p>
 
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h2>{% if capitulo %}{{ capitulo.titulo }}{% else %}Nenhum Conteúdo Cadastrado{% endif %}</h2>
+            <div class="card-ranieri rounded-xl overflow-hidden mb-6">
+                <div class="bg-primary p-6">
+                    <h2 class="text-2xl font-bold text-white">{% if capitulo %}{{ capitulo.titulo }}{% else %}Nenhum Conteúdo Cadastrado{% endif %}</h2>
                 </div>
 
-                <div class="card-body">
-                    <div class="chapter-content">
+                <div class="p-8 bg-white">
+                    <div class="prose prose-lg max-w-none text-text-main leading-relaxed">
                         {% if capitulo %}
                             {{ capitulo.conteudo|safe }}
                         {% else %}
-                            <p class="text-center text-muted">Ainda não há capítulos cadastrados para a História.</p>
+                            <p class="text-center text-gray-500 italic">Ainda não há capítulos cadastrados para a História.</p>
                         {% endif %}
                     </div>
                 </div>
             </div>
 
             {% if capitulo and total_capitulos > 0 %}
-                <div class="chapter-navigation mt-3 center">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8">
 
                     {% if capitulo_anterior %}
                         <a href="{% url 'coral:historia_digital' %}?page={{ capitulo_anterior.capitulo_index_base_1 }}"
-                           class="btn btn-back action-button mr-2"
+                           class="btn-primary inline-flex items-center shadow-md w-full sm:w-auto justify-center"
                            id="btn-anterior">
                             &larr; Capítulo Anterior
                         </a>
                     {% else %}
-                        <button class="btn btn-back is-disabled action-button mr-2" disabled>
+                        <button class="bg-gray-300 text-gray-500 px-4 py-2 rounded cursor-not-allowed w-full sm:w-auto" disabled>
                             &larr; Capítulo Anterior
                         </button>
                     {% endif %}
 
-                    <div class="mx-auto"></div>
+                    <div class="hidden sm:block flex-grow"></div>
 
                     {% if proximo_capitulo %}
                         <a href="{% url 'coral:historia_digital' %}?page={{ proximo_capitulo.capitulo_index_base_1 }}"
-                           class="btn btn-secondary primary-action action-button ml-2"
+                           class="btn-secondary inline-flex items-center shadow-md w-full sm:w-auto justify-center"
                            id="btn-proximo">
                             Próximo Capítulo &rarr;
                         </a>
                     {% else %}
-                        <button class="btn btn-secondary is-disabled action-button ml-2" disabled>
+                        <button class="bg-gray-300 text-gray-500 px-4 py-2 rounded cursor-not-allowed w-full sm:w-auto" disabled>
                             Fim da Narrativa
                         </button>
                     {% endif %}
 
                 </div>
 
-                <div class="text-center mt-3">
-                    <a href="{% url 'coral:repertorio_list' %}" class="btn-secondary-custom">
-                        <i class="fas fa-music"></i> Ver Repertório
+                <div class="text-center mt-8">
+                    <a href="{% url 'coral:repertorio_list' %}" class="inline-flex items-center text-roxo1 font-bold hover:text-laranja-escuro1 transition-colors underline decoration-2 underline-offset-4">
+                        <i class="fas fa-music mr-2"></i> Ver Repertório
                     </a>
                 </div>
 
-                <div class="progress-bar-container mt-3">
+                <div class="mt-10 max-w-2xl mx-auto">
                     {% widthratio capitulo_ordem total_capitulos 100 as progresso_percentual %}
-                    <div class="progress-bar-label text-center mb-1">
+                    <div class="text-sm font-semibold text-center mb-2 text-text-main">
                         Progresso: {{ progresso_percentual|floatformat:0 }}%
                     </div>
-                    <div class="progress-bar">
-                        <div class="progress-bar-fill" style="width: {{ progresso_percentual }}%;"></div>
+                    <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden border border-border-custom">
+                        <div class="bg-primary h-full transition-all duration-500 ease-out" style="width: {{ progresso_percentual }}%;"></div>
                     </div>
                 </div>
             {% endif %}

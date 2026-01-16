@@ -7,39 +7,38 @@
 
 {% block content %}
 
-    <div class="section-alt">
-        <div class="container text-center">
+    <div class="bg-surface py-12">
+        <div class="container mx-auto px-4 text-center">
 
             {# Logo do Coral #}
             <img src="{% static 'images/logo_coral/logo_coral.png' %}"
                  alt="Logo do Coral Ranieri"
-                 class="img-fluid mb-5 mx-auto"
-                 style="max-height: 150px;"
+                 class="max-h-[150px] w-auto mb-10 mx-auto object-contain"
                  onerror="this.onerror=null; this.src='https://placehold.co/150x150/C6F6D5/2F855A?text=LOGO+CORAL'">
 
 
-            <h1 class="section-title">Bem-vindo ao Projeto Coral Ranieri</h1>
-            <p class="section-subtitle">Selecione o livro digital que deseja explorar:</p>
+            <h1 class="text-4xl font-bold mb-2 text-roxo1 text-primary">Bem-vindo ao Projeto Coral Ranieri</h1>
+            <p class="text-xl text-text-main opacity-80 mb-12">Selecione o livro digital que deseja explorar:</p>
 
-            <div class="row mt-5" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 20px;">
+            <div class="flex flex-wrap justify-center gap-8 mt-12">
 
                 {# Link para o Livro de História #}
-                <div style="flex: 1; min-width: 300px; max-width: 500px; margin-bottom: 20px;">
+                <div class="w-full min-w-[300px] max-w-[500px]">
                     <a href="{% url 'coral:historia_digital' %}"
-                       class="btn-coral-choice">
-                        <i class="fas fa-book-open"></i>
-                        <h3>História do Coral</h3>
-                        <p>Conheça a trajetória, os fundadores e os marcos importantes do Coral Ranieri.</p>
+                       class="card-ranieri block p-10 rounded-xl text-decoration-none group">
+                        <i class="fas fa-book-open text-5xl mb-6 text-roxo1 group-hover:scale-110 transition-transform duration-200"></i>
+                        <h3 class="text-2xl font-bold mb-4">História do Coral</h3>
+                        <p class="text-text-main">Conheça a trajetória, os fundadores e os marcos importantes do Coral Ranieri.</p>
                     </a>
                 </div>
 
                 {# Link para o Livro de Repertório #}
-                <div style="flex: 1; min-width: 300px; max-width: 500px; margin-bottom: 20px;">
+                <div class="w-full min-w-[300px] max-w-[500px]">
                     <a href="{% url 'coral:repertorio_list' %}"
-                       class="btn-coral-choice">
-                        <i class="fas fa-music"></i>
-                        <h3>Repertório</h3>
-                        <p>Explore as canções que nos baseamos para o trabalho e ensaios do Coral.</p>
+                       class="card-ranieri block p-10 rounded-xl text-decoration-none group">
+                        <i class="fas fa-music text-5xl mb-6 text-roxo1 group-hover:scale-110 transition-transform duration-200"></i>
+                        <h3 class="text-2xl font-bold mb-4">Repertório</h3>
+                        <p class="text-text-main">Explore as canções que nos baseamos para o trabalho e ensaios do Coral.</p>
                     </a>
                 </div>
 

@@ -3,61 +3,60 @@
  * App: sim_cozinha
  *
  * Implementa a lógica de transição e navegação do Catálogo de Eventos/Receitas
- * no formato de Livro Digital sequencial.
+ * no estilo Ranieri (transições suaves e feedback visual).
  */
 
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Elementos principais
-    const contentContainer = document.querySelector('.section-alt .container');
+    // Ajustado para o seletor do container principal do novo layout
+    const contentContainer = document.querySelector('.container.mx-auto');
 
-    // Se não houver container, a página não é de catálogo ou está vazia
     if (!contentContainer) return;
 
     // 2. Transição de Conteúdo (Fade-In)
-    // Inicializa a transição de entrada do conteúdo.
-    // A classe 'fade-in' deve estar no elemento pai para que esta lógica funcione.
     const runInitialFadeIn = () => {
-        // Adiciona a classe que inicia a transição (se não estiver presente)
-        contentContainer.classList.add('fade-in');
+        contentContainer.style.opacity = '0';
+        contentContainer.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+        contentContainer.style.transform = 'translateY(10px)';
 
-        // Timeout para garantir que o DOM esteja totalmente carregado antes de remover o 'fade-in'
-        setTimeout(() => {
+        requestAnimationFrame(() => {
             contentContainer.style.opacity = '1';
-        }, 50); // Pequeno delay
+            contentContainer.style.transform = 'translateY(0)';
+        });
     };
 
     runInitialFadeIn();
 
     // 3. Função de Navegação Sequencial
     const navigateChapter = (event) => {
-        const link = event.currentTarget; // O link clicado (Próximo/Anterior)
+        const link = event.currentTarget;
 
-        // Verifica se o botão está desabilitado (is-disabled)
-        if (link.classList.contains('is-disabled')) {
+        // Verifica se o botão está desabilitado (pelo atributo ou classe)
+        if (link.hasAttribute('disabled') || link.classList.contains('cursor-not-allowed')) {
             event.preventDefault();
             return;
         }
 
-        // Adiciona classe de fade-out antes de navegar
-        contentContainer.style.opacity = '0';
-
-        // Desabilita os botões para evitar cliques duplos durante a transição
-        document.querySelectorAll('.action-button').forEach(btn => {
-            btn.classList.add('is-disabled');
-            // Mudar o texto dos botões para feedback visual
-            if (btn.id === 'btn-proximo') {
-                btn.textContent = 'Carregando...';
-            } else if (btn.id === 'btn-anterior') {
-                btn.textContent = 'Carregando...';
+        // Feedback visual imediato nos botões
+        const allButtons = document.querySelectorAll('#btn-anterior, #btn-proximo');
+        allButtons.forEach(btn => {
+            btn.style.pointerEvents = 'none';
+            btn.style.opacity = '0.7';
+            if (btn === link) {
+                const icon = btn.querySelector('i');
+                if (icon) icon.className = 'fas fa-spinner fa-spin';
             }
         });
 
-        // Espera a transição CSS de fade-out (0.5s) e então navega
+        // Efeito de saída (Fade-out e Slide-up)
+        contentContainer.style.opacity = '0';
+        contentContainer.style.transform = 'translateY(-10px)';
+
+        // Navegação com delay para a transição
         setTimeout(() => {
             window.location.href = link.href;
-        }, 500); // Deve ser igual ou maior que o tempo de transição em CSS (var(--transition) = 0.2s, mas 0.5s é mais seguro)
+        }, 400);
 
-        // Impede a navegação padrão imediata do link
         event.preventDefault();
     };
 
@@ -73,12 +72,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 5. Otimização de Pré-Busca (Prefetch)
-    // Adiciona o link de pré-busca para o próximo capítulo
-    if (btnProximo && btnProximo.href) {
+    if (btnProximo && btnProximo.href && !btnProximo.hasAttribute('disabled')) {
         const prefetchLink = document.createElement('link');
         prefetchLink.rel = 'prefetch';
         prefetchLink.href = btnProximo.href;
         document.head.appendChild(prefetchLink);
-        // console.log("Prefetching: " + btnProximo.href);
     }
 });

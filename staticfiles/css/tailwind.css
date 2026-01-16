@@ -2,6 +2,7 @@
 
 @source "../../../templates/**/*.html";
 @source "../../../**/templates/**/*.html";
+@source "../../../static/js/**/*.js";
 
 @theme {
   /* Cores Base da Paleta */
@@ -46,6 +47,23 @@
 
   a:hover {
     @apply text-laranja-claro1;
+  }
+
+  /* Campos de Formulário para Mobile e Contraste */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="search"],
+  textarea,
+  select {
+    @apply bg-white border-2 border-preto1 rounded-lg p-3 text-text-main w-full shadow-sm focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition-all;
+  }
+
+  label {
+    @apply block mb-2 font-bold text-roxo1;
   }
 
   /* Barra de Rolagem */

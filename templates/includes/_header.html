@@ -23,7 +23,7 @@
                 {% if user.is_superuser or user.is_fotografo or user.is_fotografo_master %}
                     <a href="{% url 'repositorio:gerenciar_galerias' %}" class="text-white hover:text-laranja-claro1 font-medium transition">Repositório</a>
                 {% endif %}
-                <a href="{% url 'users:dashboard' %}" class="text-white hover:text-laranja-claro1 font-medium transition">Painel</a>
+                <a href="{% url 'users:dashboard' %}" class="text-white hover:text-laranja-claro1 font-medium transition">Meu Painel</a>
                 <form method="post" action="{% url 'users:logout' %}" class="inline">
                     {% csrf_token %}
                     <button type="submit" class="bg-roxo1 hover:bg-roxo2 text-white px-3 py-1 rounded transition text-sm">
@@ -61,7 +61,7 @@
 
             {% if user.is_authenticated %}
                 <li><a href="{% url 'galerias:lista_galerias' %}" class="text-white block border-t border-white/10 pt-2">Galerias Restritas</a></li>
-                <li><a href="{% url 'users:dashboard' %}" class="text-white block">Painel</a></li>
+                <li><a href="{% url 'users:dashboard' %}" class="text-white block">Meu Painel</a></li>
                 <li>
                     <form method="post" action="{% url 'users:logout' %}">
                         {% csrf_token %}

@@ -6,6 +6,7 @@
 {% block content %}
 <main class="container mx-auto px-4 py-12 max-w-7xl">
 
+    {# card boas vindas #}
     <div class="mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
         <div>
             <h1 class="text-3xl md:text-4xl font-black text-roxo1 tracking-tight uppercase leading-tight">
@@ -19,7 +20,9 @@
             <span class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Status: Conectado</span>
         </div>
     </div>
+    {# fim card boas vindas #}
 
+    {# card msgs #}
     {% if messages %}
         <div class="mb-8 space-y-2">
             {% for message in messages %}
@@ -29,11 +32,15 @@
             {% endfor %}
         </div>
     {% endif %}
+    {# fim card msgs #}
 
+    {# para admin aprovar users #}
     {% include 'users/includes/approval_section.html' %}
 
+    {# grid principal #}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
 
+        {# card resumo profile #}
         <div class="card-ranieri bg-white rounded-3xl border border-border-custom shadow-sm overflow-hidden flex flex-col">
             <div class="p-6 border-b border-border-custom flex items-center gap-3 bg-surface/30">
                 <i class="fa-solid fa-user-gear text-primary text-xs"></i>
@@ -55,7 +62,9 @@
                 </a>
             </div>
         </div>
+        {# fim card resumo profile #}
 
+        {# card açoes rapidas #}
         <div class="card-ranieri bg-white rounded-3xl border border-border-custom shadow-sm overflow-hidden flex flex-col">
             <div class="p-6 border-b border-border-custom flex items-center gap-3 bg-surface/30">
                 <i class="fa-solid fa-bolt text-secondary text-xs"></i>
@@ -76,7 +85,9 @@
                 </div>
             </div>
         </div>
+        {# fim card açoes rapidas #}
 
+        {# card notificações #}
         <div class="card-ranieri bg-white rounded-3xl border border-border-custom shadow-sm overflow-hidden flex flex-col">
             <div class="p-6 border-b border-border-custom flex items-center gap-3 bg-surface/30">
                 <i class="fa-solid fa-bell text-roxo1 text-xs"></i>
@@ -111,11 +122,15 @@
                 </a>
             </div>
         </div>
+        {# fim card notificações #}
 
     </div>
+    {# fim grid principal #}
 
+    {# grid oficial #}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
 
+        {# card notificações #}
         <div class="card-ranieri bg-white rounded-3xl border border-border-custom shadow-sm overflow-hidden">
             <div class="p-6 border-b border-border-custom flex items-center justify-between bg-surface/30">
                 <div class="flex items-center gap-3">
@@ -151,7 +166,9 @@
                 <a href="{% url 'galerias:lista_galerias' %}" class="w-full block text-center py-3 text-[9px] font-black uppercase text-gray-400 hover:text-roxo1 transition-all">Ver Galerias Completa</a>
             </div>
         </div>
+        {# fim card notificações #}
 
+        {# card galerias #}
         <div class="card-ranieri bg-white rounded-3xl border border-border-custom shadow-sm overflow-hidden">
             <div class="p-6 border-b border-border-custom flex items-center gap-3 bg-surface/30">
                 <i class="fa-solid fa-lock text-secondary text-xs"></i>
@@ -191,9 +208,12 @@
                 <a href="{% url 'galerias:lista_galerias' %}" class="w-full block text-center py-3 text-[9px] font-black uppercase text-gray-400 hover:text-roxo1 transition-all">Ver Todas do Grupo</a>
             </div>
         </div>
+        {# card galerias #}
 
+    {# fim grid oficial #}
     </div>
 
+    {# suporte e comunicação #}
     <div class="card-ranieri bg-gradient-to-r from-roxo1 to-roxo2 p-8 md:p-12 rounded-[2rem] text-white shadow-2xl relative overflow-hidden">
         <div class="absolute right-0 top-0 h-full w-1/3 opacity-10 flex items-center justify-center">
             <i class="fa-solid fa-headset text-[10rem] rotate-12"></i>
@@ -217,6 +237,7 @@
             </div>
         </div>
     </div>
+    {# fim suporte e comunicação #}
 
 </main>
 {% endblock content %}

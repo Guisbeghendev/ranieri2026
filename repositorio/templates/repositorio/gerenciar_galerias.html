@@ -91,12 +91,12 @@
                             </td>
                             <td class="px-6 py-4">
                                 <div class="space-y-1">
-                                    <div class="flex items-center gap-2 text-[10px] font-bold text-gray-400">
-                                        <i class="far fa-calendar-plus"></i>
-                                        <span>{{ galeria.criado_em|date:"d/m/Y" }}</span>
+                                    <div class="flex items-center gap-2 text-[10px] font-bold text-roxo1" title="Data do Evento">
+                                        <i class="far fa-calendar-star"></i>
+                                        <span>{{ galeria.data_do_evento|date:"d/m/Y" }}</span>
                                     </div>
                                     {% if galeria.alterado_em %}
-                                    <div class="flex items-center gap-2 text-[10px] font-bold text-primary">
+                                    <div class="flex items-center gap-2 text-[10px] font-bold text-gray-400" title="Última Modificação">
                                         <i class="far fa-edit"></i>
                                         <span>{{ galeria.alterado_em|date:"d/m/Y" }}</span>
                                     </div>

@@ -71,6 +71,23 @@
                 <h3 class="text-[10px] font-black text-roxo1 uppercase tracking-[0.2em]">Ações Rápidas</h3>
             </div>
             <div class="p-8 flex-grow space-y-3">
+
+                {# Painel Administrativo (Django Admin) #}
+                {% if user.tipo_usuario == 'ADMIN' or user.is_superuser %}
+                <a href="{% url 'admin:index' %}" target="_blank" class="flex items-center gap-4 p-4 rounded-2xl bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all group border border-primary/20">
+                    <i class="fa-solid fa-gauge-high text-xs"></i>
+                    <span class="text-[10px] font-black uppercase tracking-widest">Painel Administrativo</span>
+                </a>
+                {% endif %}
+
+                {# Painel do Fotógrafo (Repositório) #}
+                {% if user.is_fotografo or user.is_fotografo_master or user.is_superuser %}
+                <a href="{% url 'repositorio:gerenciar_galerias' %}" class="flex items-center gap-4 p-4 rounded-2xl bg-secondary/10 text-secondary hover:bg-secondary hover:text-roxo1 transition-all group border border-secondary/20">
+                    <i class="fa-solid fa-camera text-xs"></i>
+                    <span class="text-[10px] font-black uppercase tracking-widest">Painel do Fotógrafo</span>
+                </a>
+                {% endif %}
+
                 <a href="{% url 'users:profile_edit' %}" class="flex items-center gap-4 p-4 rounded-2xl bg-surface hover:bg-roxo1 hover:text-white transition-all group border border-border-custom">
                     <i class="fa-solid fa-pen-to-square text-xs opacity-40 group-hover:opacity-100"></i>
                     <span class="text-[10px] font-black uppercase tracking-widest">Editar Dados</span>
@@ -79,10 +96,6 @@
                     <i class="fa-solid fa-key text-xs opacity-40 group-hover:opacity-100"></i>
                     <span class="text-[10px] font-black uppercase tracking-widest">Alterar Senha</span>
                 </a>
-                <div class="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 opacity-40 cursor-not-allowed border border-dashed border-gray-200">
-                    <i class="fa-solid fa-plus-circle text-xs"></i>
-                    <span class="text-[10px] font-black uppercase tracking-widest">Novo Registro</span>
-                </div>
             </div>
         </div>
         {# fim card açoes rapidas #}

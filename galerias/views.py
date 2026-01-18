@@ -3,10 +3,11 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse, HttpResponseForbidden, HttpResponseBadRequest, HttpResponse
 from django.db.models import Q
 from repositorio.models import Galeria, Curtida, Imagem
-from users.models import Grupo  # Importação necessária para o filtro de grupos
+from users.models import Grupo
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.conf import settings
+from django.contrib.auth.models import Group
 import mimetypes
 import boto3
 from botocore.exceptions import ClientError
@@ -97,8 +98,6 @@ class GaleriaListView(LoginRequiredMixin, GaleriaAccessMixin, ListView):
     paginate_by = 12
 
     def get_queryset(self):
-        # Para manter a paginação do ListView funcionando corretamente,
-        # retornamos o queryset base filtrado pelos acessos e parâmetros GET.
         user = self.request.user
         queryset = Galeria.objects.filter(status='PB', acesso_publico=False)
 
@@ -123,23 +122,23 @@ class GaleriaListView(LoginRequiredMixin, GaleriaAccessMixin, ListView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
 
-        # Filtros de Grupos disponíveis para o usuário
+        # Filtros de Grupos: exibe apenas grupos que têm galerias RESTRITAS PUBLICADAS acessíveis ao usuário
         if user.is_superuser:
-            from django.contrib.auth.models import Group
-            context['grupos_filtros'] = Group.objects.filter(grupo_ranieri__isnull=False).distinct()
-            user_groups = context['grupos_filtros']
+            context['grupos_filtros'] = Group.objects.filter(
+                grupo_ranieri__galerias_acessiveis__status='PB',
+                grupo_ranieri__galerias_acessiveis__acesso_publico=False
+            ).distinct()
         else:
-            context['grupos_filtros'] = user.groups.all()
-            user_groups = context['grupos_filtros']
+            context['grupos_filtros'] = user.groups.filter(
+                grupo_ranieri__galerias_acessiveis__status='PB',
+                grupo_ranieri__galerias_acessiveis__acesso_publico=False
+            ).distinct()
 
-        # Processamento de URLs e Agrupamento visual (baseado na página atual)
+        user_groups = context['grupos_filtros']
         grupos_com_galerias = []
-
-        # Filtramos as galerias da página atual para não perder a lógica de proxy
         galerias_da_pagina = context['galerias_exclusivas']
 
         for group in user_groups:
-            # Filtra as galerias que pertencem a este grupo DENTRO do resultado paginado
             galerias_do_grupo = [g for g in galerias_da_pagina if g.grupos_acesso.filter(auth_group=group).exists()]
 
             if galerias_do_grupo:

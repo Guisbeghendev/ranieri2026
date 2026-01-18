@@ -44,11 +44,18 @@
     {% endif %}
 
     <div class="card-ranieri bg-white p-6 rounded-2xl border border-border-custom shadow-sm">
-        <div class="mb-8">
-            <h2 class="text-lg font-bold text-roxo1 uppercase tracking-wider mb-1">Anexar e Remover Imagens</h2>
-            <p class="text-sm text-gray-500">
-                Clique nas fotos para vincular/desvincular. Ícones de progresso indicam processamento ativo.
-            </p>
+        <div class="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <h2 class="text-lg font-bold text-roxo1 uppercase tracking-wider mb-1">Anexar e Remover Imagens</h2>
+                <p class="text-sm text-gray-500">
+                    Clique nas fotos para vincular/desvincular. Ícones de progresso indicam processamento ativo.
+                </p>
+            </div>
+
+            <button type="button" id="select-all-btn" class="flex items-center justify-center gap-2 px-6 py-2 bg-gray-100 hover:bg-roxo1 hover:text-white text-roxo1 text-xs font-black uppercase tracking-widest rounded-xl transition-all border border-border-custom shadow-sm group">
+                <i class="fas fa-check-double group-hover:scale-110 transition-transform"></i>
+                Selecionar Todas
+            </button>
         </div>
 
         <form method="post" id="image-selection-form">
@@ -207,7 +214,7 @@
     const URL_RAW = container.getAttribute('data-definir-capa-url-raw');
     const DEFINIR_CAPA_URL_TEMPLATE = URL_RAW.replace('/0/', '/IMAGEM_PK/');
 
-    // Seleção de Imagem
+    // Seleção de Imagem Individual
     document.querySelectorAll('[id^="image-card-"]').forEach(card => {
         card.addEventListener('click', (e) => {
             if (e.target.closest('.js-rotate-btn') || e.target.closest('.js-set-cover-btn')) return;
@@ -225,6 +232,25 @@
             }
         });
     });
+
+    // Lógica Selecionar Todas
+    const selectAllBtn = document.getElementById('select-all-btn');
+    if (selectAllBtn) {
+        selectAllBtn.addEventListener('click', () => {
+            document.querySelectorAll('[id^="image-card-"]').forEach(card => {
+                const checkbox = card.querySelector('input[name="imagens"]');
+                if (!checkbox.checked) {
+                    checkbox.checked = true;
+                    card.classList.add('border-primary', 'scale-[0.98]', 'is-selected');
+                    const indicator = card.querySelector('.selection-indicator');
+                    if (indicator) {
+                        indicator.classList.remove('scale-0');
+                        indicator.classList.add('scale-100');
+                    }
+                }
+            });
+        });
+    }
 
     // Definir Capa
     document.querySelectorAll('.js-set-cover-btn').forEach(btn => {

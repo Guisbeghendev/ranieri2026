@@ -25,10 +25,12 @@
                 <i class="fas fa-camera text-primary mr-2"></i>
                 Fotógrafo:
                 <strong class="ml-1">
-                    {% if galeria.fotografo.registro %}
-                        {{ galeria.fotografo.registro.nome_completo }}
+                    {% if galeria.fotografo.username %}
+                        {{ galeria.fotografo.username }}
+                    {% elif galeria.fotografo.get_full_name %}
+                        {{ galeria.fotografo.get_full_name }}
                     {% else %}
-                        {{ galeria.fotografo.get_full_name|default:galeria.fotografo.username }}
+                        {{ galeria.fotografo.registro.nome_completo }}
                     {% endif %}
                 </strong>
             </span>

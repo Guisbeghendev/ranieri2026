@@ -18,7 +18,7 @@
                     <option value="">Selecione o Grupo</option>
                     {% for grupo in grupos_filtros %}
                         <option value="{{ grupo.id }}" {% if request.GET.grupo == grupo.id|stringformat:"i" %}selected{% endif %}>
-                            {{ grupo.name|default:grupo.nome }}
+                            {{ grupo.name }}
                         </option>
                     {% endfor %}
                 </select>

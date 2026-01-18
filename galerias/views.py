@@ -69,12 +69,16 @@ class GaleriaPublicaListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        user = self.request.user
 
-        # Grupos para o filtro (apenas grupos vinculados a galerias públicas publicadas)
-        context['grupos_filtros'] = Grupo.objects.filter(
-            galerias_acessiveis__acesso_publico=True,
-            galerias_acessiveis__status='PB'
-        ).distinct()
+        # Filtro Público: Apenas grupos onde o usuário está E que possuem galerias públicas publicadas
+        if user.is_authenticated:
+            context['grupos_filtros'] = user.groups.filter(
+                grupo_ranieri__galerias_acessiveis__status='PB',
+                grupo_ranieri__galerias_acessiveis__acesso_publico=True
+            ).distinct()
+        else:
+            context['grupos_filtros'] = []
 
         for galeria in context['galerias']:
             if galeria.capa and galeria.capa.arquivo_processado:
@@ -99,7 +103,8 @@ class GaleriaListView(LoginRequiredMixin, GaleriaAccessMixin, ListView):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = Galeria.objects.filter(status='PB', acesso_publico=False)
+        # Exibe qualquer galeria publicada (pública ou não) onde o usuário pertença ao grupo
+        queryset = Galeria.objects.filter(status='PB')
 
         if not user.is_superuser:
             queryset = queryset.filter(grupos_acesso__auth_group__in=user.groups.all())
@@ -122,16 +127,14 @@ class GaleriaListView(LoginRequiredMixin, GaleriaAccessMixin, ListView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
 
-        # Filtros de Grupos: exibe apenas grupos que têm galerias RESTRITAS PUBLICADAS acessíveis ao usuário
+        # Filtro Restrito: Grupos do usuário que possuem galerias publicadas (independente se acesso_publico é True/False)
         if user.is_superuser:
             context['grupos_filtros'] = Group.objects.filter(
-                grupo_ranieri__galerias_acessiveis__status='PB',
-                grupo_ranieri__galerias_acessiveis__acesso_publico=False
+                grupo_ranieri__galerias_acessiveis__status='PB'
             ).distinct()
         else:
             context['grupos_filtros'] = user.groups.filter(
-                grupo_ranieri__galerias_acessiveis__status='PB',
-                grupo_ranieri__galerias_acessiveis__acesso_publico=False
+                grupo_ranieri__galerias_acessiveis__status='PB'
             ).distinct()
 
         user_groups = context['grupos_filtros']

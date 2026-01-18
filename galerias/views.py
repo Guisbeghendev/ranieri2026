@@ -3,6 +3,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse, HttpResponseForbidden, HttpResponseBadRequest, HttpResponse
 from django.db.models import Q
 from repositorio.models import Galeria, Curtida, Imagem
+from users.models import Grupo  # Importação necessária para o filtro de grupos
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.conf import settings
@@ -37,21 +38,43 @@ class GaleriaAccessMixin:
 
 
 # ----------------------------------------------------------------------
-# 1. LISTAGEM PÚBLICA
+# 1. LISTAGEM PÚBLICA (Atualizada com Paginação e Filtros)
 # ----------------------------------------------------------------------
 class GaleriaPublicaListView(ListView):
     model = Galeria
     template_name = 'galerias/lista_publicas.html'
     context_object_name = 'galerias'
+    paginate_by = 12
 
     def get_queryset(self):
-        return Galeria.objects.filter(
+        queryset = Galeria.objects.filter(
             status='PB',
             acesso_publico=True
-        ).order_by('-data_do_evento').prefetch_related('capa')
+        ).order_by('-data_do_evento')
+
+        # Filtros
+        mes = self.request.GET.get('mes')
+        ano = self.request.GET.get('ano')
+        grupo_id = self.request.GET.get('grupo')
+
+        if mes:
+            queryset = queryset.filter(data_do_evento__month=mes)
+        if ano:
+            queryset = queryset.filter(data_do_evento__year=ano)
+        if grupo_id:
+            queryset = queryset.filter(grupos_acesso__id=grupo_id)
+
+        return queryset.prefetch_related('capa').distinct()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        # Grupos para o filtro (apenas grupos vinculados a galerias públicas publicadas)
+        context['grupos_filtros'] = Grupo.objects.filter(
+            galerias_acessiveis__acesso_publico=True,
+            galerias_acessiveis__status='PB'
+        ).distinct()
+
         for galeria in context['galerias']:
             if galeria.capa and galeria.capa.arquivo_processado:
                 try:
@@ -71,29 +94,55 @@ class GaleriaListView(LoginRequiredMixin, GaleriaAccessMixin, ListView):
     model = Galeria
     template_name = 'galerias/lista_galerias.html'
     context_object_name = 'galerias_exclusivas'
+    paginate_by = 12
 
     def get_queryset(self):
-        return Galeria.objects.none()
+        # Para manter a paginação do ListView funcionando corretamente,
+        # retornamos o queryset base filtrado pelos acessos e parâmetros GET.
+        user = self.request.user
+        queryset = Galeria.objects.filter(status='PB', acesso_publico=False)
+
+        if not user.is_superuser:
+            queryset = queryset.filter(grupos_acesso__auth_group__in=user.groups.all())
+
+        # Filtros de busca
+        mes = self.request.GET.get('mes')
+        ano = self.request.GET.get('ano')
+        grupo_id = self.request.GET.get('grupo')
+
+        if mes:
+            queryset = queryset.filter(data_do_evento__month=mes)
+        if ano:
+            queryset = queryset.filter(data_do_evento__year=ano)
+        if grupo_id:
+            queryset = queryset.filter(grupos_acesso__id=grupo_id)
+
+        return queryset.prefetch_related('capa', 'grupos_acesso').order_by('-data_do_evento').distinct()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
 
+        # Filtros de Grupos disponíveis para o usuário
         if user.is_superuser:
             from django.contrib.auth.models import Group
-            user_groups = Group.objects.filter(grupo_ranieri__isnull=False).distinct()
+            context['grupos_filtros'] = Group.objects.filter(grupo_ranieri__isnull=False).distinct()
+            user_groups = context['grupos_filtros']
         else:
-            user_groups = user.groups.all()
+            context['grupos_filtros'] = user.groups.all()
+            user_groups = context['grupos_filtros']
 
+        # Processamento de URLs e Agrupamento visual (baseado na página atual)
         grupos_com_galerias = []
 
-        for group in user_groups:
-            galerias_do_grupo = Galeria.objects.filter(
-                status='PB',
-                grupos_acesso__auth_group=group
-            ).prefetch_related('capa').order_by('-data_do_evento')
+        # Filtramos as galerias da página atual para não perder a lógica de proxy
+        galerias_da_pagina = context['galerias_exclusivas']
 
-            if galerias_do_grupo.exists():
+        for group in user_groups:
+            # Filtra as galerias que pertencem a este grupo DENTRO do resultado paginado
+            galerias_do_grupo = [g for g in galerias_da_pagina if g.grupos_acesso.filter(auth_group=group).exists()]
+
+            if galerias_do_grupo:
                 for galeria in galerias_do_grupo:
                     if galeria.capa and galeria.capa.arquivo_processado:
                         try:
@@ -178,7 +227,6 @@ class CurtirView(LoginRequiredMixin, View):
         user = request.user
         imagem = get_object_or_404(Imagem, pk=imagem_pk)
 
-        # Correção da verificação de acesso para aceitar superusuário e grupos corretamente
         if not GaleriaAccessMixin().has_access(imagem.galeria, user):
             return JsonResponse({'success': False, 'message': 'Acesso negado.'}, status=403)
 

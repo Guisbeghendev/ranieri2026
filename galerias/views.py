@@ -93,7 +93,7 @@ class GaleriaPublicaListView(ListView):
 
 
 # ----------------------------------------------------------------------
-# 2. LISTAGEM RESTRITA
+# 2. LISTAGEM RESTRITA (Corrigida: Lógica de agrupamento respeita filtro)
 # ----------------------------------------------------------------------
 class GaleriaListView(LoginRequiredMixin, GaleriaAccessMixin, ListView):
     model = Galeria
@@ -103,7 +103,6 @@ class GaleriaListView(LoginRequiredMixin, GaleriaAccessMixin, ListView):
 
     def get_queryset(self):
         user = self.request.user
-        # Exibe qualquer galeria publicada (pública ou não) onde o usuário pertença ao grupo
         queryset = Galeria.objects.filter(status='PB')
 
         if not user.is_superuser:
@@ -126,22 +125,31 @@ class GaleriaListView(LoginRequiredMixin, GaleriaAccessMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
+        grupo_id_filtrado = self.request.GET.get('grupo')
 
-        # Filtro Restrito: Grupos do usuário que possuem galerias publicadas (independente se acesso_publico é True/False)
+        # 1. Filtros de Grupos (Select do formulário): Todos os grupos acessíveis com galerias PB
         if user.is_superuser:
-            context['grupos_filtros'] = Group.objects.filter(
+            grupos_base = Group.objects.filter(
                 grupo_ranieri__galerias_acessiveis__status='PB'
             ).distinct()
         else:
-            context['grupos_filtros'] = user.groups.filter(
+            grupos_base = user.groups.filter(
                 grupo_ranieri__galerias_acessiveis__status='PB'
             ).distinct()
 
-        user_groups = context['grupos_filtros']
+        context['grupos_filtros'] = grupos_base
+
+        # 2. Lógica de Grupos para Exibição (Respeitando o filtro de grupo selecionado)
+        if grupo_id_filtrado:
+            user_groups_to_iterate = grupos_base.filter(id=grupo_id_filtrado)
+        else:
+            user_groups_to_iterate = grupos_base
+
         grupos_com_galerias = []
         galerias_da_pagina = context['galerias_exclusivas']
 
-        for group in user_groups:
+        for group in user_groups_to_iterate:
+            # Filtra apenas as galerias que pertencem a este grupo dentro do queryset já filtrado pela paginação/data
             galerias_do_grupo = [g for g in galerias_da_pagina if g.grupos_acesso.filter(auth_group=group).exists()]
 
             if galerias_do_grupo:

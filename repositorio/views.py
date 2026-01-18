@@ -248,11 +248,23 @@ class GerenciarGaleriasView(FotografoRequiredMixin, ListView):
         else:
             queryset = Galeria.objects.filter(fotografo=user)
 
+        # Filtros via GET
+        status = self.request.GET.get('status')
+        mes = self.request.GET.get('mes')
+        ano = self.request.GET.get('ano')
+
+        if status:
+            queryset = queryset.filter(status=status)
+        if mes:
+            queryset = queryset.filter(data_do_evento__month=mes)
+        if ano:
+            queryset = queryset.filter(data_do_evento__year=ano)
+
         queryset = queryset.select_related('capa')
 
         return queryset.annotate(
             imagens_count=models.Count('imagens')
-        ).order_by('-criado_em')
+        ).order_by('-data_do_evento', '-criado_em') # Ordenação por data do evento
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

@@ -192,6 +192,29 @@
                         {% endfor %}
                     </tbody>
                 </table>
+
+                {% if is_paginated %}
+                <div class="px-6 py-4 bg-surface/30 border-t border-border-custom flex items-center justify-between">
+                    <div class="text-[10px] font-black uppercase text-gray-400 tracking-widest">
+                        Página {{ page_obj.number }} de {{ paginator.num_pages }}
+                    </div>
+                    <div class="flex gap-2">
+                        {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.mes %}&mes={{ request.GET.mes }}{% endif %}{% if request.GET.ano %}&ano={{ request.GET.ano }}{% endif %}"
+                               class="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-border-custom text-gray-500 hover:bg-roxo1 hover:text-white transition-all">
+                                <i class="fas fa-chevron-left text-xs"></i>
+                            </a>
+                        {% endif %}
+
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.mes %}&mes={{ request.GET.mes }}{% endif %}{% if request.GET.ano %}&ano={{ request.GET.ano }}{% endif %}"
+                               class="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-border-custom text-gray-500 hover:bg-roxo1 hover:text-white transition-all">
+                                <i class="fas fa-chevron-right text-xs"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
             {% else %}
                 <div class="p-20 text-center">
                     <div class="w-20 h-20 bg-surface rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-dashed border-gray-200">
@@ -287,7 +310,6 @@
             });
             const data = await res.json();
             if (data.status_mudou) updateGalleryRow(form.getAttribute('data-galeria-pk'), data.status);
-            // Poderia usar um toast aqui em vez de alert
         } catch (err) {
             console.error('Erro na ação:', err);
         } finally {
